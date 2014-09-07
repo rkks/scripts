@@ -1,0 +1,13 @@
+alias b=break
+alias c=continue
+alias d=down
+alias fi=finish
+alias h=history
+alias l=list
+alias p=print
+alias r=run
+alias s=step
+alias tab=thread apply all bt
+alias tb=tbreak
+alias u=up
+alias w=where

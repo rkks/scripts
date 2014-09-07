@@ -1,0 +1,15 @@
+#!/usr/bin/env expect -f
+
+set host [lindex $argv 0]
+
+set spawn_id -1;
+
+set res 0
+spawn ping -c 3 $host
+
+expect eof
+catch {close}
+puts [lindex [wait -nowait] 3]
+
+send_user "result $res"
+exit

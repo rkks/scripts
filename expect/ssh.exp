@@ -1,0 +1,9 @@
+#!/usr/bin/env expect -f
+
+set host [lindex $argv 0]
+set user raviks
+set spawn_id -1;
+set res 0;
+
+spawn ssh $user@$host
+interact

@@ -1,0 +1,10 @@
+#!/usr/bin/expect --
+
+set    sys  [lrange $argv 0 0]
+
+spawn  telnet $sys
+expect "login: "
+send   "root\r"
+expect "\# "
+
+interact
