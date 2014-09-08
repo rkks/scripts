@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Downloads all links provided in ~/.downloads file
 #  CREATED: 11/19/12 12:43:39 IST
-# MODIFIED: 09/05/14 21:49:22 IST
+# MODIFIED: 09/08/14 10:39:37 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -10,7 +10,7 @@
 #set -uvx               # Treat unset variables as an error, verbose, debug mode
 
 # Source .bashrc only if invoked as a sub-shell.
-if [[ "$(basename download.sh)" == "$(basename $0)" ]] && [ -f $HOME/.bashrc ]; then
+if [[ "$(basename download.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc ]; then
     source $HOME/.bashrc
     log_init INFO $SCRIPT_LOGS/download.log
     # Global defines. (Re)define ENV only if necessary.
@@ -45,7 +45,7 @@ main()
     exit 0
 }
 
-if [ "$(basename $0)" == "$(basename download.sh)" ]; then
+if [ "$(basename -- $0)" == "$(basename download.sh)" ]; then
     main $*
 fi
 # VIM: ts=4:sw=4

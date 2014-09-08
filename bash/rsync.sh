@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Invokes rsyncs with well known better options.
 #  CREATED: 06/29/13 16:14:34 IST
-# MODIFIED: 09/05/14 21:50:06 IST
+# MODIFIED: 09/08/14 10:40:59 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -14,7 +14,7 @@
 #set -uvx           # Warn unset vars as error, Verbose (echo each command), Enable debug mode
 
 # Source .bashrc only if invoked as a sub-shell. Not if sourced.
-if [[ "$(basename rsync.sh)" == "$(basename $0)" ]] && [ -f $HOME/.bashrc ]; then
+if [[ "$(basename rsync.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc ]; then
     source $HOME/.bashrc
     log_init INFO $SCRIPT_LOGS/rsync.log
 fi
@@ -134,7 +134,7 @@ main()
     exit 0
 }
 
-if [ "$(basename $0)" == "$(basename rsync.sh)" ]; then
+if [ "$(basename -- $0)" == "$(basename rsync.sh)" ]; then
     main $*
 fi
 # VIM: ts=4:sw=4

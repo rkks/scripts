@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Cscope Utils
 #  CREATED: 06/25/13 11:05:14 IST
-# MODIFIED: 09/05/14 21:49:13 IST
+# MODIFIED: 09/08/14 10:39:16 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -11,7 +11,7 @@
 #set -uvx
 
 # Source .bashrc only if invoked as a sub-shell. Not if sourced.
-if [[ "$(basename cscope_cgtags.sh)" == "$(basename $0)" ]] && [ -f $HOME/.bashrc ]; then
+if [[ "$(basename cscope_cgtags.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc ]; then
     source $HOME/.bashrc
     log_init INFO $SCRIPT_LOGS/cscope_cgtags.log
 fi
@@ -187,7 +187,7 @@ main()
     exit 0
 }
 
-if [ "$(basename $0)" == "$(basename cscope_cgtags.sh)" ]; then
+if [ "$(basename -- $0)" == "$(basename cscope_cgtags.sh)" ]; then
     main $*
 fi
 # VIM: ts=4:sw=4

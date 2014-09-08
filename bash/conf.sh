@@ -200,7 +200,7 @@ main()
     exit 0
 }
 
-if [ "$(basename $0)" == "$(basename conf.sh)" ]; then
+if [ "$(basename -- $0)" == "$(basename conf.sh)" ]; then
     main $*
 fi
 

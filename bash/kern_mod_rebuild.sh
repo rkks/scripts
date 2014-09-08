@@ -2,7 +2,7 @@
 #  DETAILS: Builds linux kernel module for specific distro. Built from
 # http://www.pixelbeat.org/docs/rebuild_kernel_module.html
 #  CREATED: 03/03/13 19:53:21 IST
-# MODIFIED: 09/05/14 21:50:16 IST
+# MODIFIED: 09/08/14 10:40:11 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -11,7 +11,7 @@
 #set -uvx               # Treat unset variables as an error, verbose, debug mode
 
 # Source .bashrc only if invoked as a sub-shell.
-if [[ "$(basename kern_mod_rebuild.sh)" == "$(basename $0)" ]] && [ -f $HOME/.bashrc ]; then
+if [[ "$(basename kern_mod_rebuild.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc ]; then
     source $HOME/.bashrc
     log_init INFO $SCRIPT_LOGS/kern_mod_rebuild.log
     # Global defines. (Re)define ENV only if necessary.
@@ -109,7 +109,7 @@ main()
     exit 0
 }
 
-if [ "$(basename $0)" == "$(basename kern_mod_rebuild.sh)" ]; then
+if [ "$(basename -- $0)" == "$(basename kern_mod_rebuild.sh)" ]; then
     main $*
 fi
 # VIM: ts=4:sw=4

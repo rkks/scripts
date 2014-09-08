@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Displays file extension
 #  CREATED: 12/19/12 21:12:25 IST
-# MODIFIED: 01/20/14 14:40:15 IST
+# MODIFIED: 09/08/14 10:39:55 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -23,7 +23,7 @@ main()
     exit 0
 }
 
-if [ "$(basename $0)" == "$(basename extension.sh)" ]; then
+if [ "$(basename -- $0)" == "$(basename extension.sh)" ]; then
     main $*
 fi
 # VIM: ts=4:sw=4

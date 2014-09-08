@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Create directory structure based on need
 #  CREATED: 03/21/13 11:01:09 IST
-# MODIFIED: 09/06/14 08:55:06 IST
+# MODIFIED: 09/08/14 10:40:31 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -10,7 +10,7 @@
 #set -uvx               # Treat unset variables as an error, verbose, debug mode
 
 # Source .bashrc only if invoked as a sub-shell.
-if [[ "$(basename mkdir.sh)" == "$(basename $0)" ]] && [ -f $HOME/.bashrc ]; then
+if [[ "$(basename mkdir.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc ]; then
     source $HOME/.bashrc
     # define new ENV only if necessary.
 fi
@@ -127,7 +127,7 @@ main()
     exit 0
 }
 
-if [ "$(basename $0)" == "$(basename mkdir.sh)" ]; then
+if [ "$(basename -- $0)" == "$(basename mkdir.sh)" ]; then
     main $*
 fi
 # VIM: ts=4:sw=4

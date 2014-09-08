@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Tar wrappers
 #  CREATED: 07/17/13 15:53:58 IST
-# MODIFIED: 09/05/14 21:49:28 IST
+# MODIFIED: 09/08/14 10:41:35 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -11,7 +11,7 @@
 #set -uvx
 
 # Source .bashrc only if invoked as a sub-shell.
-if [[ "$(basename tar.sh)" == "$(basename $0)" ]] && [ -f $HOME/.bashrc ]; then
+if [[ "$(basename tar.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc ]; then
     source $HOME/.bashrc
     log_init INFO $SCRIPT_LOGS/tar.log
 fi
@@ -119,7 +119,7 @@ main()
     exit 0
 }
 
-if [ "$(basename $0)" == "$(basename tar.sh)" ]; then
+if [ "$(basename -- $0)" == "$(basename tar.sh)" ]; then
     main $*
 fi
 # VIM: ts=4:sw=4:sts=4:expandtab

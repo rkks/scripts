@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Profile given binary using Oprofile
 #  CREATED: 04/22/13 15:13:32 IST
-# MODIFIED: 01/20/14 14:40:59 IST
+# MODIFIED: 09/08/14 10:40:42 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -16,7 +16,7 @@
 #
 
 # Source .bashrc only if invoked as a sub-shell.
-if [[ "$(basename oprofile-run.sh)" == "$(basename $0)" ]] && [ -f $HOME/.bashrc ]; then
+if [[ "$(basename oprofile-run.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc ]; then
     source $HOME/.bashrc
     # define new ENV only if necessary.
 fi
@@ -67,7 +67,7 @@ main()
     exit 0
 }
 
-if [ "$(basename $0)" == "$(basename oprofile-run.sh)" ]; then
+if [ "$(basename -- $0)" == "$(basename oprofile-run.sh)" ]; then
     main $*
 fi
 # VIM: ts=4:sw=4

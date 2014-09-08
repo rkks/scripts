@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: generate core and status report for a running process.
 #  CREATED: 03/29/13 18:52:36 IST
-# MODIFIED: 01/20/14 14:38:34 IST
+# MODIFIED: 09/08/14 10:38:00 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -10,7 +10,7 @@
 #set -uvx           # unset vars as error, Verbose (echo each command), debug mode
 
 # Source .bashrc only if invoked as a sub-shell.
-if [[ "$(basename analyze-proc.sh)" == "$(basename $0)" ]] && [ -f $HOME/.bashrc ]; then
+if [[ "$(basename analyze-proc.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc ]; then
     source $HOME/.bashrc
     # Global defines. (Re)define ENV only if necessary.
 fi
@@ -64,7 +64,7 @@ main()
     exit 0
 }
 
-if [ "$(basename $0)" == "$(basename analyze-proc.sh)" ]; then
+if [ "$(basename -- $0)" == "$(basename analyze-proc.sh)" ]; then
     main $*
 fi
 # VIM: ts=4:sw=4

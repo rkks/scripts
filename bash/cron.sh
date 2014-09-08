@@ -3,7 +3,7 @@
 #
 #   AUTHOR: Ravikiran K.S. (ravikirandotks@gmail.com)
 #  CREATED: 11/08/11 13:35:02 PST
-# MODIFIED: 09/06/14 09:34:24 IST
+# MODIFIED: 09/08/14 10:39:11 IST
 # REVISION: 1.0
 
 # Cron has defaults below. Redefining to suite yours(if & only if necessary).
@@ -13,7 +13,7 @@
 #set -uvx       # Treat unset variables as an error, verbose, debug mode
 
 # Source .bashrc only if invoked as a sub-shell. Not if sourced.
-if [[ "$(basename cron.sh)" == "$(basename $0)" ]] && [ -f $HOME/.bashrc ]; then
+if [[ "$(basename cron.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc ]; then
     source $HOME/.bashrc
     log_init INFO $SCRIPT_LOGS/cron.log
 fi
@@ -165,7 +165,7 @@ function main()
 
 # $0 is to account for the "-bash" type of strings in login_shell.
 # login shell if [[ "$(shopt login_shell | cut -f 2)" == "off" ]]
-if [ "$(basename $0)" == "$(basename cron.sh)" ]; then
+if [ "$(basename -- $0)" == "$(basename cron.sh)" ]; then
     main $*
 fi
 # VIM: ts=4:sw=4

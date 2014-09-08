@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Find command wrappers
 #  CREATED: 07/16/13 21:22:06 IST
-# MODIFIED: 09/05/14 21:49:59 IST
+# MODIFIED: 09/08/14 10:40:00 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -11,7 +11,7 @@
 #set -uvx
 
 # Source .bashrc only if invoked as a sub-shell.
-if [[ "$(basename find.sh)" == "$(basename $0)" ]] && [ -f $HOME/.bashrc ]; then
+if [[ "$(basename find.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc ]; then
     source $HOME/.bashrc
     log_init INFO $SCRIPT_LOGS/find.log
 fi
@@ -136,7 +136,7 @@ main()
     exit 0
 }
 
-if [ "$(basename $0)" == "$(basename find.sh)" ]; then
+if [ "$(basename -- $0)" == "$(basename find.sh)" ]; then
     main $*
 fi
 # VIM: ts=4:sw=4:sts=4:expandtab

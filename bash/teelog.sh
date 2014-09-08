@@ -2,7 +2,7 @@
 #  DETAILS: Makes log file by redirecting both stdout and stderr.
 #           The main difference is, this uses 'tee' than >.
 #  CREATED: 11/13/12 19:09:06 IST
-# MODIFIED: 01/20/14 14:42:06 IST
+# MODIFIED: 09/08/14 10:41:40 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -11,7 +11,7 @@
 #set -uvx               # Treat unset variables as an error, verbose, debug mode
 
 # Source .bashrc only if invoked as a sub-shell.
-if [[ "$(basename teelog.sh)" == "$(basename $0)" ]] && [ -f $HOME/.bashrc ]; then
+if [[ "$(basename teelog.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc ]; then
     source $HOME/.bashrc
     # Global defines. (Re)define ENV only if necessary.
 fi
@@ -57,7 +57,7 @@ main()
     exit 0
 }
 
-if [ "$(basename $0)" == "$(basename teelog.sh)" ]; then
+if [ "$(basename -- $0)" == "$(basename teelog.sh)" ]; then
     main $*
 fi
 # VIM: ts=4:sw=4

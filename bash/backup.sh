@@ -3,7 +3,7 @@
 #
 #   AUTHOR: Ravikiran K.S. (ravikirandotks@gmail.com)
 #  CREATED: 11/07/11 13:32:37 PST
-# MODIFIED: 09/05/14 21:49:33 IST
+# MODIFIED: 09/08/14 10:38:14 IST
 # REVISION: 1.0
 
 # Monday to Saturday, an incremental backup is made so that you have daily backups for new files until next week.
@@ -13,7 +13,7 @@
 #set -uvx               # Treat unset variables as an error, verbose, debug mode
 
 # Source .bashrc only if invoked as a sub-shell.
-if [[ "$(basename backup.sh)" == "$(basename $0)" ]] && [ -f $HOME/.bashrc ]; then
+if [[ "$(basename backup.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc ]; then
     source $HOME/.bashrc
     log_init INFO $SCRIPT_LOGS/backup.log
     # Global defines go here. (Re)define ENV only if necessary.
@@ -125,7 +125,7 @@ function main()
 
     for dir in $*; do
         [[ ! -d "$dir" ]] && { log WARN "Backup dir $dir doesn't exist. Skip!"; continue; }
-        local targetdir=$(basename $dir); cdie $(dirname $dir);
+        local targetdir=$(basename -- $dir); cdie $(dirname $dir);
         if [ "$DOM" = "01" ]; then
             # Create Monthly Backups on 1st day of each month
             monthly_backup "$targetdir";
@@ -142,7 +142,7 @@ function main()
     exit 0
 }
 
-if [ "$(basename $0)" == "$(basename backup.sh)" ]; then
+if [ "$(basename -- $0)" == "$(basename backup.sh)" ]; then
     main $*
 fi
 # VIM: ts=4:sw=4

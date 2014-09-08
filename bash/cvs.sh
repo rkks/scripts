@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: CVS related actions
 #  CREATED: 11/07/12 12:54:25 IST
-# MODIFIED: 09/05/14 21:49:17 IST
+# MODIFIED: 09/08/14 10:39:23 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -10,7 +10,7 @@
 #set -uvx               # Treat unset variables as an error, verbose, debug mode
 
 # Source .bashrc only if invoked as a sub-shell.
-if [[ "$(basename cvs.sh)" == "$(basename $0)" ]] && [ -f $HOME/.bashrc ]; then
+if [[ "$(basename cvs.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc ]; then
     source $HOME/.bashrc
     log_init INFO $SCRIPT_LOGS/cvs.log
     # Global defines. (Re)define ENV only if necessary.
@@ -128,7 +128,7 @@ main()
     exit 0
 }
 
-if [ "$(basename $0)" == "$(basename cvs.sh)" ]; then
+if [ "$(basename -- $0)" == "$(basename cvs.sh)" ]; then
     main $*
 fi
 # VIM: ts=4:sw=4

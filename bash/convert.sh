@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Converstion utilities: base conversion, ASCII conversion
 #  CREATED: 07/16/13 21:06:10 IST
-# MODIFIED: 05/14/14 15:16:18 IST
+# MODIFIED: 09/08/14 10:38:55 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -192,7 +192,7 @@ main()
     exit 0
 }
 
-if [ "$(basename $0)" == "$(basename convert.sh)" ]; then
+if [ "$(basename -- $0)" == "$(basename convert.sh)" ]; then
     main $*
 fi
 # VIM: ts=4:sw=4:sts=4:expandtab

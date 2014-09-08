@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 09/05/14 21:46:53 IST
+# MODIFIED: 09/08/14 10:32:51 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -151,7 +151,7 @@ function pvalid()
 
 # bash scripting helper functions
 # $(date +%b%d%T) has display spacing issues. For line number tracing, use: $ becho "+$(echo $LINENO)" "message"
-function becho() { echo $(date +"%Y-%m-%d %H:%M:%S") $(hostname_short) $(basename $0)[$$]: $*; }
+function becho() { echo $(date +"%Y-%m-%d %H:%M:%S") $(hostname_short) $(basename -- $0)[$$]: $*; }
 
 function decho() { [[ "yes" == "$SHDEBUG" ]] && becho "$*"; }
 
@@ -234,7 +234,7 @@ main()
     exit 0
 }
 
-if [ "$(basename $0)" == "$(basename bash_utils.sh)" ]; then
+if [ "$(basename -- $0)" == "$(basename bash_utils.sh)" ]; then
     main $*
 fi
 # VIM: ts=4:sw=4

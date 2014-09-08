@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: tmux handler script
 #  CREATED: 01/28/14 10:51:03 IST
-# MODIFIED: 05/15/14 12:36:28 IST
+# MODIFIED: 09/08/14 10:41:45 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -82,7 +82,7 @@ main()
     exit 0
 }
 
-if [ "$(basename $0)" == "$(basename tmux.sh)" ]; then
+if [ "$(basename -- $0)" == "$(basename tmux.sh)" ]; then
     main $*
 fi
 # VIM: ts=4:sw=4:sts=4:expandtab

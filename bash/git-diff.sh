@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: External diff tool for git
 #  CREATED: 03/20/13 21:55:08 IST
-# MODIFIED: 01/20/14 14:40:30 IST
+# MODIFIED: 09/08/14 10:40:05 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -23,7 +23,7 @@ main()
     [ $# -eq 7 ] && $DIFF "$2" "$5"
 }
 
-if [ "$(basename $0)" == "$(basename git-diff.sh)" ]; then
+if [ "$(basename -- $0)" == "$(basename git-diff.sh)" ]; then
     main $*
 fi
 # VIM: ts=4:sw=4

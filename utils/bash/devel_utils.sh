@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Development Utilities
 #  CREATED: 06/25/13 11:16:41 IST
-# MODIFIED: 03/21/14 15:04:25 IST
+# MODIFIED: 09/08/14 10:33:40 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -130,7 +130,7 @@ main()
     exit 0
 }
 
-if [ "$(basename $0)" == "$(basename devel_utils.sh)" ]; then
+if [ "$(basename -- $0)" == "$(basename devel_utils.sh)" ]; then
     main $*
 fi
 # VIM: ts=4:sw=4

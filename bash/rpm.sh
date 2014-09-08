@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: RPM wrappers
 #  CREATED: 07/16/13 21:11:04 IST
-# MODIFIED: 09/05/14 21:49:48 IST
+# MODIFIED: 09/08/14 10:40:53 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -11,7 +11,7 @@
 #set -uvx
 
 # Source .bashrc only if invoked as a sub-shell.
-if [[ "$(basename rpm.sh)" == "$(basename $0)" ]] && [ -f $HOME/.bashrc ]; then
+if [[ "$(basename rpm.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc ]; then
     source $HOME/.bashrc
     log_init INFO $SCRIPT_LOGS/rpm.log
 fi
@@ -56,7 +56,7 @@ main()
     exit 0
 }
 
-if [ "$(basename $0)" == "$(basename rpm.sh)" ]; then
+if [ "$(basename -- $0)" == "$(basename rpm.sh)" ]; then
     main $*
 fi
 # VIM: ts=4:sw=4:sts=4:expandtab

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Source .bashrc only if invoked as a sub-shell.
-if [[ "$(basename bashexp.sh)" == "$(basename $0)" ]] && [ -f $HOME/.bashrc ]; then
+if [[ "$(basename bashexp.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc ]; then
     source $HOME/.bashrc
 fi
 

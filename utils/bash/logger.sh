@@ -3,7 +3,7 @@
 #   https://github.com/nischithbm/bash-logger
 #   http://sourceforge.net/projects/bash-logger
 #  CREATED: 06/21/13 23:58:09 IST
-# MODIFIED: 09/05/14 21:50:27 IST
+# MODIFIED: 09/08/14 10:33:19 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -69,7 +69,7 @@ function log_env_verify_update()
 {
     [[ -z $LOG_HOSTNAME ]]      && export LOG_HOSTNAME=$(hostname_short)         # solaris doesnt support -s
     [[ -z $LOG_PROCID ]]        && export LOG_PROCID=$(echo $$)
-    [[ -z $LOG_SCRIPTNAME ]]    && export LOG_SCRIPTNAME=$(basename $(echo $0))
+    [[ -z $LOG_SCRIPTNAME ]]    && export LOG_SCRIPTNAME=$(basename -- $(echo $0))
 }
 
 # RFC 5424 defines 8 levels of severity
@@ -223,7 +223,7 @@ main()
     exit 0
 }
 
-if [ "$(basename $0)" == "$(basename logger.sh)" ]; then
+if [ "$(basename -- $0)" == "$(basename logger.sh)" ]; then
     main $*
 fi
 # VIM: ts=4:sw=4

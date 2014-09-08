@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Clearcase Utlities
 #  CREATED: 06/25/13 11:27:14 IST
-# MODIFIED: 09/05/14 21:46:25 IST
+# MODIFIED: 09/08/14 10:38:35 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -140,7 +140,7 @@ main()
     exit 0
 }
 
-if [ "$(basename $0)" == "$(basename clearcase.sh)" ]; then
+if [ "$(basename -- $0)" == "$(basename clearcase.sh)" ]; then
     main $*
 fi
 # VIM: ts=4:sw=4
