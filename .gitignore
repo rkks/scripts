@@ -92,3 +92,6 @@ _darcs
 
 # terminal multiplexer
 *.pid
+
+# scripts/bin directory. only symbolic links
+bin/

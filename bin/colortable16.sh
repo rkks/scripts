@@ -1,1 +1,0 @@
-/Users/ravikks/scripts/3rd-party/bash/colortable16.sh

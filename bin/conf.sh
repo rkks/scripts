@@ -1,1 +1,0 @@
-/Users/ravikks/scripts/bash/conf.sh

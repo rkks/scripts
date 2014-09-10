@@ -1,1 +1,0 @@
-/Users/ravikks/scripts/bash/kern_mod_rebuild.sh

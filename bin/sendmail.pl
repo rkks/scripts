@@ -1,1 +1,0 @@
-/Users/ravikks/scripts/perl/sendmail.pl
