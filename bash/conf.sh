@@ -142,10 +142,17 @@ link-tools()
     echo "Linking Tool binary Files - Done"
 }
 
+stop-cron()
+{
+    echo "Configuring Cron - Stop"
+    $HOME/scripts/bin/cron.sh -l
+    $HOME/scripts/bin/cron.sh -t
+    echo "Configuring Cron - Done"
+}
+
 start-cron()
 {
     echo "Configuring Cron - Start"
-    $HOME/scripts/bin/cron.sh -t
     $HOME/scripts/bin/cron.sh -s $HOME/conf/custom/crontab
     $HOME/scripts/bin/cron.sh -l
     echo "Configuring Cron - Done"
@@ -157,6 +164,7 @@ function usage()
     echo "Options:"
     echo "  -a - link all files and start cron (-clnst)"
     echo "  -c - start cron job of user"
+    echo "  -d - delete cron job of user"
     echo "  -l - create symlink of user log files"
     echo "  -n - create symlink of user conf files"
     echo "  -s - create symlink of user script files"
@@ -166,7 +174,7 @@ function usage()
 
 main()
 {
-    PARSE_OPTS="haclnst"
+    PARSE_OPTS="hacdlnst"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -189,12 +197,13 @@ main()
         usage && exit $EINVAL;
     fi
 
-    ((opt_a)) && (link-confs; link-logs; link-scripts; link-tools; start-cron; exit 0)
+    ((opt_a)) && (link-confs; link-logs; link-scripts; link-tools; stop-cron; start-cron; exit 0)
     ((opt_n)) && link-confs
     ((opt_l)) && link-logs
     ((opt_s)) && link-scripts
     ((opt_t)) && link-tools
     ((opt_c)) && start-cron
+    ((opt_d)) && stop-cron
     ((opt_h)) && (usage; exit 0)
 
     exit 0
