@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Create directory structure based on need
 #  CREATED: 03/21/13 11:01:09 IST
-# MODIFIED: 09/08/14 10:40:31 IST
+# MODIFIED: 09/15/14 14:14:21 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -21,6 +21,7 @@ CREATED=$(/bin/date +'%d/%m/%Y %T %Z')
 COPYRIGHT="Copyright (c) $(/bin/date +'%Y'), $AUTHOR"
 REVISION="1.0"
 DETAIL="...details here..."
+DEVEL_TEMPS=$HOME/conf/template     # development templates
 
 make_pr_dir()
 {
