@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 09/08/14 10:32:51 IST
+# MODIFIED: 09/19/14 09:29:16 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -161,12 +161,11 @@ function ret_chk() { local ret=$?; [[ $ret -ne 0 ]] && becho "[ERROR] Command Fa
 # given input list of files, source them
 function source_script()
 {
-    local user_script;
-    [[ -z $err_cmd ]] && local err_cmd=exit;
-    [[ ! -z $LOG_LEVELS_ENABLED ]] && local cmd=log || local cmd=decho;
-    for user_script in $*; do
-        [[ ! -f $user_script ]] && { $cmd DEBUG "[OPTOUT] $user_script"; test -z $err_cmd && return $ENOENT || $err_cmd $ENOENT; }
-        source $user_script; $cmd DEBUG "[SOURCE] $user_script";
+    local us;   # user script
+    [[ "yes" == "$SHDEBUG" ]] && { local level=CRIT; } || { local level=NOTE; }
+    [[ ! -z $LOG_LEVELS_ENABLED ]] && { local cmd=log; } || { local cmd=decho; }
+    for us in $*; do
+        [[ ! -f $us ]] && { $cmd $level "[OPTOUT] $us"; return $ENOENT; } || { source $us; $cmd $level "[SOURCE] $us"; }
     done
 }
 
