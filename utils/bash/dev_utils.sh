@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Development Utilities
 #  CREATED: 06/25/13 11:16:41 IST
-# MODIFIED: 09/08/14 10:33:40 IST
+# MODIFIED: 09/29/14 15:51:00 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -111,7 +111,7 @@ function show_progress()
 
 usage()
 {
-    echo "usage: devel_utils.sh []"
+    echo "usage: dev_utils.sh []"
 }
 
 # Each shell script has to be independently testable. It can also be included/sourced in other files for functions.
@@ -130,7 +130,7 @@ main()
     exit 0
 }
 
-if [ "$(basename -- $0)" == "$(basename devel_utils.sh)" ]; then
+if [ "$(basename -- $0)" == "$(basename dev_utils.sh)" ]; then
     main $*
 fi
 # VIM: ts=4:sw=4

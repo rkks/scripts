@@ -3,7 +3,7 @@
 #   https://github.com/nischithbm/bash-logger
 #   http://sourceforge.net/projects/bash-logger
 #  CREATED: 06/21/13 23:58:09 IST
-# MODIFIED: 09/08/14 10:33:19 IST
+# MODIFIED: 09/29/14 15:50:40 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -13,7 +13,7 @@
 
 # Load and Use logger
 # --------------------
-#   source logger.sh
+#   source log_utils.sh
 #   LOG_FILE_PATH=./test.log
 #   log_init <LOG_LEVEL>
 #   log <LOG_LEVEL> "Your message here"
@@ -21,7 +21,7 @@
 #Customization Steps
 #-------------------
 #    1. Load the source file
-#    source logger.sh
+#    source log_utils.sh
 #    2. Customize the logger
 #    LOG_LEVEL=DEBUG
 #    3. Init logger with new config
@@ -34,7 +34,7 @@
 : ${PATH=/usr/local/bin:/usr/sbin:/usr/bin:/bin}
 
 # Default Values for Tunable Config Options
-LOG_FILE_PATH="$SCRIPT_LOGS/logger.log"
+LOG_FILE_PATH="$SCRIPT_LOGS/log_utils.log"
 LOG_LEVEL=INFO
 LOG_DATE_FORMAT="%Y-%m-%d %H:%M:%S"
 LOG_MSG_FORMAT="%s %s\n"
@@ -179,7 +179,7 @@ function log()
 
 usage()
 {
-    echo "Usage: logger.sh <-h|-l <log-level> <log-message>|-r <log-file>>"
+    echo "Usage: log_utils.sh <-h|-l <log-level> <log-message>|-r <log-file>>"
     echo "Options:"
     echo "  -l <log-level> <log-message>- log given message at given log-level"
     echo "  -r <log-file>               - rotate given log file"
@@ -223,7 +223,7 @@ main()
     exit 0
 }
 
-if [ "$(basename -- $0)" == "$(basename logger.sh)" ]; then
+if [ "$(basename -- $0)" == "$(basename log_utils.sh)" ]; then
     main $*
 fi
 # VIM: ts=4:sw=4
