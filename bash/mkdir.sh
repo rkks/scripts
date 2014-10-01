@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Create directory structure based on need
 #  CREATED: 03/21/13 11:01:09 IST
-# MODIFIED: 09/15/14 14:14:21 IST
+# MODIFIED: 10/01/14 08:53:42 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -28,15 +28,13 @@ make_pr_dir()
     [[ "$#" != "1" ]] && (usage; exit $EINVAL)
 
     PR=$(basename $1)
-    if [ -d $PR ]; then
-        echo "PR directory $PR already exists" && exit 1
-    fi
+    [[ -d $PR ]] && { echo "PR directory $PR already exists" && exit 1; }
     mkdir $PR && cdie $PR && mkdir -p logs mails tests
     sed -e "s;@AUTHOR@;$AUTHOR;" \
         -e "s;@AUTHOR_EMAIL@;$AUTHOR_EMAIL;" \
         -e "s;@CREATED_DATE@;$CREATED;" \
         -e "s;@COPYRIGHT@;$COPYRIGHT;" \
-        $DEVEL_TEMPS/problem-template.txt > ./PR$PR.txt
+        $DEVEL_TEMPS/debug-checklist > ./$PR.txt
 }
 
 make_rli_dir()
@@ -44,15 +42,13 @@ make_rli_dir()
     [[ "$#" != "1" ]] && (usage; exit $EINVAL)
 
     RLI=$(basename $1)
-    if [ -d $RLI ]; then
-        echo "RLI directory $RLI already exists" && exit 1
-    fi
+    [[ -d $RLI ]] && { echo "RLI directory $RLI already exists" && exit 1; }
     mkdir $RLI && cdie $RLI && mkdir -p docs logs mails src tests
     sed -e "s;@AUTHOR@;$AUTHOR;" \
         -e "s;@AUTHOR_EMAIL@;$AUTHOR_EMAIL;" \
         -e "s;@CREATED_DATE@;$CREATED;" \
         -e "s;@COPYRIGHT@;$COPYRIGHT;" \
-        $DEVEL_TEMPS/develop-template.txt > ./RLI$RLI.txt
+        $DEVEL_TEMPS/devel-checklist > ./RLI$RLI.txt
 }
 
 make_proj_dir()
@@ -60,9 +56,7 @@ make_proj_dir()
     [[ "$#" != "1" ]] && (usage; exit $EINVAL)
 
     PROJ=$(basename $1)
-    if [ -d $PROJ ]; then
-        echo "PROJ directory $PROJ already exists" && exit 1
-    fi
+    [[ -d $PROJ ]] && { echo "PROJ directory $PROJ already exists" && exit 1; }
     PROJ_UPPER=$(echo PROJ | tr '[:lower:]' '[:upper:]')
     mkdir $PROJ && cdie $PROJ && cp $DEVEL_TEMPS/Makefile Makefile
     sed -e "s;@AUTHOR@;$AUTHOR;" \
