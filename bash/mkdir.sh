@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Create directory structure based on need
 #  CREATED: 03/21/13 11:01:09 IST
-# MODIFIED: 10/01/14 09:20:17 IST
+# MODIFIED: 10/01/14 09:28:41 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -28,7 +28,7 @@ make_pr_dir()
     [[ "$#" != "1" ]] && (usage; exit $EINVAL)
 
     PR=$(basename $1)
-    mkdie $PR && cdie $PR && mkdie -p logs mails tests
+    mkdie $PR && cdie $PR && mkdir -p logs mails tests
     sed -e "s;@AUTHOR@;$AUTHOR;" \
         -e "s;@AUTHOR_EMAIL@;$AUTHOR_EMAIL;" \
         -e "s;@CREATED_DATE@;$CREATED;" \
@@ -41,7 +41,7 @@ make_rli_dir()
     [[ "$#" != "1" ]] && (usage; exit $EINVAL)
 
     RLI=$(basename $1)
-    mkdie $RLI && cdie $RLI && mkdie -p docs logs mails src tests
+    mkdie $RLI && cdie $RLI && mkdir -p docs logs mails src tests
     sed -e "s;@AUTHOR@;$AUTHOR;" \
         -e "s;@AUTHOR_EMAIL@;$AUTHOR_EMAIL;" \
         -e "s;@CREATED_DATE@;$CREATED;" \
