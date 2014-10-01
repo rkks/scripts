@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 09/19/14 09:29:16 IST
+# MODIFIED: 10/01/14 09:16:20 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -45,8 +45,8 @@ function have { type -t "$1" &>/dev/null; }
 # usage: cdie <path>
 function cdie { [[ -d $1 ]] && cd $1 || die $EINVAL "Path $1 doesn't exist. Quitting!"; }
 
-# usage: mkcd <path>
-function mkcd { mkdir -pv $1 && cd $1; }
+# usage: mkdie <path>
+function mkdie { [[ -e $1 ]] && die $EINVAL "Path $1 already exists" || mkdir -pv $1; }
 
 # Bash tracing functions
 # begin bash tracing

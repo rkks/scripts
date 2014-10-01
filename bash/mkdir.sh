@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Create directory structure based on need
 #  CREATED: 03/21/13 11:01:09 IST
-# MODIFIED: 10/01/14 08:53:42 IST
+# MODIFIED: 10/01/14 09:20:17 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -28,8 +28,7 @@ make_pr_dir()
     [[ "$#" != "1" ]] && (usage; exit $EINVAL)
 
     PR=$(basename $1)
-    [[ -d $PR ]] && { echo "PR directory $PR already exists" && exit 1; }
-    mkdir $PR && cdie $PR && mkdir -p logs mails tests
+    mkdie $PR && cdie $PR && mkdie -p logs mails tests
     sed -e "s;@AUTHOR@;$AUTHOR;" \
         -e "s;@AUTHOR_EMAIL@;$AUTHOR_EMAIL;" \
         -e "s;@CREATED_DATE@;$CREATED;" \
@@ -42,8 +41,7 @@ make_rli_dir()
     [[ "$#" != "1" ]] && (usage; exit $EINVAL)
 
     RLI=$(basename $1)
-    [[ -d $RLI ]] && { echo "RLI directory $RLI already exists" && exit 1; }
-    mkdir $RLI && cdie $RLI && mkdir -p docs logs mails src tests
+    mkdie $RLI && cdie $RLI && mkdie -p docs logs mails src tests
     sed -e "s;@AUTHOR@;$AUTHOR;" \
         -e "s;@AUTHOR_EMAIL@;$AUTHOR_EMAIL;" \
         -e "s;@CREATED_DATE@;$CREATED;" \
@@ -58,7 +56,7 @@ make_proj_dir()
     PROJ=$(basename $1)
     [[ -d $PROJ ]] && { echo "PROJ directory $PROJ already exists" && exit 1; }
     PROJ_UPPER=$(echo PROJ | tr '[:lower:]' '[:upper:]')
-    mkdir $PROJ && cdie $PROJ && cp $DEVEL_TEMPS/Makefile Makefile
+    mkdie $PROJ && cdie $PROJ && cp $DEVEL_TEMPS/Makefile Makefile
     sed -e "s;@AUTHOR@;$AUTHOR;" \
         -e "s;@AUTHOR_EMAIL@;$AUTHOR_EMAIL;" \
         -e "s;@CREATED_DATE@;$CREATED;" \
