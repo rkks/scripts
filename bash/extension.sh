@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Displays file extension
 #  CREATED: 12/19/12 21:12:25 IST
-# MODIFIED: 09/08/14 10:39:55 IST
-# REVISION: 1.0
+# MODIFIED: 10/06/14 14:20:24 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2012, Ravikiran K.S.

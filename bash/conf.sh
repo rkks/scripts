@@ -14,7 +14,6 @@
 #        AUTHOR:  Ravikiran K.S (ravikirandotks@gmail.com)
 #       VERSION:  1.0
 #       CREATED:  11/08/11 18:15:05 PST
-#      REVISION:  ---
 #===============================================================================
 
 #set -uvx               # Treat unset variables as an error, verbose, debug mode

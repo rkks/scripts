@@ -15,7 +15,6 @@
 #       COMPANY:
 #       VERSION:  1.0
 #       CREATED:  05/13/09 11:21:10 IST
-#      REVISION:  ---
 #===============================================================================
 
 # pristine clearcase directory to sync to git directory

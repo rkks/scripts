@@ -3,8 +3,7 @@
 #
 #   AUTHOR: Ravikiran K.S. (ravikirandotks@gmail.com)
 #  CREATED: 11/07/11 13:32:37 PST
-# MODIFIED: 09/08/14 10:38:14 IST
-# REVISION: 1.0
+# MODIFIED: 10/06/14 14:19:31 IST
 
 # Monday to Saturday, an incremental backup is made so that you have daily backups for new files until next week.
 # Every Sunday, do backup of all tars from last week. One such incremental backup tarball for each of 52 weeks in a year.

@@ -1,8 +1,7 @@
 #!/bin/bash
 #  DETAILS: Process handling utilities
 #  CREATED: 07/17/13 17:14:12 IST
-# MODIFIED: 09/08/14 10:40:47 IST
-# REVISION: 1.0
+# MODIFIED: 10/06/14 14:21:18 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.

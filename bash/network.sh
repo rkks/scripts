@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Network utilities
 #  CREATED: 07/17/13 16:00:40 IST
-# MODIFIED: 09/08/14 10:40:36 IST
-# REVISION: 1.0
+# MODIFIED: 10/06/14 14:21:12 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.

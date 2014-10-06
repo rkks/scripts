@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: SVN related actions
 #  CREATED: 11/07/12 12:54:25 IST
-# MODIFIED: 09/08/14 10:41:28 IST
-# REVISION: 1.0
+# MODIFIED: 10/06/14 14:21:35 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2012, Ravikiran K.S.

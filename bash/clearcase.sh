@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Clearcase Utlities
 #  CREATED: 06/25/13 11:27:14 IST
-# MODIFIED: 09/08/14 10:38:35 IST
-# REVISION: 1.0
+# MODIFIED: 10/06/14 14:19:41 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.

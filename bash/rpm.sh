@@ -1,8 +1,7 @@
 #!/bin/bash
 #  DETAILS: RPM wrappers
 #  CREATED: 07/16/13 21:11:04 IST
-# MODIFIED: 09/08/14 10:40:53 IST
-# REVISION: 1.0
+# MODIFIED: 10/06/14 14:21:24 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.

@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Create directory structure based on need
 #  CREATED: 03/21/13 11:01:09 IST
-# MODIFIED: 10/01/14 09:28:41 IST
-# REVISION: 1.0
+# MODIFIED: 10/06/14 14:21:08 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -19,7 +18,6 @@ AUTHOR="Ravikiran K.S."
 AUTHOR_EMAIL="ravikirandotks@gmail.com"
 CREATED=$(/bin/date +'%d/%m/%Y %T %Z')
 COPYRIGHT="Copyright (c) $(/bin/date +'%Y'), $AUTHOR"
-REVISION="1.0"
 DETAIL="...details here..."
 DEVEL_TEMPS=$HOME/conf/template     # development templates
 
@@ -62,7 +60,6 @@ make_proj_dir()
         -e "s;@CREATED_DATE@;$CREATED;" \
         -e "s;@COPYRIGHT@;$COPYRIGHT;" \
         -e "s;@DETAIL@;$DETAIL;" \
-        -e "s;@REVISION@;$REVISION;" \
         -e "s;@FILE@;$PROJ;" \
         $DEVEL_TEMPS/template.c > ./$PROJ.c
     sed -e "s;@AUTHOR@;$AUTHOR;" \
@@ -70,7 +67,6 @@ make_proj_dir()
         -e "s;@CREATED_DATE@;$CREATED;" \
         -e "s;@COPYRIGHT@;$COPYRIGHT;" \
         -e "s;@DETAIL@;$DETAIL;" \
-        -e "s;@REVISION@;$REVISION;" \
         -e "s;@FILE_HEAD@;$PROJ_UPPER;" \
         $DEVEL_TEMPS/template.h > ./$PROJ.h
 }

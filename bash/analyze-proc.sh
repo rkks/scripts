@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: generate core and status report for a running process.
 #  CREATED: 03/29/13 18:52:36 IST
-# MODIFIED: 09/08/14 10:38:00 IST
-# REVISION: 1.0
+# MODIFIED: 10/06/14 14:19:25 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.

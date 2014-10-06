@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Provides brief analysis of cores. Adopted from 
 #  CREATED: 03/29/13 18:22:18 IST
-# MODIFIED: 09/08/14 10:37:53 IST
-# REVISION: 1.0
+# MODIFIED: 10/06/14 14:19:20 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.

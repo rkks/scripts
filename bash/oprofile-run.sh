@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Profile given binary using Oprofile
 #  CREATED: 04/22/13 15:13:32 IST
-# MODIFIED: 09/08/14 10:40:42 IST
-# REVISION: 1.0
+# MODIFIED: 10/06/14 14:21:15 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.

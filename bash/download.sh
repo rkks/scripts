@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Downloads all links provided in ~/.downloads file
 #  CREATED: 11/19/12 12:43:39 IST
-# MODIFIED: 09/08/14 10:39:37 IST
-# REVISION: 1.0
+# MODIFIED: 10/06/14 14:20:13 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2012, Ravikiran K.S.

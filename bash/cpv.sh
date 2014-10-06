@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Do copy of binary while showing progress bar similar to wget
 #  CREATED: 03/18/13 14:30:31 IST
-# MODIFIED: 09/08/14 10:39:05 IST
-# REVISION: 1.0
+# MODIFIED: 10/06/14 14:19:56 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
