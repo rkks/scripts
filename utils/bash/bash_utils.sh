@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 10/01/14 09:16:20 IST
+# MODIFIED: 10/06/14 11:47:47 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -56,6 +56,9 @@ function bash_trace() { set -x; }
 function bash_untrace() { set +x; }
 
 function hostname_short() { [[ $UNAMES == *SunOS* ]] && { echo $(hostname); } || echo $(hostname -s); }
+
+# bail-out if last command returned error. success == 0
+function fail_bail() { [[ $? -ne 0 ]] && { die $? "$! returns error $?"; } || return; }
 
 # Coloring functions
 # Colors - Enable colors for ls, etc.
