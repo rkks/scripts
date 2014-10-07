@@ -66,7 +66,7 @@ link-confs()
     CONFS="elinks links vim vnc"
     CONFS+=" alias bashrc bash_profile bash_logout cshrc login login_conf profile shrc"
     CONFS+=" cvsignore gitignore svnignore"
-    CONFS+=" mailrc pinerc screenrc toprc gvimrc vimrc"
+    CONFS+=" mailrc pinerc screenrc toprc gvimrc vimrc tmux.conf"
     CONFS+=" gdbinit gitattributes gitconfig indent.pro"
     CONFS+=" cookies cvspass mail_aliases rhosts"
     CONFS+=" hushlogin"

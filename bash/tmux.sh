@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: tmux handler script
 #  CREATED: 01/28/14 10:51:03 IST
-# MODIFIED: 10/06/14 14:21:46 IST
+# MODIFIED: 10/07/14 16:15:04 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2014, Ravikiran K.S.
@@ -10,10 +10,7 @@
 #set -uvx
 
 # No utilities from ~/.bashrc are used here, except PATH. So, only doing that.
-PATH=".:/homes/raviks/scripts/bin:/homes/raviks/tools/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-[[ "$(uname -s)" == "Linux" ]] && PATH="/homes/raviks/tools/bin/linux:$PATH"
-[[ "$(uname -s)" == "FreeBSD" ]] && PATH="/homes/raviks/tools/bin/freebsd:$PATH"
-export PATH;
+export PATH=".:/homes/raviks/scripts/bin:/homes/raviks/tools/$(uname -s)/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
 function check_os_load()
 {
