@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Installer script for my tools. Downloads and installs locally.
 #  CREATED: 09/23/14 09:31:11 IST
-# MODIFIED: 10/08/14 11:29:55 IST
+# MODIFIED: 10/20/14 10:16:59 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2014, Ravikiran K.S.
@@ -12,7 +12,7 @@ if [ "install.sh" == "$(basename $0)" ] && [ -f $HOME/.bashrc ]; then
     log_init INFO $SCRIPT_LOGS/install.log
 fi
 
-set -x  # -uvx: Warn unset vars, Verbose (echo each cmd), Enable debug mode
+#set -x  # -uvx: Warn unset vars, Verbose (echo each cmd), Enable debug mode
 CFLAGS="-I$TOOLS/include"
 LDFLAGS="-static -L$TOOLS/lib"
 
@@ -20,8 +20,9 @@ usage()
 {
     echo "Usage: install.sh [-h|]"
     echo "Options:"
-    echo "  -h          - print this help"
+    echo "  -p          - install p7zip"
     echo "  -t          - install tmux"
+    echo "  -h          - print this help"
 }
 
 function downld()
@@ -57,6 +58,11 @@ function sinstall()
     downld $file $url; untar $dir $file; build $dir $*;
 }
 
+function p7zip_install()
+{
+    sinstall p7zip p7zip_9.20.1.tar.bz2 http://sourceforge.net/projects/p7zip/files/p7zip/9.20.1/p7zip_9.20.1_src_all.tar.bz2
+}
+
 # download from https://github.com/downloads/libevent/libevent/libevent-xxx.tar.gz gives SSL error
 function tmux_install()
 {
@@ -76,7 +82,7 @@ function tmux_install()
 # It can then be included in other files for functions.
 main()
 {
-    PARSE_OPTS="ht"
+    PARSE_OPTS="htp"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -103,6 +109,7 @@ main()
     [[ ! -d $DOWNLOADS ]] && { mkdie $DOWNLOADS; }
 
     cdie $DOWNLOADS;
+    ((opt_p)) && { p7zip_install; }
     ((opt_t)) && { tmux_install; }
     ((opt_h)) && { usage; }
 
