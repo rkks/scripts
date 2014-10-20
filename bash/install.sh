@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Installer script for my tools. Downloads and installs locally.
 #  CREATED: 09/23/14 09:31:11 IST
-# MODIFIED: 10/20/14 10:16:59 IST
+# MODIFIED: 10/20/14 10:57:04 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2014, Ravikiran K.S.
@@ -22,21 +22,22 @@ usage()
     echo "Options:"
     echo "  -p          - install p7zip"
     echo "  -t          - install tmux"
+    echo "  -w          - install wget"
     echo "  -h          - print this help"
 }
 
 function downld()
 {
-    [[ $# -ne 2 ]] && { echo "downld <file> <url>"; return; }
-    [[ -e $1 ]] && { echo "File $1 already exists"; return; }
+    [[ $# -ne 2 ]] && { echo "downld <file> <url>"; return $EINVAL; }
+    [[ -e $1 ]] && { echo "File $1 already exists"; return $EEXIST; }
     local fname=$1; shift; wget -O $fname $*; fail_bail;
 }
 
 function untar()
 {
-    [[ $# -ne 2 ]] && { echo "untar <dir> <file>"; return; }
-    [[ -e $1 ]] && { echo "Directory $1 already exists"; return; }
-    mkdie $1; tar xvzf $2 -C $1 --strip-components=1; fail_bail;
+    [[ $# -ne 1 ]] && { echo "untar <file>"; return; }
+    # Avoid mkdir $1 && tar xvzf $2 -C $1 --strip-components=1; fail_bail;
+    tar.sh -x $1; fail_bail;
 }
 
 function config() {
@@ -55,7 +56,13 @@ function sinstall()
 {
     [[ $# -lt 3 ]] && { echo "install <dir> <file> <url> [conf-args]"; }
     local dir=$1; shift; local file=$1; shift; local url=$1; shift;
-    downld $file $url; untar $dir $file; build $dir $*;
+    local dir=$(tar.sh -d $file);
+    downld $file $url; untar $file; build $dir $*;
+}
+
+function wget_install()
+{
+    sinstall wget wget-1.15.tar.gz http://ftp.gnu.org/gnu/wget/wget-1.15.tar.gz
 }
 
 function p7zip_install()
@@ -82,7 +89,7 @@ function tmux_install()
 # It can then be included in other files for functions.
 main()
 {
-    PARSE_OPTS="htp"
+    PARSE_OPTS="htpw"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -111,6 +118,7 @@ main()
     cdie $DOWNLOADS;
     ((opt_p)) && { p7zip_install; }
     ((opt_t)) && { tmux_install; }
+    ((opt_w)) && { wget_install; }
     ((opt_h)) && { usage; }
 
     exit 0;

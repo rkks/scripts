@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Tar wrappers
 #  CREATED: 07/17/13 15:53:58 IST
-# MODIFIED: 10/06/14 14:21:39 IST
+# MODIFIED: 10/20/14 10:55:51 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -34,22 +34,23 @@ function archive()
 
 function extract()
 {
-    local filename=$(basename $1);
-    test -e $1 && echo "extracting $1 into ${filename%.*}/" || { echo "'$1' is not a valid file"; return $EINVAL; }
-    case $1 in
-        *.7z)       7za x $1        ;;
-        *.tar.bz2)  tar xvjfp $1    ;;
-        *.tar.gz)   tar xvzfp $1    ;;
-        *.bz2)      bunzip2 $1      ;;
-        *.rar)      unrar x $1      ;;
-        *.gz)       gunzip $1       ;;
-        *.tar)      tar xvfp $1     ;;
-        *.tbz2)     tar xvjfp $1    ;;
-        *.tgz)      tar xvzfp $1    ;;
-        *.zip)      unzip $1        ;;
-        *.Z)        uncompress $1   ;;
-        *)          echo "'$1' cannot be extracted via extract()" ;;
+    local file=$(basename $1); local fpath=$1; local dname=$(untar_dname $fpath)
+    [[ ! -e $fpath ]] && echo "extract $fpath into $dname/" || { echo "File $fpath not found"; return $EINVAL; }
+    case $fpath in
+        *.7z)       7za x $fpath      ;;
+        *.tar.bz2)  tar xvjf $fpath   ;;
+        *.tar.gz)   tar xvzf $fpath   ;;
+        *.bz2)      bunzip2 $fpath    ;;
+        *.rar)      unrar x $fpath    ;;
+        *.gz)       gunzip $fpath     ;;
+        *.tar)      tar xvfp $fpath   ;;
+        *.tbz2)     tar xvjf $fpath   ;;
+        *.tgz)      tar xvzf $fpath   ;;
+        *.zip)      unzip $fpath      ;;
+        *.Z)        uncompress $fpath ;;
+        *)          echo "$fpath can not be extracted via extract()" ;;
     esac
+    fail_bail;
 }
 
 function list()
@@ -71,11 +72,21 @@ function list()
     esac
 }
 
+function untar_dname()
+{
+    case $1 in
+        *.tar.bz2|*.tar.gz|*.tar.tar)  echo "${file%.*.*}"  ;;
+        *.7z|*.bz2|*.rar|*.gz|*.tar|*.tbz2|*.tgz|*.zip|*.Z) echo "${file%.*}"  ;;
+        *)  ;;
+    esac
+}
+
 usage()
 {
     echo "Usage: tar.sh <-c <archive-type> <files|dir>|-l <archive-file>|-x <archive-file>>"
     echo "Options:"
     echo "  -c <archive-type> <files|dir>   - create archive of given type using given list of files/dir"
+    echo "  -d <archive-file>               - give dir-name resulting from extract"
     echo "  -l <archive-file>               - list given archive-file contents"
     echo "  -x <archive-file>               - extract given archive-file contents"
     echo "  -h                              - print this help message"
@@ -87,7 +98,7 @@ usage()
 # It can then be included in other files for functions.
 main()
 {
-    local PARSE_OPTS="hc:lx"
+    local PARSE_OPTS="hc:dlx"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -111,6 +122,7 @@ main()
     fi
 
     ((opt_c)) && archive $optarg_c $1;
+    ((opt_d)) && untar_dname $1;
     ((opt_l)) && list $1;
     ((opt_x)) && extract $1;
     ((opt_h)) && { usage; exit 0; }
