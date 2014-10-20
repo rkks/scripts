@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Tar wrappers
 #  CREATED: 07/17/13 15:53:58 IST
-# MODIFIED: 10/20/14 10:55:51 IST
+# MODIFIED: 10/20/14 10:59:10 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -35,7 +35,7 @@ function archive()
 function extract()
 {
     local file=$(basename $1); local fpath=$1; local dname=$(untar_dname $fpath)
-    [[ ! -e $fpath ]] && echo "extract $fpath into $dname/" || { echo "File $fpath not found"; return $EINVAL; }
+    [[ -e $fpath ]] && echo "extract $fpath into $dname/" || { echo "File $fpath not found"; return $EINVAL; }
     case $fpath in
         *.7z)       7za x $fpath      ;;
         *.tar.bz2)  tar xvjf $fpath   ;;
