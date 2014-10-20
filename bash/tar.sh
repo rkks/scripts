@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Tar wrappers
 #  CREATED: 07/17/13 15:53:58 IST
-# MODIFIED: 10/20/14 10:59:10 IST
+# MODIFIED: 10/20/14 14:03:17 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -75,8 +75,8 @@ function list()
 function untar_dname()
 {
     case $1 in
-        *.tar.bz2|*.tar.gz|*.tar.tar)  echo "${file%.*.*}"  ;;
-        *.7z|*.bz2|*.rar|*.gz|*.tar|*.tbz2|*.tgz|*.zip|*.Z) echo "${file%.*}"  ;;
+        *.tar.bz2|*.tar.gz|*.tar.tar)  echo "${1%.*.*}"  ;;
+        *.7z|*.bz2|*.rar|*.gz|*.tar|*.tbz2|*.tgz|*.zip|*.Z) echo "${1%.*}"  ;;
         *)  ;;
     esac
 }
