@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Installer script for my tools. Downloads and installs locally.
 #  CREATED: 09/23/14 09:31:11 IST
-# MODIFIED: 10/28/14 10:59:46 IST
+# MODIFIED: 10/28/14 12:35:48 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2014, Ravikiran K.S.
@@ -18,12 +18,13 @@ LDFLAGS="-static -L$TOOLS/lib"
 
 usage()
 {
-    echo "Usage: install.sh [-h|]"
+    echo "Usage: install.sh [-h|-e|-p|-t|-w]"
     echo "Options:"
-    echo "  -p          - install p7zip"
-    echo "  -t          - install tmux"
-    echo "  -w          - install wget"
-    echo "  -h          - print this help"
+    echo "  -e     - install expect"
+    echo "  -p     - install p7zip"
+    echo "  -t     - install tmux"
+    echo "  -w     - install wget"
+    echo "  -h     - print this help"
 }
 
 function downld()
@@ -121,6 +122,7 @@ main()
     [[ ! -d $DOWNLOADS ]] && { mkdie $DOWNLOADS; }
 
     cdie $DOWNLOADS;
+    ((opt_e)) && { expect_install; }
     ((opt_p)) && { p7zip_install; }
     ((opt_t)) && { tmux_install; }
     ((opt_w)) && { wget_install; }
