@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Installer script for my tools. Downloads and installs locally.
 #  CREATED: 09/23/14 09:31:11 IST
-# MODIFIED: 10/20/14 10:57:04 IST
+# MODIFIED: 10/28/14 10:59:46 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2014, Ravikiran K.S.
@@ -83,6 +83,11 @@ function tmux_install()
     CFLAGS+=" -I$HOME/tools/$UNAMES/include/ncurses";
     LDFLAGS+=" -L$HOME/tools/$UNAMES/include/ncurses -L$HOME/tools/$UNAMES/include"
     sinstall tmux tmux-1.9a.tar.gz http://downloads.sourceforge.net/tmux/tmux-1.9a.tar.gz
+}
+
+function expect_install()
+{
+    sinstall expect expect5.45.tar.gz http://sourceforge.net/projects/expect/files/Expect/5.45/expect5.45.tar.gz
 }
 
 # Each shell script has to be independently testable.
