@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Installer script for my tools. Downloads and installs locally.
 #  CREATED: 09/23/14 09:31:11 IST
-# MODIFIED: 10/28/14 12:35:48 IST
+# MODIFIED: 10/28/14 12:47:31 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2014, Ravikiran K.S.
@@ -95,7 +95,7 @@ function expect_install()
 # It can then be included in other files for functions.
 main()
 {
-    PARSE_OPTS="htpw"
+    PARSE_OPTS="heptw"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
