@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Find command wrappers
 #  CREATED: 07/16/13 21:22:06 IST
-# MODIFIED: 10/06/14 14:20:28 IST
+# MODIFIED: 11/12/14 09:52:57 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -15,6 +15,7 @@ if [[ "$(basename find.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc ]; t
     log_init INFO $SCRIPT_LOGS/find.log
 fi
 
+set -x
 function findcores() { find ${1:-.} -type f -name "*core*.gz"; }
 
 function clean_obj()
@@ -23,7 +24,7 @@ function clean_obj()
     local OBJ_PAT; local FINDOPT;
 
     [[ "$UNAMES" == "Linux" || "$UNAMES" == "SunOS" ]] && { OBJ_PAT=".*\.\([sklpP]o\|cmd\|obj\)"; }
-    [[ "$UNAMES" == "FreeBSD" ]] && { OBJ_PAT=".*\.([skpP]o|cmd|obj)"; FINDOPT=-E; }
+    [[ "$UNAMES" == "FreeBSD" || "$UNAMES" == "Darwin" ]] && { OBJ_PAT=".*\.([skpP]o|cmd|obj)"; FINDOPT=-E; }
 
     [[ "" == "$OBJ_PAT" ]] && { echo "Unknown machine" && return; }
 
@@ -37,7 +38,7 @@ function findgrep()
     local dpath=.; local findexclude=$dpath/findexclude
 
     [[ "$UNAMES" == "Linux" || "$UNAMES" == "SunOS" ]] && { SRC_PAT=".*\.\([cChHlxsSy]\|cpp\|[io]dl\|p[lmy]\|mib\|mk\|sh\)"; }
-    [[ "$UNAMES" == "FreeBSD" ]] && { SRC_PAT=".*\.([cChHlxsSy]|cpp|[io]dl|p[lmy]|mib|mk|sh)"; FINDOPT=-E; }
+    [[ "$UNAMES" == "FreeBSD" || "$UNAMES" == "Darwin" ]] && { SRC_PAT=".*\.([cChHlxsSy]|cpp|[io]dl|p[lmy]|mib|mk|sh)"; FINDOPT=-E; }
 
     [[ "" == "$SRC_PAT" ]] && { echo "Unknown machine" && return; }
 
