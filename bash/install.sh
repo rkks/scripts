@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Installer script for my tools. Downloads and installs locally.
 #  CREATED: 09/23/14 09:31:11 IST
-# MODIFIED: 11/12/14 22:32:23 PST
+# MODIFIED: 11/13/14 12:23:24 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2014, Ravikiran K.S.
@@ -20,6 +20,7 @@ usage()
 {
     echo "Usage: install.sh [-h|-e|-p|-t|-w]"
     echo "Options:"
+    echo "  -c     - install cscope+ctags"
     echo "  -e     - install expect"
     echo "  -m     - install pmtools"
     echo "  -p     - install p7zip"
