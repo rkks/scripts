@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Installer script for my tools. Downloads and installs locally.
 #  CREATED: 09/23/14 09:31:11 IST
-# MODIFIED: 10/28/14 12:47:31 IST
+# MODIFIED: 11/12/14 22:32:23 PST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2014, Ravikiran K.S.
@@ -21,7 +21,9 @@ usage()
     echo "Usage: install.sh [-h|-e|-p|-t|-w]"
     echo "Options:"
     echo "  -e     - install expect"
+    echo "  -m     - install pmtools"
     echo "  -p     - install p7zip"
+    echo "  -p     - install rsnapshot"
     echo "  -t     - install tmux"
     echo "  -w     - install wget"
     echo "  -h     - print this help"
@@ -91,11 +93,31 @@ function expect_install()
     sinstall expect expect5.45.tar.gz http://sourceforge.net/projects/expect/files/Expect/5.45/expect5.45.tar.gz
 }
 
+function pmtools_install()
+{
+    downld pmtools-2.0.0.tar.gz http://search.cpan.org/CPAN/authors/id/M/ML/MLFISHER/pmtools-2.0.0.tar.gz
+    local dir=$(tar.sh -d pmtools-2.0.0.tar.gz);
+    cd $TOOLS && untar $DOWNLOADS/pmtools-2.0.0.tar.gz && cd -;
+}
+
+function rsnapshot_install()
+{
+    downld rsnapshot.tar.gz http://www.rsnapshot.org/downloads/rsnapshot-latest.tar.gz
+    local dir=$(tar.sh -d rsnapshot.tar.gz);
+    cd $TOOLS && untar $DOWNLOADS/rsnapshot.tar.gz && cd -;
+}
+
+function cscope-tags_install()
+{
+    sinstall cscope cscope-15.8a.tar.gz http://sourceforge.net/projects/cscope/files/cscope/15.8a/cscope-15.8a.tar.gz
+    sinstall ctags ctags-5.8.tar.gz http://prdownloads.sourceforge.net/ctags/ctags-5.8.tar.gz
+}
+
 # Each shell script has to be independently testable.
 # It can then be included in other files for functions.
 main()
 {
-    PARSE_OPTS="heptw"
+    PARSE_OPTS="hcemprtw"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -121,9 +143,13 @@ main()
     [[ ! -d $TOOLS ]] && { mkdie $TOOLS; }
     [[ ! -d $DOWNLOADS ]] && { mkdie $DOWNLOADS; }
 
+    set -x;
     cdie $DOWNLOADS;
+    ((opt_c)) && { cscope-tags_install; }
     ((opt_e)) && { expect_install; }
+    ((opt_m)) && { pmtools_install; }
     ((opt_p)) && { p7zip_install; }
+    ((opt_r)) && { rsnapshot_install; }
     ((opt_t)) && { tmux_install; }
     ((opt_w)) && { wget_install; }
     ((opt_h)) && { usage; }
