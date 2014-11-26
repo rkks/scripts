@@ -3,36 +3,29 @@
 #   https://github.com/nischithbm/bash-logger
 #   http://sourceforge.net/projects/bash-logger
 #  CREATED: 06/21/13 23:58:09 IST
-# MODIFIED: 10/06/14 14:24:35 IST
+# MODIFIED: 11/26/14 10:59:20 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
 
 #set -uvx               # Warn unset vars as error, Verbose (echo each command), Enable debug mode
 
-# Load and Use logger
-# --------------------
-#   source log_utils.sh
-#   LOG_FILE_PATH=./test.log
-#   log_init <LOG_LEVEL>
-#   log <LOG_LEVEL> "Your message here"
-#
-#Customization Steps
-#-------------------
-#    1. Load the source file
-#    source log_utils.sh
-#    2. Customize the logger
-#    LOG_LEVEL=DEBUG
-#    3. Init logger with new config
-#    log_init $LOG_LEVEL
+# Logger Usage Guideline
+#-----------------------
+# 1. Load the source file
+# source log_utils.sh
+# 2. Init logger with new config
+# log_init <LOG_LEVEL> <LOG_FILE_PATH>
+# 3. Use logger api for logging
+# log <LOG_LEVEL> "Your message here"
 
 # Date in MSEC is not supported on all platforms. Like FreeBSD. So, removing support in logs
+# [[ ! -z $LOG_DATE_ENABLE_MSEC ]] && { local date_time_msec=$(date +"$LOG_DATE_FORMAT"".%N" | sed 's/......$//g'); }
 # Truncate last 6 digits: sed 's/......$//g' & sed 's/[0-9][0-9][0-9][0-9][0-9][0-9]$//g' same.
-# [[ ! -z $LOG_DATE_ENABLE_MSEC ]] && { local local_date_time=$(date +"$LOG_DATE_FORMAT"".%N" | sed 's/......$//g'); }
 
 : ${PATH=/usr/local/bin:/usr/sbin:/usr/bin:/bin}
 
-# Default Values for Tunable Config Options
+# Tunable Config Options (Defaults)
 LOG_FILE_PATH="$SCRIPT_LOGS/log_utils.log"
 LOG_LEVEL=INFO
 LOG_DATE_FORMAT="%Y-%m-%d %H:%M:%S"
@@ -41,27 +34,20 @@ LOG_MAX_FILE_SIZE=10000              # In KB
 LOG_MAX_BACKUPS=1
 #LOG_TO_TTY=TRUE                 # Set variable for logging to console
 LOG_MAIL_OLD_LOGS=TRUE
-LOG_EMAIL_ID=raviks@juniper.net
+#LOG_EMAIL_ID=ravikks@cisco.com
 
 # create directory path (if doesn't exist). Otherwise just update timestamp.
 function verify_create_dirs()
 {
     [[ $# -lt 1 ]] && { echo "usage: verify_create_dirs [<dir1> <dir2> ...]"; return; }
-    local dir;
-    for dir in $*; do      # no checks necessary, as: [[ -e $dir ]] && { continue; }
-        mkdir -pv "$dir" && chmod 740 "$dir" && chown $USER "$dir"
-    done
+    local d; for d in $*; do mkdir -pv "$d" && chmod 740 "$d" && chown $USER "$d"; done
 }
 
-# create file and path (if doesn't exist). Otherwise just update timestamp.
+# create file and directory path (if doesn't exist). Otherwise just update timestamp.
 function verify_create_files()
 {
     [[ $# -lt 1 ]] && { echo "usage: verify_create_files [<file1> <file2> ...]"; return; }
-    local file;
-    for file in $*; do      # no checks necessary, as: [[ -e $file ]] && { continue; }
-        verify_create_dirs "$(dirname $file)"
-        touch "$file" && chmod 640 "$file" && chown $USER "$file"
-    done
+    local f; for f in $*; do verify_create_dirs "$(dirname $f)"; touch "$f" && chmod 640 "$f" && chown $USER "$f"; done
 }
 
 function log_env_verify_update()
@@ -143,10 +129,10 @@ function log_rotate()
     done
 
     if [ $max -ge $LOG_MAX_BACKUPS -a -f "$logFile.$(($max + 1))" -a "$LOG_MAIL_OLD_LOGS" == "TRUE" ]; then
-        local oldFile="$logFile.$(($max + 1))"; gzip $oldFile; local archFile="$oldFile.gz";
+        local oldFile="$logFile.$(($max + 1))"; gzip $oldFile; local tarFile="$oldFile.gz";
         # uuencode 2nd arg is attachment filename (as appears in mail). mutt isn't available on all machines.
-        uuencode $archFile $(basename $archFile) | mail -s "[ARCHIVE] Old logs" $LOG_EMAIL_ID
-        rm -f ${oldFile} ${archFile}
+        [[ ! -z $LOG_EMAIL_ID ]] && uuencode $tarFile $(basename $tarFile) | mail -s "[ARCHIVE] Old logs" $LOG_EMAIL_ID
+        rm -f ${oldFile} ${tarFile}
     fi
 
     local i;
@@ -226,4 +212,3 @@ if [ "$(basename -- $0)" == "$(basename log_utils.sh)" ]; then
     main $*
 fi
 # VIM: ts=4:sw=4
-

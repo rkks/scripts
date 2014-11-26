@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 10/06/14 14:37:41 IST
+# MODIFIED: 11/26/14 10:39:58 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -58,6 +58,9 @@ function hostname_short() { [[ $UNAMES == *SunOS* ]] && { echo $(hostname); } ||
 
 # bail-out if last command returned error. success == 0
 function fail_bail() { [[ $? -ne 0 ]] && { die $? "$! returns error $?"; } || return; }
+
+# no more cd ../../../../ just -- up 4
+function up() { local d=""; for ((i=1;i<=$1;i++)); do d=../$d; done; echo "cd $d"; cd $d; }
 
 # Coloring functions
 # Colors - Enable colors for ls, etc.
