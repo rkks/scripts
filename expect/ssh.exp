@@ -1,7 +1,7 @@
 #!/usr/bin/env expect -f
 
 set host [lindex $argv 0]
-set user raviks
+set user ravikks
 set spawn_id -1;
 set res 0;
 
