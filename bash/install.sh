@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Installer script for my tools. Downloads and installs locally.
 #  CREATED: 09/23/14 09:31:11 IST
-# MODIFIED: 11/13/14 12:23:24 IST
+# MODIFIED: 12/04/14 17:36:57 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2014, Ravikiran K.S.
@@ -23,6 +23,7 @@ usage()
     echo "  -c     - install cscope+ctags"
     echo "  -e     - install expect"
     echo "  -m     - install pmtools"
+    echo "  -o     - install openssl"
     echo "  -p     - install p7zip"
     echo "  -p     - install rsnapshot"
     echo "  -t     - install tmux"
@@ -114,11 +115,16 @@ function cscope-tags_install()
     sinstall ctags ctags-5.8.tar.gz http://prdownloads.sourceforge.net/ctags/ctags-5.8.tar.gz
 }
 
+function openssl_install()
+{
+    sinstall openssl openssl-1.0.1j.tar.gz https://www.openssl.org/source/openssl-1.0.1j.tar.gz
+}
+
 # Each shell script has to be independently testable.
 # It can then be included in other files for functions.
 main()
 {
-    PARSE_OPTS="hcemprtw"
+    PARSE_OPTS="hcemoprtw"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -149,6 +155,7 @@ main()
     ((opt_c)) && { cscope-tags_install; }
     ((opt_e)) && { expect_install; }
     ((opt_m)) && { pmtools_install; }
+    ((opt_o)) && { openssl_install; }
     ((opt_p)) && { p7zip_install; }
     ((opt_r)) && { rsnapshot_install; }
     ((opt_t)) && { tmux_install; }
