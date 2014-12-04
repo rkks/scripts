@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Installer script for my tools. Downloads and installs locally.
 #  CREATED: 09/23/14 09:31:11 IST
-# MODIFIED: 12/04/14 17:36:57 IST
+# MODIFIED: 12/04/14 04:42:25 PST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2014, Ravikiran K.S.
@@ -49,7 +49,7 @@ function config() {
     local args="$*";
     [[ ! -e ./configure ]] && { ./autogen.sh; }
     ./configure --prefix=$TOOLS CFLAGS="$CFLAGS" CPPFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" $args; fail_bail;
-} 
+}
 
 function build()
 {
@@ -105,7 +105,6 @@ function pmtools_install()
 function rsnapshot_install()
 {
     downld rsnapshot.tar.gz http://www.rsnapshot.org/downloads/rsnapshot-latest.tar.gz
-    local dir=$(tar.sh -d rsnapshot.tar.gz);
     cd $TOOLS && untar $DOWNLOADS/rsnapshot.tar.gz && cd -;
 }
 
@@ -117,7 +116,10 @@ function cscope-tags_install()
 
 function openssl_install()
 {
-    sinstall openssl openssl-1.0.1j.tar.gz https://www.openssl.org/source/openssl-1.0.1j.tar.gz
+    local wflag='--no-check-certificate'; local file='openssl-1.0.1j.tar.gz'; local dir=$(tar.sh -d $file);
+    [[ ! -e $file ]] && { wget $wflag -O $file https://www.openssl.org/source/openssl-1.0.1j.tar.gz; fail_bail; }
+    untar $file; cd $dir && ./config --prefix=$TOOLS; fail_bail;
+    make && make install && cd - && rm -rf $dir
 }
 
 # Each shell script has to be independently testable.
@@ -150,7 +152,6 @@ main()
     [[ ! -d $TOOLS ]] && { mkdie $TOOLS; }
     [[ ! -d $DOWNLOADS ]] && { mkdie $DOWNLOADS; }
 
-    set -x;
     cdie $DOWNLOADS;
     ((opt_c)) && { cscope-tags_install; }
     ((opt_e)) && { expect_install; }
