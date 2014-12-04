@@ -1,0 +1,262 @@
+#!/usr/bin/expect --
+#
+# 6/15/2013 By Scott L. Miller
+# Created by Tim Evens (tim@evensweb.com), 5/2009
+# Corrected by Sergio Zavala (sergio.zavala at sidetec.com.mx), 12/2010
+# Enhanced by Ravikiran KS (ravikirandotks at gmail.com), 12/03/14
+#
+# Copyright Tim Evens, 2009
+# Copyright Scott L. Miller, 2014
+# Copyright Ravikiran KS, 2014
+
+#++++++++++++++++++++++++++
+# Global vars
+#++++++++++++++++++++++++++
+set timeout 30
+# below matches prompts such as "router#", "router>", "router$"
+set prompt "\>\ *$\|#\ *$\|\\$\ *$"
+
+# print cmdline args. usage: print_args $file $host $loc $user $pass $img
+proc print_args {args} {
+    send_user "cmdline args:"
+    foreach arg [set args] {
+        send_user " $arg"
+    }
+    send_user "\n"
+}
+
+# Login to switch using given method: telnet or ssh
+# Return
+#   Puts at interactive console -- control to user
+# Example
+# login ssh 10.197.154.43 admin nbv_12345
+proc login {method host user pw} {
+    global spawn_id
+    global timeout
+    global prompt
+
+    if { [string compare $method "ssh"] == 0 } {
+        set host "$user@$host"
+    }
+
+    set procid [spawn $method $host]
+    if { $procid <= 0 } {
+       send_user "ERROR: Failed to connect to host $host\n"
+       return 1
+    }
+
+    expect {
+        -nocase -re "\(yes/no\)" {
+            send "yes\r"
+            exp_continue
+
+        } -nocase -re "word:" {
+            send "$pw\r"
+            exp_continue
+
+        } -nocase -re "name:" {
+            send "$user\r"
+            exp_continue
+
+        } -nocase -re "ogin:" {
+            send "$user\r"
+            exp_continue
+
+        } -nocase -re "Connection refused" {
+            puts "Connection refused"; exit 1
+
+        } -nocase -re "Authentication failed" {
+            puts "Login incorrect"; exit 1
+
+        } -nocase -re "Permission denied" {
+            puts "Login incorrect"; exit 1
+
+        # $prompt is needed for send_cmd to grab it. regex doesn't work: -re ">\|#"
+        } -nocase -re "$prompt" {
+            # what to do: interact or input cmds -- left to caller. -notransfer -- needed?
+
+        } timeout {
+            puts "ERROR: Connection timeout\n"
+            return 3
+
+        } eof {
+            puts "ERROR: Connection to host failed: $expect_out(buffer)\n"
+            return 4
+        }
+    }
+#   catch { get_prompt_and_enable } pstr
+
+   return 0
+}
+
+# Connect to a host using given method: telnet or ssh.
+# Return:
+#    0 = if successful
+#    > 0 = unsuccessful
+proc connect {method host usr pw} {
+   set usr_chk 0
+   set pw_chk 0
+   set max_checks 4
+   global spawn_id
+   global timeout
+   global prompt
+
+   send_user "Connecting using $method to $host as user $usr max_checks: $max_checks\n"
+
+   if { [string compare $method "ssh"] == 0 } {
+      set host "$usr@$host"
+   }
+
+   # get connected
+   set id [spawn $method $host]
+   if { $id <= 0 } {
+      send_user "ERROR: Failed to connect to host\n"
+      return 1
+   }
+
+   # Start the expect/send process to login
+   expect {
+      #send_user "procid: $id usr_chk: $usr_chk pw_chk: $pw_chk\n"
+
+      # Below handles the username prompt. name:*|
+      -nocase -re "ogin:" {
+         send "$usr\r"
+         incr usr_chk;
+
+         if { $usr_chk < $max_checks } {
+            exp_continue
+         } else {
+            send_user "ERROR: Login retry failed. Invalid login username\n"
+            return 2
+         }
+
+       # Below handles the password prompt
+       } -nocase -re "word:" {
+         send "$pw\r"
+         incr pw_chk;
+
+         if { $pw_chk < $max_checks } {
+            exp_continue
+         } else {
+            send_user "ERROR: Login retry failed. Invalid login password\n"
+            return 2
+         }
+
+      # Below handles the yes/no prompt when SSH first connects to a host
+      } -nocase -re "\(yes/no\)" {
+         send "yes\r"
+         exp_continue
+
+      # Below handles the normal prompt to detect when logged in
+      } -nocase -re "$prompt" {
+         #send_user "\nSUCCESS\n"
+
+      # Below is for expect timeout waiting for a connection
+      } timeout {
+         send_user "ERROR: Connection timeout waiting for login prompt\n"
+         return 3
+
+      # Below is for when the connect is closed before finishing
+      } eof {
+         send_user "ERROR: Connection to host failed: $expect_out(buffer)\n"
+         return 4
+      }
+   }
+
+   return 0
+}
+
+# Send 'enable' command & pass to router/switch
+# Return
+#   0 if sending enable command was successful
+#   > 0 otherwise
+proc send_enable {pw} {
+   set rval 0
+
+   # If we have an enable password, lets try to send it
+   if { [llength $pw] > 0} {
+      send_user "***Using enable mode\n"
+      send "enable\r"
+      expect {
+         -timeout 3
+         # Below handles the password prompt
+         -nocase -re "word:" {
+            send "$pw\r"
+            exp_continue
+
+         # Below handles the normal prompt to detect when logged in
+         } -re "#\ *$" {
+            send_user "--SUCCESS on enable mode--\n"
+
+         # Below is for expect timeout waiting for a
+         } timeout {
+            send_user "ERROR: Enable password timeout\n"
+            set rval 3
+
+         # Below is for when the connect is closed before finishing
+         } eof {
+            send_user "ERROR: Connection to host failed: $expect_out(buffer)\n"
+            set rval 4
+         }
+      }
+   }
+
+   return $rval
+}
+
+# Read cmdfile and send commands to switch
+proc send_cmd {cmdfile} {
+   global prompt
+
+   if { [llength $cmdfile] <= 0 } {
+      send_user "Enter the send text (type 'end' on last line to finish):\n"
+      expect_user -nocase -re "(.*)\nend\n"
+      set send_text $expect_out(1,string)
+
+   } else {
+      # open command file
+      if { [catch {set cmdfile_fd [open $cmdfile r]} err_msg] } {
+         send_user stderr "Could not open $cmdfile for reading\n$err_msg\n"
+         exit 1
+      }
+
+      # read in the file contents - max size 10000 lines
+      set send_text [read $cmdfile_fd 10000]
+      #send_user "Using $cmdfile for send text:\n$send_text\n"
+
+      close $cmdfile_fd
+   }
+
+   # Send line-by-line commands from the send_text to switch
+   foreach line [split $send_text \n] {
+      # exclude empty lines
+      if { [llength $line] > 0 } {
+         send "$line\r"
+
+         expect {
+            # Below handles the yes/no prompts
+            -nocase -re "\(yes/no\)" {
+               send "yes\r"
+               exp_continue
+
+            # Below handles the y/n prompts
+            } -nocase -re "\(y/n\)" {
+               send "y\r"
+               exp_continue
+
+            # Below handles the --more-- prompts (Cisco)
+            } -nocase -re "--more--" {
+               send " "
+               exp_continue
+
+            # Below handles the cli prompt: router# or router>
+            } -nocase -re "$prompt" {
+            }
+         }
+      }
+   }
+
+   return 0
+}
+
+# vim:si:ts=4:sw=4
