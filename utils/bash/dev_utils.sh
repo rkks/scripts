@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Development Utilities
 #  CREATED: 06/25/13 11:16:41 IST
-# MODIFIED: 12/04/14 17:30:43 IST
+# MODIFIED: 12/08/14 13:11:59 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -108,17 +108,17 @@ function show_progress()
     printf "    \b\b\b\b"
 }
 
-# Any string with $ within should be passed as: encrypt 'str' <pass>
+# Any string with $ within should be passed as: encrypt 'str' <salt>
 function encrypt()
 {
-    [[ $# -ne 2 ]] && { echo "usage: encrypt <str> <pass>"; return; }
+    [[ $# -ne 2 ]] && { echo "usage: encrypt <str> <salt>"; return; }
     (own openssl) && { echo "$1" | openssl enc -aes-256-cbc -a -e -k $2; }
 }
 
-# Encoded key is Base64, so can be input as: decrypt <key> <pass>
+# Encoded key is Base64, so can be input as: decrypt <key> <salt>
 function decrypt()
 {
-    [[ $# -ne 2 ]] && { echo "usage: decrypt <key> <pass>"; return; }
+    [[ $# -ne 2 ]] && { echo "usage: decrypt <key> <salt>"; return; }
     (own openssl) && { echo "$1" | openssl enc -aes-256-cbc -a -d -k $2; }
 }
 
