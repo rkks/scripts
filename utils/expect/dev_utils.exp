@@ -230,7 +230,7 @@ proc send_cmd {cmdfile} {
    # Send line-by-line commands from the send_text to switch
    foreach line [split $send_text \n] {
       # exclude empty lines
-      if { [llength $line] > 0 } {
+      if { [llength $line] > 0 && [string match "\#*" $line] <= 0 } {
          send "$line\r"
 
          expect {
