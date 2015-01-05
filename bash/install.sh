@@ -1,11 +1,13 @@
 #!/bin/bash
 #  DETAILS: Installer script for my tools. Downloads and installs locally.
 #  CREATED: 09/23/14 09:31:11 IST
-# MODIFIED: 12/04/14 04:42:25 PST
+# MODIFIED: 01/05/15 10:53:56 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2014, Ravikiran K.S.
 
+# Work Tools: curl ncdu p7zip rsync git wget ncurses tmux lighttpd resin
+# Dev Tools: ant gmake libevent ctags cscope global splint vim jdk sloccount
 
 if [ "install.sh" == "$(basename $0)" ] && [ -f $HOME/.bashrc ]; then
     source $HOME/.bashrc
