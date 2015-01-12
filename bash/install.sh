@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Installer script for my tools. Downloads and installs locally.
 #  CREATED: 09/23/14 09:31:11 IST
-# MODIFIED: 01/12/15 21:41:28 IST
+# MODIFIED: 01/12/15 22:11:12 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2014, Ravikiran K.S.
@@ -34,11 +34,14 @@ usage()
     echo "  -h     - print this help"
 }
 
+# misc curl opts: --connect-timeout 30 --create-dirs --keepalive-time 10 --max-redirs 50
 function downld()
 {
     [[ $# -ne 2 ]] && { echo "downld <file> <url>"; return $EINVAL; }
     [[ -e $1 ]] && { echo "File $1 already exists"; return $EEXIST; }
-    local fname=$1; shift; wget -O $fname $*; fail_bail;
+    local fname=$1; shift;
+    (own wget) && { wget -O $fname $*; } || { curl -L -o $fname $*; }
+    fail_bail;
 }
 
 function untar()
