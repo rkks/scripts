@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Installer script for my tools. Downloads and installs locally.
 #  CREATED: 09/23/14 09:31:11 IST
-# MODIFIED: 01/12/15 22:11:12 IST
+# MODIFIED: 01/12/15 22:16:17 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2014, Ravikiran K.S.
@@ -40,7 +40,7 @@ function downld()
     [[ $# -ne 2 ]] && { echo "downld <file> <url>"; return $EINVAL; }
     [[ -e $1 ]] && { echo "File $1 already exists"; return $EEXIST; }
     local fname=$1; shift;
-    (own wget) && { wget -O $fname $*; } || { curl -L -o $fname $*; }
+    (own wget) && { wget -O $fname $*; } || { curl -# -L -o $fname $*; }
     fail_bail;
 }
 
@@ -160,6 +160,7 @@ main()
         usage && exit $EINVAL;
     fi
 
+    ((own wget) || (own curl)) || { echo "wget/curl not found"; exit $EINVAL; }
     [[ ! -d $TOOLS ]] && { mkdie $TOOLS; }
     [[ ! -d $DOWNLOADS ]] && { mkdie $DOWNLOADS; }
 
