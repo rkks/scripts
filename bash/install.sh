@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Installer script for my tools. Downloads and installs locally.
 #  CREATED: 09/23/14 09:31:11 IST
-# MODIFIED: 01/05/15 10:53:56 IST
+# MODIFIED: 01/12/15 21:41:28 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2014, Ravikiran K.S.
@@ -22,6 +22,7 @@ usage()
 {
     echo "Usage: install.sh [-h|-e|-p|-t|-w]"
     echo "Options:"
+    echo "  -a     - install autossh"
     echo "  -c     - install cscope+ctags"
     echo "  -e     - install expect"
     echo "  -m     - install pmtools"
@@ -65,6 +66,11 @@ function sinstall()
     local dir=$1; shift; local file=$1; shift; local url=$1; shift;
     local dir=$(tar.sh -d $file);
     downld $file $url; untar $file; build $dir $*;
+}
+
+function autossh_install()
+{
+    sinstall autossh autossh-1.4d.tgz http://www.harding.motd.ca/autossh/autossh-1.4d.tgz
 }
 
 function wget_install()
@@ -128,7 +134,7 @@ function openssl_install()
 # It can then be included in other files for functions.
 main()
 {
-    PARSE_OPTS="hcemoprtw"
+    PARSE_OPTS="hacemoprtw"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -155,6 +161,7 @@ main()
     [[ ! -d $DOWNLOADS ]] && { mkdie $DOWNLOADS; }
 
     cdie $DOWNLOADS;
+    ((opt_a)) && { autossh_install; }
     ((opt_c)) && { cscope-tags_install; }
     ((opt_e)) && { expect_install; }
     ((opt_m)) && { pmtools_install; }
