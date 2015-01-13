@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Installer script for my tools. Downloads and installs locally.
 #  CREATED: 09/23/14 09:31:11 IST
-# MODIFIED: 01/13/15 12:34:41 IST
+# MODIFIED: 01/13/15 15:09:01 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2014, Ravikiran K.S.
@@ -22,7 +22,6 @@ usage()
 {
     echo "Usage: install.sh [-h|-e|-p|-t|-w]"
     echo "Options:"
-    echo "  -a     - install autossh"
     echo "  -c     - install cscope+ctags"
     echo "  -e     - install expect"
     echo "  -m     - install pmtools"
@@ -69,12 +68,6 @@ function sinstall()
     local dir=$1; shift; local file=$1; shift; local url=$1; shift;
     local dir=$(tar.sh -d $file);
     downld $file $url; untar $file; build $dir $*;
-}
-
-function autossh_install()
-{
-    unset CFLAGS; unset CPPFLAGS; unset LDFLAGS;
-    sinstall autossh autossh-1.4d.tgz http://www.harding.motd.ca/autossh/autossh-1.4d.tgz
 }
 
 function wget_install()
@@ -166,7 +159,6 @@ main()
     [[ ! -d $DOWNLOADS ]] && { mkdie $DOWNLOADS; }
 
     cdie $DOWNLOADS;
-    ((opt_a)) && { autossh_install; }
     ((opt_c)) && { cscope-tags_install; }
     ((opt_e)) && { expect_install; }
     ((opt_m)) && { pmtools_install; }
