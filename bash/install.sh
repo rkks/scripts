@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Installer script for my tools. Downloads and installs locally.
 #  CREATED: 09/23/14 09:31:11 IST
-# MODIFIED: 01/12/15 22:16:17 IST
+# MODIFIED: 01/13/15 12:34:41 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2014, Ravikiran K.S.
@@ -73,6 +73,7 @@ function sinstall()
 
 function autossh_install()
 {
+    unset CFLAGS; unset CPPFLAGS; unset LDFLAGS;
     sinstall autossh autossh-1.4d.tgz http://www.harding.motd.ca/autossh/autossh-1.4d.tgz
 }
 
