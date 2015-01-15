@@ -1,12 +1,13 @@
 #!/bin/bash
 #  DETAILS: Installer script for my tools. Downloads and installs locally.
 #  CREATED: 09/23/14 09:31:11 IST
-# MODIFIED: 01/13/15 15:09:01 IST
+# MODIFIED: 01/15/15 12:13:17 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2014, Ravikiran K.S.
 
-# Work Tools: curl ncdu p7zip rsync git wget ncurses tmux lighttpd resin
+# Never install: p7zip -- unable to delete afterwards
+# Work Tools: curl ncdu rsync git wget ncurses tmux lighttpd resin
 # Dev Tools: ant gmake libevent ctags cscope global splint vim jdk sloccount
 
 if [ "install.sh" == "$(basename $0)" ] && [ -f $HOME/.bashrc ]; then
@@ -26,8 +27,8 @@ usage()
     echo "  -e     - install expect"
     echo "  -m     - install pmtools"
     echo "  -o     - install openssl"
-    echo "  -p     - install p7zip"
-    echo "  -p     - install rsnapshot"
+#    echo "  -p     - install p7zip"
+    echo "  -r     - install rsnapshot"
     echo "  -t     - install tmux"
     echo "  -w     - install wget"
     echo "  -h     - print this help"
@@ -75,10 +76,10 @@ function wget_install()
     sinstall wget wget-1.15.tar.gz http://ftp.gnu.org/gnu/wget/wget-1.15.tar.gz
 }
 
-function p7zip_install()
-{
-    sinstall p7zip p7zip_9.20.1.tar.bz2 http://sourceforge.net/projects/p7zip/files/p7zip/9.20.1/p7zip_9.20.1_src_all.tar.bz2
-}
+#function p7zip_install()
+#{
+#    sinstall p7zip p7zip_9.20.1.tar.bz2 http://sourceforge.net/projects/p7zip/files/p7zip/9.20.1/p7zip_9.20.1_src_all.tar.bz2
+#}
 
 # download from https://github.com/downloads/libevent/libevent/libevent-xxx.tar.gz gives SSL error
 function tmux_install()
@@ -163,7 +164,7 @@ main()
     ((opt_e)) && { expect_install; }
     ((opt_m)) && { pmtools_install; }
     ((opt_o)) && { openssl_install; }
-    ((opt_p)) && { p7zip_install; }
+#    ((opt_p)) && { p7zip_install; }
     ((opt_r)) && { rsnapshot_install; }
     ((opt_t)) && { tmux_install; }
     ((opt_w)) && { wget_install; }
