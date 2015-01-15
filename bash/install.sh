@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Installer script for my tools. Downloads and installs locally.
 #  CREATED: 09/23/14 09:31:11 IST
-# MODIFIED: 01/15/15 12:13:17 IST
+# MODIFIED: 01/15/15 09:10:25 PST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2014, Ravikiran K.S.
@@ -40,7 +40,7 @@ function downld()
     [[ $# -ne 2 ]] && { echo "downld <file> <url>"; return $EINVAL; }
     [[ -e $1 ]] && { echo "File $1 already exists"; return $EEXIST; }
     local fname=$1; shift;
-    (own wget) && { wget -O $fname $*; } || { curl -# -L -o $fname $*; }
+    (own wget) && { wget --limit-rate=1m -O $fname $*; } || { curl --limit-rate 1m -# -L -o $fname $*; }
     fail_bail;
 }
 
@@ -65,40 +65,39 @@ function build()
 
 function sinstall()
 {
-    [[ $# -lt 3 ]] && { echo "install <dir> <file> <url> [conf-args]"; }
-    local dir=$1; shift; local file=$1; shift; local url=$1; shift;
-    local dir=$(tar.sh -d $file);
+    [[ $# -lt 2 ]] && { echo "install <file> <url> [conf-args]"; }
+    local file=$1; shift; local url=$1; shift; local dir=$(tar.sh -d $file);
     downld $file $url; untar $file; build $dir $*;
 }
 
 function wget_install()
 {
-    sinstall wget wget-1.15.tar.gz http://ftp.gnu.org/gnu/wget/wget-1.15.tar.gz
+    sinstall wget.tar.gz http://ftp.gnu.org/gnu/wget/wget-1.15.tar.gz
 }
 
 #function p7zip_install()
 #{
-#    sinstall p7zip p7zip_9.20.1.tar.bz2 http://sourceforge.net/projects/p7zip/files/p7zip/9.20.1/p7zip_9.20.1_src_all.tar.bz2
+#    sinstall p7zip.tar.bz2 http://sourceforge.net/projects/p7zip/files/p7zip/9.20.1/p7zip_9.20.1_src_all.tar.bz2
 #}
 
 # download from https://github.com/downloads/libevent/libevent/libevent-xxx.tar.gz gives SSL error
 function tmux_install()
 {
-    sinstall libtool libtool-2.4.tar.gz http://ftp.gnu.org/gnu/libtool/libtool-2.4.tar.gz
-    sinstall autoconf autoconf-latest.tar.gz http://ftp.gnu.org/gnu/autoconf/autoconf-latest.tar.gz
-    sinstall automake automake-1.14.tar.gz http://ftp.gnu.org/gnu/automake/automake-1.14.tar.gz
-    sinstall gettext gettext-latest.tar.gz http://ftp.gnu.org/gnu/gettext/gettext-latest.tar.gz
+    sinstall libtool.tar.gz http://ftp.gnu.org/gnu/libtool/libtool-2.4.tar.gz
+    sinstall autoconf.tar.gz http://ftp.gnu.org/gnu/autoconf/autoconf-latest.tar.gz
+    sinstall automake.tar.gz http://ftp.gnu.org/gnu/automake/automake-1.14.tar.gz
+    sinstall gettext.tar.gz http://ftp.gnu.org/gnu/gettext/gettext-latest.tar.gz
 #    --disable-shared
-    sinstall libevent libevent-2.0.21.tar.gz http://sourceforge.net/projects/levent/files/libevent/libevent-2.0/libevent-2.0.21-stable.tar.gz
-    sinstall ncurses ncurses-5.9.tar.gz ftp://ftp.gnu.org/gnu/ncurses/ncurses-5.9.tar.gz --without-ada
+    sinstall libevent.tar.gz http://sourceforge.net/projects/levent/files/libevent/libevent-2.0/libevent-2.0.21-stable.tar.gz
+    sinstall ncurses.tar.gz ftp://ftp.gnu.org/gnu/ncurses/ncurses-5.9.tar.gz --without-ada
     CFLAGS+=" -I$HOME/tools/$UNAMES/include/ncurses";
     LDFLAGS+=" -L$HOME/tools/$UNAMES/include/ncurses -L$HOME/tools/$UNAMES/include"
-    sinstall tmux tmux-1.9a.tar.gz http://downloads.sourceforge.net/tmux/tmux-1.9a.tar.gz
+    sinstall tmux.tar.gz http://downloads.sourceforge.net/tmux/tmux-1.9a.tar.gz
 }
 
 function expect_install()
 {
-    sinstall expect expect5.45.tar.gz http://sourceforge.net/projects/expect/files/Expect/5.45/expect5.45.tar.gz
+    sinstall expect.tar.gz http://sourceforge.net/projects/expect/files/Expect/5.45/expect5.45.tar.gz
 }
 
 function pmtools_install()
@@ -116,8 +115,8 @@ function rsnapshot_install()
 
 function cscope-tags_install()
 {
-    sinstall cscope cscope-15.8a.tar.gz http://sourceforge.net/projects/cscope/files/cscope/15.8a/cscope-15.8a.tar.gz
-    sinstall ctags ctags-5.8.tar.gz http://prdownloads.sourceforge.net/ctags/ctags-5.8.tar.gz
+    sinstall cscope.tar.gz http://sourceforge.net/projects/cscope/files/cscope/15.8a/cscope-15.8a.tar.gz
+    sinstall ctags.tar.gz http://prdownloads.sourceforge.net/ctags/ctags-5.8.tar.gz
 }
 
 function openssl_install()
