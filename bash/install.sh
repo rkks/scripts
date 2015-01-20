@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Installer script for my tools. Downloads and installs locally.
 #  CREATED: 09/23/14 09:31:11 IST
-# MODIFIED: 01/15/15 09:10:25 PST
+# MODIFIED: 01/15/15 22:48:59 PST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2014, Ravikiran K.S.
@@ -23,15 +23,16 @@ usage()
 {
     echo "Usage: install.sh [-h|-e|-p|-t|-w]"
     echo "Options:"
-    echo "  -c     - install cscope+ctags"
-    echo "  -e     - install expect"
-    echo "  -m     - install pmtools"
-    echo "  -o     - install openssl"
-#    echo "  -p     - install p7zip"
-    echo "  -r     - install rsnapshot"
-    echo "  -t     - install tmux"
-    echo "  -w     - install wget"
-    echo "  -h     - print this help"
+    echo "  -a <arch>   - compile for arch"
+    echo "  -c          - install cscope+ctags"
+    echo "  -e          - install expect"
+    echo "  -m          - install pmtools"
+    echo "  -o          - install openssl"
+#    echo "  -p         - install p7zip"
+    echo "  -r          - install rsnapshot"
+    echo "  -t          - install tmux"
+    echo "  -w          - install wget"
+    echo "  -h          - print this help"
 }
 
 # misc curl opts: --connect-timeout 30 --create-dirs --keepalive-time 10 --max-redirs 50
@@ -60,7 +61,7 @@ function config() {
 function build()
 {
     [[ $# -lt 1 ]] && { echo "build <dir> [args]"; return; }
-    local dir=$1; shift; cdie $dir*; config "$*"; make && make install; fail_bail; cd -; rm -rf $dir;
+    local d=$1; shift; cdie $d*; config "$*"; make && make install; fail_bail; d=$(basename $PWD); cd -; rm -rf $d;
 }
 
 function sinstall()
@@ -127,11 +128,17 @@ function openssl_install()
     make && make install && cd - && rm -rf $dir
 }
 
+function set_arch()
+{
+    CFLAGS="-m$1 $CFLAGS";
+    LDFLAGS="-m$1 $LDFLAGS";
+}
+
 # Each shell script has to be independently testable.
 # It can then be included in other files for functions.
 main()
 {
-    PARSE_OPTS="hacemoprtw"
+    PARSE_OPTS="ha:cemoprtw"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -159,6 +166,7 @@ main()
     [[ ! -d $DOWNLOADS ]] && { mkdie $DOWNLOADS; }
 
     cdie $DOWNLOADS;
+    ((opt_a)) && { set_arch $optarg_a; }
     ((opt_c)) && { cscope-tags_install; }
     ((opt_e)) && { expect_install; }
     ((opt_m)) && { pmtools_install; }
