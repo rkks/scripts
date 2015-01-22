@@ -25,6 +25,38 @@ proc print_args {args} {
     send_user "\n"
 }
 
+# scp to switch
+# Input: host loc file name user pass
+proc cscp {h l f n u p} {
+    global spawn_id
+    global timeout
+    global prompt
+
+    send "copy scp://$u@$h$l/$f $n vrf management\r"
+    expect {
+        -nocase -re "\(yes/no\)" {
+            send "yes\r"
+            exp_continue
+        } -nocase -re "\(y/n\)" {
+            send "y\r"
+            exp_continue
+        } -nocase -re "ssword:" {
+            send "$p\r"
+            exp_continue
+        } -nocase -re "$prompt" {
+            return 0
+        } timeout {
+            puts "ERROR: Connection timeout\n"
+            return 3
+        } eof {
+            puts "ERROR: Connection to host failed: $expect_out(buffer)\n"
+            return 4
+        }
+    }
+
+    return 0
+}
+
 # Login to switch using given method: telnet or ssh
 # Return
 #   Puts at interactive console -- control to user

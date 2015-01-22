@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Development Utilities
 #  CREATED: 06/25/13 11:16:41 IST
-# MODIFIED: 01/13/15 15:07:35 IST
+# MODIFIED: 01/22/15 18:27:00 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -120,6 +120,16 @@ function decrypt()
 {
     [[ $# -ne 2 ]] && { echo "usage: decrypt <key> <salt>"; return; }
     (own openssl) && { echo "$1" | openssl enc -aes-256-cbc -a -d -k $2; }
+}
+
+function get_ip_addr()
+{
+    if [[ $UNAMES == "Linux" ]]; then
+        local addr=$(ifconfig eth0 | grep -w inet | awk -F: '{print $2}' | awk '{print $1}')
+    elif [[ $UNAMES == "Darwin" ]]; then
+        local addr=$(ifconfig en0 | grep -w inet | awk '{print $2}')
+    fi
+    echo $addr;
 }
 
 usage()
