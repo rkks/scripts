@@ -3,7 +3,7 @@
 #   https://github.com/nischithbm/bash-logger
 #   http://sourceforge.net/projects/bash-logger
 #  CREATED: 06/21/13 23:58:09 IST
-# MODIFIED: 11/26/14 10:59:20 IST
+# MODIFIED: 02/05/15 12:16:35 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -35,6 +35,13 @@ LOG_MAX_BACKUPS=1
 #LOG_TO_TTY=TRUE                 # Set variable for logging to console
 LOG_MAIL_OLD_LOGS=TRUE
 #LOG_EMAIL_ID=ravikks@cisco.com
+
+function export_log_funcs()
+{
+    local FUNCS="verify_create_dirs verify_create_files log_env_verify_update"
+    FUNCS="log_init log_rotate log $FUNCS"
+    export_func $FUNCS;
+}
 
 # create directory path (if doesn't exist). Otherwise just update timestamp.
 function verify_create_dirs()
@@ -210,5 +217,7 @@ main()
 
 if [ "$(basename -- $0)" == "$(basename log_utils.sh)" ]; then
     main $*
+else
+    export_log_funcs
 fi
 # VIM: ts=4:sw=4

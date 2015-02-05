@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 11/26/14 10:39:58 IST
+# MODIFIED: 02/05/15 12:09:52 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -28,6 +28,18 @@ export ETIMEDOUT=145 # Operation timedout
 export EASSERT=199   # Assertion failed
 
 # {} - used for command grouping. if all commands are on single line, last command should end with a semi-colon ';'
+# invoke any program with 'env -i <prog>' for clearing all ENV variables while invoking program
+
+# export functions using 'export -f' option. $FUNCNAME has current function name in bash
+function export_func() { local func; export -f $FUNCNAME; for func in $*; do export -f $func; done; }
+
+function export_bash_funcs()
+{
+    local FUNCS="run shell own have cdie mkdie hostname_short fail_bail up die via"
+    FUNCS="bash_trace bash_untrace becho decho term assert pause ret_chk $FUNCS"
+    FUNCS="puniq ppop pvalid prm pappend pprepend pshift pls source_script $FUNCS"
+    export_func $FUNCS;
+}
 
 # usage: run <cmd> <args>
 function run() { [[ "yes" == "$SHDEBUG" ]] && echo "$(pwd)\$ $*" || $*; }
@@ -108,11 +120,8 @@ function light()
     (have light_dircolors) && light_dircolors;
 }
 
-# Admin helper functions
-function --() { cd -; }
-
 # Path management functions
-# Usage: pls [<var>]. List path entries of PATH or environment variable <var>. Alternate: alias p='echo -e ${PATH//:/\\n}'
+# Usage: pls [<var>]. List entries of PATH or env var <var>. Alternate: alias p='echo -e ${PATH//:/\\n}'
 function pls() { eval echo \$${1:-PATH} | tr : '\n'; }
 
 # Usage: pappend <path> [<var>]. Append <path> to PATH or environment variable <var>.
@@ -240,6 +249,8 @@ main()
 
 if [ "$(basename -- $0)" == "$(basename bash_utils.sh)" ]; then
     main $*
+else
+    export_bash_funcs
 fi
 # VIM: ts=4:sw=4
 

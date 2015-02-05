@@ -57,6 +57,72 @@ proc cscp {h l f n u p} {
     return 0
 }
 
+# Console login to switch using telnet
+# Return
+#   Puts at interactive console -- control to user
+# Example
+# console 10.197.154.43 port admin nbv_12345
+proc console {host port user pw} {
+    global spawn_id
+    global timeout
+    global prompt
+
+    set procid [spawn telnet -K $host $port]
+#    expect_after eof {exit 0}
+    if { $procid <= 0 } {
+       send_user "ERROR: Failed to connect to host $host\n"
+       return 1
+    }
+
+    expect {
+        -nocase -re "\(yes/no\)" {
+            send "yes\r"
+            exp_continue
+
+        } -nocase -re "character" {
+#            send -- "\r"
+            exp_continue
+
+        } -nocase -re "word:" {
+            send "$pw\r"
+            exp_continue
+
+        } -nocase -re "name:" {
+            send "$user\r"
+            exp_continue
+
+        } -nocase -re "ogin:" {
+            send "$user\r"
+            exp_continue
+
+        } -nocase -re "Connection refused" {
+            puts "Connection refused"; exit 1
+
+        } -nocase -re "Authentication failed" {
+            puts "Login incorrect"; exit 1
+
+        } -nocase -re "Permission denied" {
+            puts "Login incorrect"; exit 1
+
+        # $prompt is needed for send_cmd to grab it. regex doesn't work: -re ">\|#"
+        } -nocase -re "$prompt" {
+            # what to do: interact or input cmds -- left to caller. -notransfer -- needed?
+
+        } timeout {
+            puts "ERROR: Connection timeout\n"
+            return 3
+
+        } eof {
+            puts "ERROR: Connection to host failed: $expect_out(buffer)\n"
+            return 4
+        }
+    }
+#   catch { get_prompt_and_enable } pstr
+
+   return 0
+}
+
+
 # Login to switch using given method: telnet or ssh
 # Return
 #   Puts at interactive console -- control to user

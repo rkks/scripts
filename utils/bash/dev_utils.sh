@@ -1,13 +1,21 @@
 #!/bin/bash
 #  DETAILS: Development Utilities
 #  CREATED: 06/25/13 11:16:41 IST
-# MODIFIED: 01/22/15 18:27:00 IST
+# MODIFIED: 02/05/15 12:14:04 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
 
 # Warn unset vars as error, Verbose (echo each command), Enable debug mode
 #set -uvx
+
+function export_dev_funcs()
+{
+    local FUNCS="chownall cpx dos2unixall reset_tty hide unhide screentab starthttp"
+    FUNCS="truncate_file vncs push_ssh_cert f bug rli make_workspace_alias $FUNCS"
+    FUNCS="diffscp compare show_progress encrypt decrypt get_ip_addr $FUNCS"
+    export_func $FUNCS;
+}
 
 # Admin functions
 # grab ownership of given file/directory
@@ -155,6 +163,8 @@ main()
 
 if [ "$(basename -- $0)" == "$(basename dev_utils.sh)" ]; then
     main $*
+else
+    export_dev_funcs
 fi
 # VIM: ts=4:sw=4
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Installer script for my tools. Downloads and installs locally.
 #  CREATED: 09/23/14 09:31:11 IST
-# MODIFIED: 01/15/15 22:48:59 PST
+# MODIFIED: 02/05/15 12:19:35 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2014, Ravikiran K.S.
@@ -39,17 +39,17 @@ usage()
 function downld()
 {
     [[ $# -ne 2 ]] && { echo "downld <file> <url>"; return $EINVAL; }
-    [[ -e $1 ]] && { echo "File $1 already exists"; return $EEXIST; }
+    [[ -e $1 ]] && { echo "File $1 already exists"; mv $1 $PWD/tar/; return $EEXIST; }
     local fname=$1; shift;
     (own wget) && { wget --limit-rate=1m -O $fname $*; } || { curl --limit-rate 1m -# -L -o $fname $*; }
-    fail_bail;
+    fail_bail; mv $fname $PWD/tar/ ;
 }
 
 function untar()
 {
     [[ $# -ne 1 ]] && { echo "untar <file>"; return; }
     # Avoid mkdir $1 && tar xvzf $2 -C $1 --strip-components=1; fail_bail;
-    tar.sh -x $1; fail_bail;
+    tar.sh -x $PWD/tar/$1; fail_bail;
 }
 
 function config() {
@@ -163,7 +163,7 @@ main()
 
     ((own wget) || (own curl)) || { echo "wget/curl not found"; exit $EINVAL; }
     [[ ! -d $TOOLS ]] && { mkdie $TOOLS; }
-    [[ ! -d $DOWNLOADS ]] && { mkdie $DOWNLOADS; }
+    [[ ! -d $DOWNLOADS/tar/ ]] && { mkdie $DOWNLOADS/tar/; }
 
     cdie $DOWNLOADS;
     ((opt_a)) && { set_arch $optarg_a; }
