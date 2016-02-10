@@ -12,7 +12,7 @@
 #++++++++++++++++++++++++++
 # Global vars
 #++++++++++++++++++++++++++
-set timeout 30
+set timeout 250
 # below matches prompts such as "router#", "router>", "router$"
 set prompt "\>\ *$\|#\ *$\|\\$\ *$"
 
