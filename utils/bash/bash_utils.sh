@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 02/05/15 12:09:52 IST
+# MODIFIED: 02/24/16 14:59:12 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -90,22 +90,24 @@ function light_dircolors()
 
 function dark_prompt()
 {
-    local BLACK="\[\033[0;30m\]"; local BLACKB="\[\033[1;30m\]"; local RED="\[\033[0;31m\]"; local REDB="\[\033[1;31m\]";
-    local GREEN="\[\033[0;32m\]"; local GREENB="\[\033[1;32m\]"; local YELLOW="\[\033[0;33m\]"; local YELLOWB="\[\033[1;33m\]";
-    local BLUE="\[\033[0;34m\]"; local BLUEB="\[\033[1;34m\]"; local PURPLE="\[\033[0;35m\]"; local PURPLEB="\[\033[1;35m\]";
-    local CYAN="\[\033[0;36m\]"; local CYANB="\[\033[1;36m\]"; local WHITE="\[\033[0;37m\]"; local WHITEB="\[\033[1;37m\]"
-    local PS1_BLACK="$BLACKB[$BLUEB\D{%b/%d} \t$BLACKB|$PURPLEB\u$REDB@$PURPLEB\h$REDB:$GREENB\w$BLACKB]$BLACKB\$\[\033[0m\] "
-    export PS1=$PS1_BLACK;
+    local BLACKB="\[\033[1;30m\]"; local REDB="\[\033[1;31m\]";
+    local GREENB="\[\033[1;32m\]"; local YELLOWB="\[\033[1;33m\]";
+    local BLUEB="\[\033[1;34m\]"; local PURPLEB="\[\033[1;35m\]";
+    local CYANB="\[\033[1;36m\]"; local WHITEB="\[\033[1;37m\]"
+    local PS1_BLACK="$BLACKB[$BLUEB\D{%b/%d} \t$BLACKB|$PURPLEB\u$REDB@$PURPLEB\h$REDB:$GREENB\w$BLACKB]\$\[\033[0m\] "
+    local PS1_BLACK_BRIEF="$BLACKB[$BLUEB\D{%b/%d} \t$BLACKB|$GREENB\w$BLACKB]\$\[\033[0m\] "
+    [[ ! -z $PS1_BRIEF ]] && { export PS1=$PS1_BLACK_BRIEF; }|| { export PS1=$PS1_BLACK; }
 }
 
 function light_prompt()
 {
-    local BLACK="\[\033[0;30m\]"; local BLACKB="\[\033[1;30m\]"; local RED="\[\033[0;31m\]"; local REDB="\[\033[1;31m\]";
-    local GREEN="\[\033[0;32m\]"; local GREENB="\[\033[1;32m\]"; local YELLOW="\[\033[0;33m\]"; local YELLOWB="\[\033[1;33m\]";
-    local BLUE="\[\033[0;34m\]"; local BLUEB="\[\033[1;34m\]"; local PURPLE="\[\033[0;35m\]"; local PURPLEB="\[\033[1;35m\]";
-    local CYAN="\[\033[0;36m\]"; local CYANB="\[\033[1;36m\]"; local WHITE="\[\033[0;37m\]"; local WHITEB="\[\033[1;37m\]"
-    local PS1_WHITE="$BLACK[$BLUE\D{%b/%d} \t$BLACK|$PURPLE\u$RED@$PURPLE\h$RED:$GREEN\w$BLACK]$BLACK\$\[\033[0m\] "
-    export PS1=$PS1_WHITE;
+    local BLACK="\[\033[0;30m\]"; local RED="\[\033[0;31m\]";
+    local GREEN="\[\033[0;32m\]"; local YELLOW="\[\033[0;33m\]";
+    local BLUE="\[\033[0;34m\]"; local PURPLE="\[\033[0;35m\]";
+    local CYAN="\[\033[0;36m\]"; local WHITE="\[\033[0;37m\]";
+    local PS1_WHITE="$BLACK[$BLUE\D{%b/%d} \t$BLACK|$PURPLE\u$RED@$PURPLE\h$RED:$GREEN\w$BLACK]\$\[\033[0m\] "
+    local PS1_WHITE_BRIEF="$BLACK[$BLUE\D{%b/%d} \t$BLACK|$GREEN\w$BLACK]\$\[\033[0m\] "
+    [[ ! -z $PS1_BRIEF ]] && { export PS1=$PS1_WHITE_BRIEF; }|| { export PS1=$PS1_WHITE; }
 }
 
 function dark()
@@ -224,6 +226,9 @@ function term()
 }
 
 function via() { local file; for file in $*;do vim $file; done; }
+
+function ps1-brief() { export PS1_BRIEF=TRUE; }
+function ps1-long() { unset PS1_BRIEF; }
 
 usage()
 {
