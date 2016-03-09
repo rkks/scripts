@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Installer script for my tools. Downloads and installs locally.
 #  CREATED: 09/23/14 09:31:11 IST
-# MODIFIED: 02/05/15 12:19:35 IST
+# MODIFIED: 03/08/16 23:32:49 PST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2014, Ravikiran K.S.
@@ -12,7 +12,7 @@
 
 if [ "install.sh" == "$(basename $0)" ] && [ -f $HOME/.bashrc ]; then
     source $HOME/.bashrc
-    log_init INFO $SCRIPT_LOGS/install.log
+    log_init INFO $SCRPT_LOGS/install.log
 fi
 
 #set -x  # -uvx: Warn unset vars, Verbose (echo each cmd), Enable debug mode

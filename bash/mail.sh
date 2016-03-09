@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Send mail to pre-defined email addresses
 #  CREATED: 11/19/12 14:14:03 IST
-# MODIFIED: 10/06/14 14:20:42 IST
+# MODIFIED: 03/08/16 23:31:05 PST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2012, Ravikiran K.S.
@@ -11,7 +11,7 @@
 # Source .bashrc only if invoked as a sub-shell.
 if [[ "$(basename mail.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc ]; then
     source $HOME/.bashrc
-    log_init INFO $SCRIPT_LOGS/mail.log
+    log_init INFO $SCRPT_LOGS/mail.log
     # Global defines. (Re)define ENV only if necessary.
 fi
 
@@ -72,7 +72,7 @@ main()
     fi
 
     ((opt_b)) && mail-send "BUILD" $optarg_b
-    ((opt_c)) && mail-send "CRON" $SCRIPT_LOGS/cron.log
+    ((opt_c)) && mail-send "CRON" $SCRPT_LOGS/cron.log
     ((opt_f)) && mail-send "AUTO" $optarg_f
     ((opt_h)) && (usage; exit 0)
 

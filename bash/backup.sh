@@ -3,7 +3,7 @@
 #
 #   AUTHOR: Ravikiran K.S. (ravikirandotks@gmail.com)
 #  CREATED: 11/07/11 13:32:37 PST
-# MODIFIED: 10/06/14 14:19:31 IST
+# MODIFIED: 03/08/16 23:27:26 PST
 
 # Monday to Saturday, an incremental backup is made so that you have daily backups for new files until next week.
 # Every Sunday, do backup of all tars from last week. One such incremental backup tarball for each of 52 weeks in a year.
@@ -14,7 +14,7 @@
 # Source .bashrc only if invoked as a sub-shell.
 if [[ "$(basename backup.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc ]; then
     source $HOME/.bashrc
-    log_init INFO $SCRIPT_LOGS/backup.log
+    log_init INFO $SCRPT_LOGS/backup.log
     # Global defines go here. (Re)define ENV only if necessary.
     # Reduce list of paths to trusted directories (most->least trusted)
 fi

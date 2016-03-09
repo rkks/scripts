@@ -3,7 +3,7 @@
 #
 #   AUTHOR: Ravikiran K.S. (ravikirandotks@gmail.com)
 #  CREATED: 11/08/11 13:35:02 PST
-# MODIFIED: 10/06/14 14:20:00 IST
+# MODIFIED: 03/08/16 23:28:23 PST
 
 # Cron has defaults below. Redefining to suite yours(if & only if necessary).
 # HOME=user-home-directory  # LOGNAME=user.s-login-id
@@ -14,14 +14,14 @@
 # Source .bashrc only if invoked as a sub-shell. Not if sourced.
 if [[ "$(basename cron.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc ]; then
     source $HOME/.bashrc
-    log_init INFO $SCRIPT_LOGS/cron.log
+    log_init INFO $SCRPT_LOGS/cron.log
 fi
 
 function backup()
 {
     [[ $# -eq 0 ]] && { echo "Usage: backup <list-with-backup-dir-names>"; return $EINVAL; }
 
-    [[ ! -z "$(grep -w backup $CUSTOM_CONFS/cronskip)" ]] && return;  # skip if configured so
+    [[ ! -z "$(grep -w backup $CUST_CONFS/cronskip)" ]] && return;  # skip if configured so
 
     local backup_list=$1
     while read dir; do
@@ -36,7 +36,7 @@ function sync()
 {
     log INFO "Syncing Conf & Tools to eng-shell";
 
-    [[ ! -z "$(grep -w rsync $CUSTOM_CONFS/cronskip)" ]] && return;  # skip if configured so
+    [[ ! -z "$(grep -w rsync $CUST_CONFS/cronskip)" ]] && return;  # skip if configured so
 
     shell rsync.sh -c $HOME eng-shell1:
 }
@@ -45,10 +45,10 @@ function nightly()
 {
     log CRIT "Running cron for $(/bin/date +'%a %b/%d/%Y %T%p %Z')";
 
-    [[ ! -z "$(grep -w cron $CUSTOM_CONFS/cronskip)" ]] && return;  # skip if configured so
+    [[ ! -z "$(grep -w cron $CUST_CONFS/cronskip)" ]] && return;  # skip if configured so
 
     # take backup before SCM changes the contents
-    backup $CUSTOM_CONFS/backup
+    backup $CUST_CONFS/backup
     build $COMPANY_CONFS/workspaces
     [[ "$(date +'%a')" == "Fri" ]] && { reserve $COMPANY_CONFS/reserve; sync; }
     download
@@ -59,7 +59,7 @@ function build()
 {
     [[ $# -eq 0 ]] && { echo "Usage: build <[path1|path2|...]>"; return $EINVAL; }
 
-    [[ ! -z "$(grep -w jbuild $CUSTOM_CONFS/cronskip)" ]] && return;  # skip if configured so
+    [[ ! -z "$(grep -w jbuild $CUST_CONFS/cronskip)" ]] && return;  # skip if configured so
 
     local blddir_list=$1; local SVNLOG=svn.log; local STATUS=status.log
     while read dir; do
@@ -80,9 +80,9 @@ function download()
 {
     log INFO "Start pending downloads"
 
-    [[ ! -z "$(grep -w download $CUSTOM_CONFS/cronskip)" ]] && return;  # skip if configured so
+    [[ ! -z "$(grep -w download $CUST_CONFS/cronskip)" ]] && return;  # skip if configured so
 
-    shell download.sh $CUSTOM_CONFS/downlinks;
+    shell download.sh $CUST_CONFS/downlinks;
 }
 
 function report()
@@ -96,7 +96,7 @@ function reserve()
     [[ $# -eq 0 ]] && { echo "Usage: reserve <path-to-reserve-file>"; return $EINVAL; }
     [[ ! -f $1 ]] && { log INFO "File $1 not found. Skipping router reservation"; return $ENOENT; }
 
-    [[ ! -z "$(grep -w reserve $CUSTOM_CONFS/cronskip)" ]] && return;  # skip if configured so
+    [[ ! -z "$(grep -w reserve $CUST_CONFS/cronskip)" ]] && return;  # skip if configured so
 
     local reserve_file=$1
     # Format in $reserve_file is: router duration start-time repeat

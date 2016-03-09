@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Clearcase Utlities
 #  CREATED: 06/25/13 11:27:14 IST
-# MODIFIED: 10/06/14 14:19:41 IST
+# MODIFIED: 03/08/16 23:27:42 PST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -86,7 +86,7 @@ function ccgitsync()
         DSTDIR=/viewstore/rkks/git
 
     # this contains a wildcard pattern per line of files to exclude
-        EXCLUDES=$CUSTOM_CONFS/.gitexclude
+        EXCLUDES=$CUST_CONFS/.gitexclude
 
     # now the actual transfer
         OPTS="-rvt --progress --delete --exclude-from=$EXCLUDES"
@@ -109,7 +109,7 @@ function ccgitsyncdry()
         DSTDIR=/viewstore/rkks/git
 
     # this contains a wildcard pattern per line of files to exclude
-        EXCLUDES=$CUSTOM_CONFS/.gitexclude
+        EXCLUDES=$CUST_CONFS/.gitexclude
 
     # now the actual transfer
         OPTS="-rvtn --progress --delete --exclude-from=$EXCLUDES"

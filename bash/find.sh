@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Find command wrappers
 #  CREATED: 07/16/13 21:22:06 IST
-# MODIFIED: 11/12/14 09:52:57 IST
+# MODIFIED: 03/08/16 23:30:39 PST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -12,7 +12,7 @@
 # Source .bashrc only if invoked as a sub-shell.
 if [[ "$(basename find.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc ]; then
     source $HOME/.bashrc
-    log_init INFO $SCRIPT_LOGS/find.log
+    log_init INFO $SCRPT_LOGS/find.log
 fi
 
 set -x

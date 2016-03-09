@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Generates Doxygen Configuration using pre-defined template.
 #  CREATED: 03/05/13 10:23:23 IST
-# MODIFIED: 10/06/14 14:20:17 IST
+# MODIFIED: 03/08/16 23:30:24 PST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -11,7 +11,7 @@
 # Source .bashrc only if invoked as a sub-shell.
 if [[ "$(basename doxyconfig.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc ]; then
     source $HOME/.bashrc
-    log_init INFO $SCRIPT_LOGS/doxyconfig.log
+    log_init INFO $SCRPT_LOGS/doxyconfig.log
     # Global defines. (Re)define ENV only if necessary.
 fi
 
@@ -86,7 +86,7 @@ doxy_config()
         -e "s;@HAVE_DOT@;$HAVE_DOT;" \
         -e "s;@CALL_GRAPH@;$CALL_GRAPH;" \
         -e "s;@PERL_PATH@;$PERL_PATH;" \
-        $CUSTOM_CONFS/doxygen.cfg > ./.$OUTPUT-doxygen.cfg
+        $CUST_CONFS/doxygen.cfg > ./.$OUTPUT-doxygen.cfg
 
     log DEBUG "Update ./.$OUTPUT-doxygen.cfg with correct PROJECT_NAME and PROJECT_BRIEF"
 }

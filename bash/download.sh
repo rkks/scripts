@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Downloads all links provided in ~/conf/custom/downloads file
 #  CREATED: 11/19/12 12:43:39 IST
-# MODIFIED: 10/08/14 11:29:03 IST
+# MODIFIED: 03/08/16 23:30:04 PST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2012, Ravikiran K.S.
@@ -11,7 +11,7 @@
 # Source .bashrc only if invoked as a sub-shell.
 if [[ "download.sh" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc ]; then
     source $HOME/.bashrc
-    log_init INFO $SCRIPT_LOGS/download.log
+    log_init INFO $SCRPT_LOGS/download.log
 fi
 
 usage()

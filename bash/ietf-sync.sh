@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Sync IETF RFCs to local workspace
 #  CREATED: 10/16/14 16:10:03 IST
-# MODIFIED: 10/16/14 16:34:33 IST
+# MODIFIED: 03/08/16 23:33:45 PST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -11,7 +11,7 @@
 
 if [ "ietf-sync.sh" == "$(basename $0)" ] && [ -f $HOME/.bashrc ]; then
     source $HOME/.bashrc
-    log_init INFO $SCRIPT_LOGS/ietf-sync.sh.log
+    log_init INFO $SCRPT_LOGS/ietf-sync.sh.log
 fi
 
 usage()

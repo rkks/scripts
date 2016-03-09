@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Process handling utilities
 #  CREATED: 07/17/13 17:14:12 IST
-# MODIFIED: 10/06/14 14:21:18 IST
+# MODIFIED: 03/08/16 23:31:33 PST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -12,7 +12,7 @@
 # Source .bashrc only if invoked as a sub-shell.
 if [[ "$(basename ps.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc ]; then
     source $HOME/.bashrc
-    log_init INFO $SCRIPT_LOGS/ps.log
+    log_init INFO $SCRPT_LOGS/ps.log
 fi
 
 # zomb_ps : list zombie processes

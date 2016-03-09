@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 02/24/16 14:59:12 IST
+# MODIFIED: 03/09/16 02:27:07 PST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -76,50 +76,63 @@ function up() { local d=""; for ((i=1;i<=$1;i++)); do d=../$d; done; echo "cd $d
 
 # Coloring functions
 # Colors - Enable colors for ls, etc.
-function dark_dircolors()
+function bash_dircolors()
 {
-    [[ ! -f $CUSTOM_CONFS/dir_colors_light ]] && { echo "[ERROR] $CUSTOM_CONFS/dir_colors_light not found."; return $ENOENT; }
-    (own dircolors) && eval $(dircolors -b $CUSTOM_CONFS/dir_colors_light;)
+    case $* in
+    light)
+        [[ -f $CUST_CONFS/dir_colors_light ]] && { (own dircolors) && eval $(dircolors -b $CUST_CONFS/dir_colors_light;); }
+        ;;
+    *)
+        [[ -f $CUST_CONFS/dir_colors_dark ]] && { (own dircolors) && eval $(dircolors -b $CUST_CONFS/dir_colors_dark;); }
+        ;;
+    esac
 }
 
-function light_dircolors()
+function ps1_prompt()
 {
-    [[ ! -f $CUSTOM_CONFS/dir_colors_dark ]] && { echo "[ERROR] $CUSTOM_CONFS/dir_colors_dark not found."; return $ENOENT; }
-    (own dircolors) && eval $(dircolors -b $CUSTOM_CONFS/dir_colors_dark;)
+    local BLACKD="\[\033[1;30m\]"; local REDD="\[\033[1;31m\]";
+    local GREEND="\[\033[1;32m\]"; local YELLOWD="\[\033[1;33m\]";
+    local BLUED="\[\033[1;34m\]"; local PURPLED="\[\033[1;35m\]";
+    local CYAND="\[\033[1;36m\]"; local WHITED="\[\033[1;37m\]"
+    local BLACKL="\[\033[0;30m\]"; local REDL="\[\033[0;31m\]";
+    local GREENL="\[\033[0;32m\]"; local YELLOWL="\[\033[0;33m\]";
+    local BLUEL="\[\033[0;34m\]"; local PURPLEL="\[\033[0;35m\]";
+    local CYANL="\[\033[0;36m\]"; local WHITEL="\[\033[0;37m\]";
+    export PS1_DARK="$BLACKD[$BLUED\D{%y/%b/%d} \t$BLACKD|$PURPLED\h$REDD:$GREEND\w$BLACKD]\$\[\033[0m\] "
+    export PS1_LIGHT="$BLACKL[$BLUEL\D{%y/%b/%d} \t$BLACKL|$PURPLEL\h$REDL:$GREENL\w$BLACKL]\$\[\033[0m\] "
+    export PS1_LONG="$BLACKL[$BLUEL\D{%Y/%b/%d} \t$BLACKL|$PURPLEL\u$REDL@$PURPLEL\h$REDL:$GREENL\w$BLACKL]\$\[\033[0m\] "
+    case $* in
+    light)
+        [[ ! -z $PS1_LIGHT ]] && { export PS1=$PS1_LIGHT; }
+        ;;
+    long)
+        [[ ! -z $PS1_LONG ]] && { export PS1=$PS1_LONG; }
+        ;;
+    *)
+        [[ ! -z $PS1_DARK ]] && { export PS1=$PS1_DARK; }
+        ;;
+    esac
 }
 
-function dark_prompt()
+# toggle PS1
+function ps1_theme()
 {
-    local BLACKB="\[\033[1;30m\]"; local REDB="\[\033[1;31m\]";
-    local GREENB="\[\033[1;32m\]"; local YELLOWB="\[\033[1;33m\]";
-    local BLUEB="\[\033[1;34m\]"; local PURPLEB="\[\033[1;35m\]";
-    local CYANB="\[\033[1;36m\]"; local WHITEB="\[\033[1;37m\]"
-    local PS1_BLACK="$BLACKB[$BLUEB\D{%b/%d} \t$BLACKB|$PURPLEB\u$REDB@$PURPLEB\h$REDB:$GREENB\w$BLACKB]\$\[\033[0m\] "
-    local PS1_BLACK_BRIEF="$BLACKB[$BLUEB\D{%b/%d} \t$BLACKB|$GREENB\w$BLACKB]\$\[\033[0m\] "
-    [[ ! -z $PS1_BRIEF ]] && { export PS1=$PS1_BLACK_BRIEF; }|| { export PS1=$PS1_BLACK; }
-}
+    [[ $# -eq 1 ]] && { (have ps1_prompt) && ps1_prompt $*; (have bash_dircolors) && bash_dircolors $*; return 0; }
 
-function light_prompt()
-{
-    local BLACK="\[\033[0;30m\]"; local RED="\[\033[0;31m\]";
-    local GREEN="\[\033[0;32m\]"; local YELLOW="\[\033[0;33m\]";
-    local BLUE="\[\033[0;34m\]"; local PURPLE="\[\033[0;35m\]";
-    local CYAN="\[\033[0;36m\]"; local WHITE="\[\033[0;37m\]";
-    local PS1_WHITE="$BLACK[$BLUE\D{%b/%d} \t$BLACK|$PURPLE\u$RED@$PURPLE\h$RED:$GREEN\w$BLACK]\$\[\033[0m\] "
-    local PS1_WHITE_BRIEF="$BLACK[$BLUE\D{%b/%d} \t$BLACK|$GREEN\w$BLACK]\$\[\033[0m\] "
-    [[ ! -z $PS1_BRIEF ]] && { export PS1=$PS1_WHITE_BRIEF; }|| { export PS1=$PS1_WHITE; }
-}
-
-function dark()
-{
-    (have dark_prompt) && dark_prompt;
-    (have dark_dircolors) && dark_dircolors;
-}
-
-function light()
-{
-    (have light_prompt) && light_prompt;
-    (have light_dircolors) && light_dircolors;
+    case $PS1 in
+    "$PS1_LIGHT")
+        (have ps1_prompt) && ps1_prompt dark;
+        (have bash_dircolors) && bash_dircolors dark;
+        ;;
+    "$PS1_DARK")
+        (have ps1_prompt) && ps1_prompt light;
+        (have bash_dircolors) && bash_dircolors light;
+        ;;
+    "$PS1_LONG")
+        ;;
+    "$PS1_SHORT")
+        ;;
+    esac
 }
 
 # Path management functions

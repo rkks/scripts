@@ -3,7 +3,7 @@
 #   https://github.com/nischithbm/bash-logger
 #   http://sourceforge.net/projects/bash-logger
 #  CREATED: 06/21/13 23:58:09 IST
-# MODIFIED: 02/05/15 12:16:35 IST
+# MODIFIED: 03/08/16 23:34:21 PST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -26,7 +26,7 @@
 : ${PATH=/usr/local/bin:/usr/sbin:/usr/bin:/bin}
 
 # Tunable Config Options (Defaults)
-LOG_FILE_PATH="$SCRIPT_LOGS/log_utils.log"
+LOG_FILE_PATH="$SCRPT_LOGS/log_utils.log"
 LOG_LEVEL=INFO
 LOG_DATE_FORMAT="%Y-%m-%d %H:%M:%S"
 LOG_MSG_FORMAT="%s %s\n"

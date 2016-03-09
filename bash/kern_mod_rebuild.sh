@@ -2,7 +2,7 @@
 #  DETAILS: Builds linux kernel module for specific distro. Built from
 # http://www.pixelbeat.org/docs/rebuild_kernel_module.html
 #  CREATED: 03/03/13 19:53:21 IST
-# MODIFIED: 10/06/14 14:20:38 IST
+# MODIFIED: 03/08/16 23:30:53 PST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -12,7 +12,7 @@
 # Source .bashrc only if invoked as a sub-shell.
 if [[ "$(basename kern_mod_rebuild.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc ]; then
     source $HOME/.bashrc
-    log_init INFO $SCRIPT_LOGS/kern_mod_rebuild.log
+    log_init INFO $SCRPT_LOGS/kern_mod_rebuild.log
     # Global defines. (Re)define ENV only if necessary.
 fi
 

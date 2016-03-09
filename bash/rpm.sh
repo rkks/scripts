@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: RPM wrappers
 #  CREATED: 07/16/13 21:11:04 IST
-# MODIFIED: 10/06/14 14:21:24 IST
+# MODIFIED: 03/08/16 23:31:56 PST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -12,7 +12,7 @@
 # Source .bashrc only if invoked as a sub-shell.
 if [[ "$(basename rpm.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc ]; then
     source $HOME/.bashrc
-    log_init INFO $SCRIPT_LOGS/rpm.log
+    log_init INFO $SCRPT_LOGS/rpm.log
 fi
 
 # Create cpio image with all files under current directory (no recurse)

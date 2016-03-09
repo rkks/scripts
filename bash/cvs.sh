@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: CVS related actions
 #  CREATED: 11/07/12 12:54:25 IST
-# MODIFIED: 10/06/14 14:20:07 IST
+# MODIFIED: 03/08/16 23:29:50 PST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2012, Ravikiran K.S.
@@ -11,7 +11,7 @@
 # Source .bashrc only if invoked as a sub-shell.
 if [[ "$(basename cvs.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc ]; then
     source $HOME/.bashrc
-    log_init INFO $SCRIPT_LOGS/cvs.log
+    log_init INFO $SCRPT_LOGS/cvs.log
     # Global defines. (Re)define ENV only if necessary.
 fi
 

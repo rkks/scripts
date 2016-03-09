@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Tar wrappers
 #  CREATED: 07/17/13 15:53:58 IST
-# MODIFIED: 10/20/14 14:03:17 IST
+# MODIFIED: 03/08/16 23:32:39 PST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -12,7 +12,7 @@
 # Source .bashrc only if invoked as a sub-shell.
 if [[ "$(basename tar.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc ]; then
     source $HOME/.bashrc
-    log_init INFO $SCRIPT_LOGS/tar.log
+    log_init INFO $SCRPT_LOGS/tar.log
 fi
 
 function archive()
@@ -20,11 +20,11 @@ function archive()
     test -e $2 && echo "archiving $2 into $2.$1" || { echo "'$2' is not a valid path"; return $EINVAL; }
     case $1 in
         7z)   7za a -t7z -mx9 $2.$1 $2   ;;
-        bz2)  tar cvjf -X $CUSTOM_CONFS/tarexclude $2.$1 $2    ;;
-        gz)   tar cvzf -X $CUSTOM_CONFS/tarexclude $2.$1 $2    ;;
-        tar)  tar cvf -X $CUSTOM_CONFS/tarexclude $2.$1 $2     ;;
-        tbz2) tar cvjf -X $CUSTOM_CONFS/tarexclude $2.$1 $2    ;;
-        tgz)  tar cvzf -X $CUSTOM_CONFS/tarexclude $2.$1 $2    ;;
+        bz2)  tar cvjf -X $CUST_CONFS/tarexclude $2.$1 $2    ;;
+        gz)   tar cvzf -X $CUST_CONFS/tarexclude $2.$1 $2    ;;
+        tar)  tar cvf -X $CUST_CONFS/tarexclude $2.$1 $2     ;;
+        tbz2) tar cvjf -X $CUST_CONFS/tarexclude $2.$1 $2    ;;
+        tgz)  tar cvzf -X $CUST_CONFS/tarexclude $2.$1 $2    ;;
         rar)  rar x $2    ;;
         zip)  zip $2      ;;
         Z)    compress $2 ;;

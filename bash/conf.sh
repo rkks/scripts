@@ -20,40 +20,27 @@
 
 # .bashrc not sourced as it creates cyclic dependencies during first time setting up of environment.
 
-link-files()
+function link-files()
 {
-    args=$#
-    if [ $args -le 3 ]; then
-        echo "usage: link-files <flag> <src-dir> <dst-dir> <files-list>"
-        echo "  flag = DOT|NORMAL"
-        echo "Ex. link-files DOT $HOME/conf $HOME alias bashrc profile"
-        return;
-    fi
-    FLAG=$1; shift;
-    SRC_DIR=$1; shift;
-    DST_DIR=$1; shift;
-    FILES=$*
+    [[ $# -lt 3 ]] && { echo "Usage: link-files <flag> <src-dir> <dst-dir> [files-list]"; echo "  flag = DOT|NORMAL"; return; }
 
+    local FLAG=$1; shift; local SRC_DIR=$1; shift; local DST_DIR=$1; shift;
     [[ ! -d $SRC_DIR ]] && { echo "[ERROR] src: $SRC_DIR doesnt exist"; exit 1; }
     [[ ! -d $DST_DIR ]] && { echo "[INFO] dst: $DST_DIR doesnt exist. Creating new one."; mkdir -p $DST_DIR; }
-
-    for file in $FILES; do
-        case $FLAG in
-            "DOT")
-                dstfile=.$file
-                ;;
-            *)
-                dstfile=$file
-                ;;
-        esac
-        if [ -h "$DST_DIR/$dstfile" -o -e "$DST_DIR/$dstfile" ]; then
-	    if [ -h "$SRC_DIR/$file" -o -e "$SRC_DIR/$file" ]; then
-	        { echo "Unlinking $DST_DIR/$dstfile"; }	# unlink $DST_DIR/$dstfile;
-	    else
-	        { echo "Moving $DST_DIR/$dstfile"; mv $DST_DIR/$dstfile $SRC_DIR/$file; }
-	    fi
-	fi
-        { echo "Linking $DST_DIR/$file"; ln -s $SRC_DIR/$file $DST_DIR/$dstfile; }
+    if [ $# -eq 3 ]; then
+        cd $SRC_DIR || { echo "Unable to change directory to $SRC_DIR"; exit 1; }
+        local FILES=$(find -P . -maxdepth 1 ! -path . -type f -name \* | sed 's/..//');
+        local DIRS=$(find -P . -maxdepth 1 ! -path . -type d -name \* | sed 's/..//');
+        local LIST="$DIRS $FILES";
+    else
+        local LIST="$*";
+    fi
+    for item in $LIST; do
+        [[ ! -e $SRC_DIR/$item -o -h "$SRC_DIR/$item" ]] && { echo "$SRC_DIR/$item not found or symlink"; continue; }
+        [[ "$FLAG" == "DOT" ]] && { dst=.$item; } || { dst=$item; }
+        [[ -h "$DST_DIR/$dst" ]] && { echo "Unlink symlink $DST_DIR/$dst"; unlink $DST_DIR/$dst; }
+        [[ -e "$DST_DIR/$dst" ]] && { mkdir -p tdir; echo "Move $DST_DIR/$dst => $PWD/tdir/"; mv $DST_DIR/$dst tdir/; }
+        [[ ! -e "$DST_DIR/$dst" ]] && { echo "Link $SRC_DIR/$item => $DST_DIR/$dst"; ln -s $SRC_DIR/$item $DST_DIR/$dst; }
     done
 }
 

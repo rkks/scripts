@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Invokes rsyncs with well known better options.
 #  CREATED: 06/29/13 16:14:34 IST
-# MODIFIED: 10/06/14 14:21:28 IST
+# MODIFIED: 03/08/16 23:32:20 PST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -15,11 +15,11 @@
 # Source .bashrc only if invoked as a sub-shell. Not if sourced.
 if [[ "$(basename rsync.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc ]; then
     source $HOME/.bashrc
-    log_init INFO $SCRIPT_LOGS/rsync.log
+    log_init INFO $SCRPT_LOGS/rsync.log
 fi
 
 # contains a wildcard pattern per line of files to exclude. has no entries -- sync everything
-RSYNC_EXCLUDE=$CUSTOM_CONFS/rsyncexclude
+RSYNC_EXCLUDE=$CUST_CONFS/rsyncexclude
 
 # common rsync options
 # -a - sync all file perms/attributes
@@ -39,7 +39,7 @@ RSYNC_EXCLUDE=$CUSTOM_CONFS/rsyncexclude
 # --out-format="%i|%n|" - Display itemized changes in this format.
 # --safe-links - ignore symlinks that point outside the tree
 RSYNC_OPTS="-ahiuWxz -e ssh --stats --force --delete --safe-links --out-format=%i|%n"
-RSYNC_OPTS+=" --log-file=$SCRIPT_LOGS/rsync.log --exclude-from=$RSYNC_EXCLUDE"
+RSYNC_OPTS+=" --log-file=$SCRPT_LOGS/rsync.log --exclude-from=$RSYNC_EXCLUDE"
 #RSYNC_OPTS+=" --rsync-path=/homes/raviks/tools/bin/freebsd/rsync"
 
 function rsync_dir()
@@ -81,7 +81,7 @@ function rsync_cron()
     fi
 
     # Directory path names must be terminated with a "/" or "/."
-    CRON_RSYNC_LIST=$CUSTOM_CONFS/rsync.lst
+    CRON_RSYNC_LIST=$CUST_CONFS/rsync.lst
 
     rsync_list $CRON_RSYNC_LIST $*
 }
