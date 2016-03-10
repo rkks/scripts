@@ -10,8 +10,8 @@
 # Work Tools: curl ncdu rsync git wget ncurses tmux lighttpd resin
 # Dev Tools: ant gmake libevent ctags cscope global splint vim jdk sloccount
 
-if [ "install.sh" == "$(basename $0)" ] && [ -f $HOME/.bashrc ]; then
-    source $HOME/.bashrc
+if [ "install.sh" == "$(basename $0)" ] && [ -f $HOME/.bashrc.dev ]; then
+    source $HOME/.bashrc.dev
     log_init INFO $SCRPT_LOGS/install.log
 fi
 

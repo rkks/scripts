@@ -11,9 +11,9 @@
 
 #set -uvx               # Treat unset variables as an error, verbose, debug mode
 
-# Source .bashrc only if invoked as a sub-shell.
-if [[ "$(basename backup.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc ]; then
-    source $HOME/.bashrc
+# Source .bashrc.dev only if invoked as a sub-shell.
+if [[ "$(basename backup.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc.dev ]; then
+    source $HOME/.bashrc.dev
     log_init INFO $SCRPT_LOGS/backup.log
     # Global defines go here. (Re)define ENV only if necessary.
     # Reduce list of paths to trusted directories (most->least trusted)

@@ -12,9 +12,9 @@
 
 #set -uvx           # Warn unset vars as error, Verbose (echo each command), Enable debug mode
 
-# Source .bashrc only if invoked as a sub-shell. Not if sourced.
-if [[ "$(basename rsync.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc ]; then
-    source $HOME/.bashrc
+# Source .bashrc.dev only if invoked as a sub-shell. Not if sourced.
+if [[ "$(basename rsync.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc.dev ]; then
+    source $HOME/.bashrc.dev
     log_init INFO $SCRPT_LOGS/rsync.log
 fi
 

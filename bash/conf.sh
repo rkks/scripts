@@ -18,7 +18,7 @@
 
 #set -uvx               # Treat unset variables as an error, verbose, debug mode
 
-# .bashrc not sourced as it creates cyclic dependencies during first time setting up of environment.
+# .bashrc.dev not sourced as it creates cyclic dependencies during first time setting up of environment.
 
 function link-files()
 {
@@ -51,7 +51,7 @@ link-confs()
     echo "Linking Configuration Files/Directories - Start"
 
     CONFS="elinks links vim vnc"
-    CONFS+=" alias bashrc bash_profile bash_logout cshrc login login_conf profile shrc"
+    CONFS+=" alias bashrc.dev bash_profile bash_logout cshrc login login_conf profile shrc"
     CONFS+=" cvsignore gitignore svnignore"
     CONFS+=" mailrc pinerc screenrc toprc gvimrc vimrc tmux.conf"
     CONFS+=" gdbinit gitattributes gitconfig indent.pro"

@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 03/09/16 02:27:07 PST
+# MODIFIED: 03/10/16 02:51:57 PST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -79,11 +79,11 @@ function up() { local d=""; for ((i=1;i<=$1;i++)); do d=../$d; done; echo "cd $d
 function bash_dircolors()
 {
     case $* in
-    light)
-        [[ -f $CUST_CONFS/dir_colors_light ]] && { (own dircolors) && eval $(dircolors -b $CUST_CONFS/dir_colors_light;); }
+    dark)
+        [[ -f $CUST_CONFS/dir_colors_dark ]] && { (own dircolors) && eval $(dircolors -b $CUST_CONFS/dir_colors_dark;); }
         ;;
     *)
-        [[ -f $CUST_CONFS/dir_colors_dark ]] && { (own dircolors) && eval $(dircolors -b $CUST_CONFS/dir_colors_dark;); }
+        [[ -f $CUST_CONFS/dir_colors_light ]] && { (own dircolors) && eval $(dircolors -b $CUST_CONFS/dir_colors_light;); }
         ;;
     esac
 }
@@ -102,20 +102,20 @@ function ps1_prompt()
     export PS1_LIGHT="$BLACKL[$BLUEL\D{%y/%b/%d} \t$BLACKL|$PURPLEL\h$REDL:$GREENL\w$BLACKL]\$\[\033[0m\] "
     export PS1_LONG="$BLACKL[$BLUEL\D{%Y/%b/%d} \t$BLACKL|$PURPLEL\u$REDL@$PURPLEL\h$REDL:$GREENL\w$BLACKL]\$\[\033[0m\] "
     case $* in
-    light)
-        [[ ! -z $PS1_LIGHT ]] && { export PS1=$PS1_LIGHT; }
+    dark)
+        [[ ! -z $PS1_DARK ]] && { export PS1=$PS1_DARK; }
         ;;
     long)
         [[ ! -z $PS1_LONG ]] && { export PS1=$PS1_LONG; }
         ;;
     *)
-        [[ ! -z $PS1_DARK ]] && { export PS1=$PS1_DARK; }
+        [[ ! -z $PS1_LIGHT ]] && { export PS1=$PS1_LIGHT; }
         ;;
     esac
 }
 
 # toggle PS1
-function ps1_theme()
+function ps1_toggle()
 {
     [[ $# -eq 1 ]] && { (have ps1_prompt) && ps1_prompt $*; (have bash_dircolors) && bash_dircolors $*; return 0; }
 

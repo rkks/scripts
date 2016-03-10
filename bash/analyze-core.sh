@@ -9,9 +9,9 @@
 # Warn unset vars as error, Verbose (echo each command), Enable debug mode
 #set -uvx
 
-# Source .bashrc only if invoked as a sub-shell.
-if [[ "$(basename analyze-core.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc ]; then
-    source $HOME/.bashrc
+# Source .bashrc.dev only if invoked as a sub-shell.
+if [[ "$(basename analyze-core.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc.dev ]; then
+    source $HOME/.bashrc.dev
     # Global defines. (Re)define ENV only if necessary.
 fi
 

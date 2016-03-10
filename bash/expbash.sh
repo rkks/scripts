@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Source .bashrc only if invoked as a sub-shell.
-if [[ "$(basename bashexp.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc ]; then
-    source $HOME/.bashrc
+# Source .bashrc.dev only if invoked as a sub-shell.
+if [[ "$(basename bashexp.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc.dev ]; then
+    source $HOME/.bashrc.dev
 fi
 
 [ "$#" -eq 2 ] || die "2 arguments required, $# provided"

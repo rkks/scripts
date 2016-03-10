@@ -14,9 +14,9 @@
 # Must be run as root.
 #
 
-# Source .bashrc only if invoked as a sub-shell.
-if [[ "$(basename oprofile-run.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc ]; then
-    source $HOME/.bashrc
+# Source .bashrc.dev only if invoked as a sub-shell.
+if [[ "$(basename oprofile-run.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc.dev ]; then
+    source $HOME/.bashrc.dev
     # define new ENV only if necessary.
 fi
 

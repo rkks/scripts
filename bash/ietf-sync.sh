@@ -9,8 +9,8 @@
 
 #set -uvx   # Warn unset vars, Verbose (echo each command), Enable debug mode
 
-if [ "ietf-sync.sh" == "$(basename $0)" ] && [ -f $HOME/.bashrc ]; then
-    source $HOME/.bashrc
+if [ "ietf-sync.sh" == "$(basename $0)" ] && [ -f $HOME/.bashrc.dev ]; then
+    source $HOME/.bashrc.dev
     log_init INFO $SCRPT_LOGS/ietf-sync.sh.log
 fi
 

@@ -9,7 +9,7 @@
 # Warn unset vars as error, Verbose (echo each command), Enable debug mode
 #set -uvx
 
-# No utilities from ~/.bashrc.dev are used here, except PATH. So, only doing that.
+# No utilities from ~/.bashrc are used here, except PATH. So, only doing that.
 UNAMES=$(uname -s)
 export PATH=".:$HOME/scripts/bin:$HOME/tools/$UNAMES/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
