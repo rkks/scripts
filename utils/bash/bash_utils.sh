@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 03/10/16 02:51:57 PST
+# MODIFIED: 03/27/16 19:02:08 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -78,61 +78,36 @@ function up() { local d=""; for ((i=1;i<=$1;i++)); do d=../$d; done; echo "cd $d
 # Colors - Enable colors for ls, etc.
 function bash_dircolors()
 {
-    case $* in
-    dark)
-        [[ -f $CUST_CONFS/dir_colors_dark ]] && { (own dircolors) && eval $(dircolors -b $CUST_CONFS/dir_colors_dark;); }
-        ;;
-    *)
-        [[ -f $CUST_CONFS/dir_colors_light ]] && { (own dircolors) && eval $(dircolors -b $CUST_CONFS/dir_colors_light;); }
-        ;;
-    esac
+    [[ -z $PS1_COLOR ]] && { echo "ps1_prompt: PS1_COLOR not set"; return 1; }
+    local d="$CUST_CONFS/dir_colors_$PS1_COLOR"; [[ ! -f $d ]] && { return 1; }
+    (own dircolors) && { eval $(dircolors -b $d); return 0; }
 }
 
 function ps1_prompt()
 {
-    local BLACKD="\[\033[1;30m\]"; local REDD="\[\033[1;31m\]";
-    local GREEND="\[\033[1;32m\]"; local YELLOWD="\[\033[1;33m\]";
-    local BLUED="\[\033[1;34m\]"; local PURPLED="\[\033[1;35m\]";
-    local CYAND="\[\033[1;36m\]"; local WHITED="\[\033[1;37m\]"
-    local BLACKL="\[\033[0;30m\]"; local REDL="\[\033[0;31m\]";
-    local GREENL="\[\033[0;32m\]"; local YELLOWL="\[\033[0;33m\]";
-    local BLUEL="\[\033[0;34m\]"; local PURPLEL="\[\033[0;35m\]";
-    local CYANL="\[\033[0;36m\]"; local WHITEL="\[\033[0;37m\]";
-    export PS1_DARK="$BLACKD[$BLUED\D{%y/%b/%d} \t$BLACKD|$PURPLED\h$REDD:$GREEND\w$BLACKD]\$\[\033[0m\] "
-    export PS1_LIGHT="$BLACKL[$BLUEL\D{%y/%b/%d} \t$BLACKL|$PURPLEL\h$REDL:$GREENL\w$BLACKL]\$\[\033[0m\] "
-    export PS1_LONG="$BLACKL[$BLUEL\D{%Y/%b/%d} \t$BLACKL|$PURPLEL\u$REDL@$PURPLEL\h$REDL:$GREENL\w$BLACKL]\$\[\033[0m\] "
-    case $* in
+    [[ -z $PS1_COLOR ]] && { echo "ps1_prompt: PS1_COLOR not set"; return 1; }
+    # B=BLACK, W=WHITE, Y=YELLOW, R=RED, G=GREEN, P=PURPLE, U=BLUE, C=CYAN
+    case $PS1_COLOR in
     dark)
-        [[ ! -z $PS1_DARK ]] && { export PS1=$PS1_DARK; }
-        ;;
-    long)
-        [[ ! -z $PS1_LONG ]] && { export PS1=$PS1_LONG; }
+        local B="\[\033[1;30m\]"; local R="\[\033[1;31m\]"; local G="\[\033[1;32m\]"; local Y="\[\033[1;33m\]";
+        local U="\[\033[1;34m\]"; local P="\[\033[1;35m\]"; local C="\[\033[1;36m\]"; local W="\[\033[1;37m\]";
         ;;
     *)
-        [[ ! -z $PS1_LIGHT ]] && { export PS1=$PS1_LIGHT; }
+        local B="\[\033[0;30m\]"; local R="\[\033[0;31m\]"; local G="\[\033[0;32m\]"; local Y="\[\033[0;33m\]";
+        local U="\[\033[0;34m\]"; local P="\[\033[0;35m\]"; local C="\[\033[0;36m\]"; local W="\[\033[0;37m\]";
         ;;
     esac
+    # default/short PS1
+    [[ $# -eq 0 ]] && { export PS1="$B[$U\D{%y/%b/%d} \t$B|$G\w$B]\$\[\033[0m\] "; return 0; }
+    # long PS1
+    export PS1="$B[$U\D{%Y/%b/%d} \t$B|$P\u$R@$P\h$R:$G\w$B]\$\[\033[0m\] "
 }
 
 # toggle PS1
 function ps1_toggle()
 {
-    [[ $# -eq 1 ]] && { (have ps1_prompt) && ps1_prompt $*; (have bash_dircolors) && bash_dircolors $*; return 0; }
-
-    case $PS1 in
-    "$PS1_LIGHT")
-        (have ps1_prompt) && ps1_prompt dark;
-        (have bash_dircolors) && bash_dircolors dark;
-        ;;
-    "$PS1_DARK")
-        (have ps1_prompt) && ps1_prompt light;
-        (have bash_dircolors) && bash_dircolors light;
-        ;;
-    "$PS1_LONG")
-        ;;
-    "$PS1_SHORT")
-        ;;
-    esac
+    [[ "$PS1_COLOR" == "light" ]] && { export PS1_COLOR=dark; } || { export PS1_COLOR=light; }
+    (have ps1_prompt) && ps1_prompt; (have bash_dircolors) && bash_dircolors;
 }
 
 # Path management functions

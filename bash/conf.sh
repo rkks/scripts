@@ -36,10 +36,10 @@ function link-files()
         local LIST="$*";
     fi
     for item in $LIST; do
-        [[ ! -e $SRC_DIR/$item -o -h "$SRC_DIR/$item" ]] && { echo "$SRC_DIR/$item not found or symlink"; continue; }
+        [[ ! -e $SRC_DIR/$item || -h "$SRC_DIR/$item" ]] && { echo "$SRC_DIR/$item not found or symlink"; continue; }
         [[ "$FLAG" == "DOT" ]] && { dst=.$item; } || { dst=$item; }
         [[ -h "$DST_DIR/$dst" ]] && { echo "Unlink symlink $DST_DIR/$dst"; unlink $DST_DIR/$dst; }
-        [[ -e "$DST_DIR/$dst" ]] && { mkdir -p tdir; echo "Move $DST_DIR/$dst => $PWD/tdir/"; mv $DST_DIR/$dst tdir/; }
+        [[ -e "$DST_DIR/$dst" ]] && { mkdir -p ~/tdir; echo "Move $DST_DIR/$dst => ~/tdir/"; mv $DST_DIR/$dst ~/tdir/; }
         [[ ! -e "$DST_DIR/$dst" ]] && { echo "Link $SRC_DIR/$item => $DST_DIR/$dst"; ln -s $SRC_DIR/$item $DST_DIR/$dst; }
     done
 }
@@ -51,7 +51,7 @@ link-confs()
     echo "Linking Configuration Files/Directories - Start"
 
     CONFS="elinks links vim vnc"
-    CONFS+=" alias bashrc.dev bash_profile bash_logout cshrc login login_conf profile shrc"
+    CONFS+=" alias bashrc bash_profile bash_logout cshrc login login_conf profile shrc"
     CONFS+=" cvsignore gitignore svnignore"
     CONFS+=" mailrc pinerc screenrc toprc gvimrc vimrc tmux.conf"
     CONFS+=" gdbinit gitattributes gitconfig indent.pro"
@@ -59,6 +59,7 @@ link-confs()
     CONFS+=" hushlogin"
 
     link-files DOT $HOME/conf $HOME $CONFS
+    link-files DOT $HOME/conf/custom $HOME bashrc.dev
 
     echo "Linking Configuration Files/Directories - Done"
 }
