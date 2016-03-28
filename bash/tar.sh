@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Tar wrappers
 #  CREATED: 07/17/13 15:53:58 IST
-# MODIFIED: 03/08/16 23:32:39 PST
+# MODIFIED: 03/28/16 17:49:59 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -10,10 +10,7 @@
 #set -uvx
 
 # Source .bashrc.dev only if invoked as a sub-shell.
-if [[ "$(basename tar.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc.dev ]; then
-    source $HOME/.bashrc.dev
-    log_init INFO $SCRPT_LOGS/tar.log
-fi
+[[ "$(basename tar.sh)" == "$(basename -- $0)" && -f $HOME/.bashrc.dev ]] && { source $HOME/.bashrc.dev; }
 
 function archive()
 {

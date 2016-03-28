@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Cscope Utils
 #  CREATED: 06/25/13 11:05:14 IST
-# MODIFIED: 03/08/16 23:29:22 PST
+# MODIFIED: 03/28/16 17:45:17 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -10,10 +10,7 @@
 #set -uvx
 
 # Source .bashrc.dev only if invoked as a sub-shell. Not if sourced.
-if [[ "$(basename cscope_cgtags.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc.dev ]; then
-    source $HOME/.bashrc.dev
-    log_init INFO $SCRPT_LOGS/cscope_cgtags.log
-fi
+[[ "$(basename cscope_cgtags.sh)" == "$(basename -- $0)" && -f $HOME/.bashrc.dev ]] && { source $HOME/.bashrc.dev; }
 
 SRC_FILES=src.list
 

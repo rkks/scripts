@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Invokes rsyncs with well known better options.
 #  CREATED: 06/29/13 16:14:34 IST
-# MODIFIED: 03/08/16 23:32:20 PST
+# MODIFIED: 03/28/16 17:49:44 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -13,10 +13,7 @@
 #set -uvx           # Warn unset vars as error, Verbose (echo each command), Enable debug mode
 
 # Source .bashrc.dev only if invoked as a sub-shell. Not if sourced.
-if [[ "$(basename rsync.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc.dev ]; then
-    source $HOME/.bashrc.dev
-    log_init INFO $SCRPT_LOGS/rsync.log
-fi
+[[ "$(basename rsync.sh)" == "$(basename -- $0)" && -f $HOME/.bashrc.dev ]] && { source $HOME/.bashrc.dev; }
 
 # contains a wildcard pattern per line of files to exclude. has no entries -- sync everything
 RSYNC_EXCLUDE=$CUST_CONFS/rsyncexclude

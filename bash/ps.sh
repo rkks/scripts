@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Process handling utilities
 #  CREATED: 07/17/13 17:14:12 IST
-# MODIFIED: 03/08/16 23:31:33 PST
+# MODIFIED: 03/28/16 17:49:11 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -10,10 +10,7 @@
 #set -uvx
 
 # Source .bashrc.dev only if invoked as a sub-shell.
-if [[ "$(basename ps.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc.dev ]; then
-    source $HOME/.bashrc.dev
-    log_init INFO $SCRPT_LOGS/ps.log
-fi
+[[ "$(basename ps.sh)" == "$(basename -- $0)" && -f $HOME/.bashrc.dev ]] && { source $HOME/.bashrc.dev; }
 
 # zomb_ps : list zombie processes
 function zomb_ps () { ps hr -Nos | awk 'if ($1 == "Z") {print $1}'; }

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Send mail to pre-defined email addresses
 #  CREATED: 11/19/12 14:14:03 IST
-# MODIFIED: 03/08/16 23:31:05 PST
+# MODIFIED: 03/28/16 17:48:38 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2012, Ravikiran K.S.
@@ -9,11 +9,8 @@
 #set -uvx               # Treat unset variables as an error, verbose, debug mode
 
 # Source .bashrc.dev only if invoked as a sub-shell.
-if [[ "$(basename mail.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc.dev ]; then
-    source $HOME/.bashrc.dev
-    log_init INFO $SCRPT_LOGS/mail.log
-    # Global defines. (Re)define ENV only if necessary.
-fi
+[[ "$(basename mail.sh)" == "$(basename -- $0)" && -f $HOME/.bashrc.dev ]] && { source $HOME/.bashrc.dev; }
+# Global defines. (Re)define ENV only if necessary.
 
 # ravikirandotks@gmail.com mrksravikiran@gmail.com friends4web@gmail.com
 MAILADDRS=raviks@juniper.net

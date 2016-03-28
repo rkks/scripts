@@ -3,7 +3,7 @@
 #
 #   AUTHOR: Ravikiran K.S. (ravikirandotks@gmail.com)
 #  CREATED: 11/08/11 13:35:02 PST
-# MODIFIED: 03/08/16 23:28:23 PST
+# MODIFIED: 03/28/16 17:44:57 IST
 
 # Cron has defaults below. Redefining to suite yours(if & only if necessary).
 # HOME=user-home-directory  # LOGNAME=user.s-login-id
@@ -12,10 +12,7 @@
 #set -uvx       # Treat unset variables as an error, verbose, debug mode
 
 # Source .bashrc.dev only if invoked as a sub-shell. Not if sourced.
-if [[ "$(basename cron.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc.dev ]; then
-    source $HOME/.bashrc.dev
-    log_init INFO $SCRPT_LOGS/cron.log
-fi
+[[ "$(basename cron.sh)" == "$(basename -- $0)" && -f $HOME/.bashrc.dev ]] && { source $HOME/.bashrc.dev; }
 
 function backup()
 {

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Find command wrappers
 #  CREATED: 07/16/13 21:22:06 IST
-# MODIFIED: 03/08/16 23:30:39 PST
+# MODIFIED: 03/28/16 17:46:46 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -10,12 +10,8 @@
 #set -uvx
 
 # Source .bashrc.dev only if invoked as a sub-shell.
-if [[ "$(basename find.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc.dev ]; then
-    source $HOME/.bashrc.dev
-    log_init INFO $SCRPT_LOGS/find.log
-fi
+[[ "$(basename find.sh)" == "$(basename -- $0)" && -f $HOME/.bashrc.dev ]] && { source $HOME/.bashrc.dev; }
 
-set -x
 function findcores() { find ${1:-.} -type f -name "*core*.gz"; }
 
 function clean_obj()

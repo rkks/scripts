@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Downloads all links provided in ~/conf/custom/downloads file
 #  CREATED: 11/19/12 12:43:39 IST
-# MODIFIED: 03/08/16 23:30:04 PST
+# MODIFIED: 03/28/16 17:46:02 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2012, Ravikiran K.S.
@@ -9,10 +9,7 @@
 #set -uvx               # Treat unset variables as an error, verbose, debug mode
 
 # Source .bashrc.dev only if invoked as a sub-shell.
-if [[ "download.sh" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc.dev ]; then
-    source $HOME/.bashrc.dev
-    log_init INFO $SCRPT_LOGS/download.log
-fi
+[[ "$(basename download.sh)" == "$(basename -- $0)" && -f $HOME/.bashrc.dev ]] && { source $HOME/.bashrc.dev; }
 
 usage()
 {

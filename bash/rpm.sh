@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: RPM wrappers
 #  CREATED: 07/16/13 21:11:04 IST
-# MODIFIED: 03/08/16 23:31:56 PST
+# MODIFIED: 03/28/16 17:49:28 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -10,10 +10,7 @@
 #set -uvx
 
 # Source .bashrc.dev only if invoked as a sub-shell.
-if [[ "$(basename rpm.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc.dev ]; then
-    source $HOME/.bashrc.dev
-    log_init INFO $SCRPT_LOGS/rpm.log
-fi
+[[ "$(basename rpm.sh)" == "$(basename -- $0)" && -f $HOME/.bashrc.dev ]] && { source $HOME/.bashrc.dev; }
 
 # Create cpio image with all files under current directory (no recurse)
 function mkcpio() { test -z $1 && { echo "Usage: mkcpio <rpm-name>"; return $EINVAL; } || (ls | cpio -o > $1); }

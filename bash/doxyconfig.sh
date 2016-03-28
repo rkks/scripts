@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Generates Doxygen Configuration using pre-defined template.
 #  CREATED: 03/05/13 10:23:23 IST
-# MODIFIED: 03/08/16 23:30:24 PST
+# MODIFIED: 03/28/16 17:46:27 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -9,11 +9,8 @@
 #set -uvx               # Treat unset variables as an error, verbose, debug mode
 
 # Source .bashrc.dev only if invoked as a sub-shell.
-if [[ "$(basename doxyconfig.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc.dev ]; then
-    source $HOME/.bashrc.dev
-    log_init INFO $SCRPT_LOGS/doxyconfig.log
-    # Global defines. (Re)define ENV only if necessary.
-fi
+[[ "$(basename doxyconfig.sh)" == "$(basename -- $0)" && -f $HOME/.bashrc.dev ]] && { source $HOME/.bashrc.dev; }
+# Global defines. (Re)define ENV only if necessary.
 
 OUTPUT=$(basename -- $(pwd))
 

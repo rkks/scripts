@@ -1,21 +1,19 @@
 #!/bin/bash
 #  DETAILS: Installer script for my tools. Downloads and installs locally.
 #  CREATED: 09/23/14 09:31:11 IST
-# MODIFIED: 03/08/16 23:32:49 PST
+# MODIFIED: 03/28/16 17:47:47 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2014, Ravikiran K.S.
+
+#set -x  # -uvx: Warn unset vars, Verbose (echo each cmd), Enable debug mode
 
 # Never install: p7zip -- unable to delete afterwards
 # Work Tools: curl ncdu rsync git wget ncurses tmux lighttpd resin
 # Dev Tools: ant gmake libevent ctags cscope global splint vim jdk sloccount
 
-if [ "install.sh" == "$(basename $0)" ] && [ -f $HOME/.bashrc.dev ]; then
-    source $HOME/.bashrc.dev
-    log_init INFO $SCRPT_LOGS/install.log
-fi
+[[ "$(basename install.sh)" == "$(basename -- $0)" && -f $HOME/.bashrc.dev ]] && { source $HOME/.bashrc.dev; }
 
-#set -x  # -uvx: Warn unset vars, Verbose (echo each cmd), Enable debug mode
 CFLAGS="-I$TOOLS/include"
 LDFLAGS="-static -L$TOOLS/lib"
 

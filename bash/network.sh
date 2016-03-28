@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Network utilities
 #  CREATED: 07/17/13 16:00:40 IST
-# MODIFIED: 03/08/16 23:31:17 PST
+# MODIFIED: 03/28/16 17:48:56 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -10,10 +10,7 @@
 #set -uvx
 
 # Source .bashrc.dev only if invoked as a sub-shell.
-if [[ "$(basename network.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc.dev ]; then
-    source $HOME/.bashrc.dev
-    log_init INFO $SCRPT_LOGS/network.log
-fi
+[[ "$(basename network.sh)" == "$(basename -- $0)" && -f $HOME/.bashrc.dev ]] && { source $HOME/.bashrc.dev; }
 
 function arpclear() { for i in $(awk -F ' ' '{ if ( $1 ~ /[0-9{1,3}].[0-9{1,3}].[0-9{1,3}].[0-9{1,3}]/ ) print $1 }' /proc/net/arp); do arp -d $i; done; }
 

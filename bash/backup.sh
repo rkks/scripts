@@ -3,7 +3,7 @@
 #
 #   AUTHOR: Ravikiran K.S. (ravikirandotks@gmail.com)
 #  CREATED: 11/07/11 13:32:37 PST
-# MODIFIED: 03/08/16 23:27:26 PST
+# MODIFIED: 03/28/16 17:44:38 IST
 
 # Monday to Saturday, an incremental backup is made so that you have daily backups for new files until next week.
 # Every Sunday, do backup of all tars from last week. One such incremental backup tarball for each of 52 weeks in a year.
@@ -12,12 +12,9 @@
 #set -uvx               # Treat unset variables as an error, verbose, debug mode
 
 # Source .bashrc.dev only if invoked as a sub-shell.
-if [[ "$(basename backup.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc.dev ]; then
-    source $HOME/.bashrc.dev
-    log_init INFO $SCRPT_LOGS/backup.log
-    # Global defines go here. (Re)define ENV only if necessary.
-    # Reduce list of paths to trusted directories (most->least trusted)
-fi
+[[ "$(basename backup.sh)" == "$(basename -- $0)" && -f $HOME/.bashrc.dev ]] && { source $HOME/.bashrc.dev; }
+# Global defines go here. (Re)define ENV only if necessary.
+# Reduce list of paths to trusted directories (most->least trusted)
 
 # Local defines
 DOW=$(date +%a)         # Day of the week e.g. Mon

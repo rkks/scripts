@@ -1,16 +1,13 @@
 #!/usr/bin/env bash
 #  DETAILS: External diff tool for git
 #  CREATED: 03/20/13 21:55:08 IST
-# MODIFIED: 03/09/16 20:10:13 PST
+# MODIFIED: 03/28/16 17:47:03 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
 
 #set -uvx               # Treat unset variables as an error, verbose, debug mode
-if [ "$(basename git.sh)" == "$(basename -- $0)" ] -a [ -f $HOME/.bashrc.dev ]; then
-    source $HOME/.bashrc.dev
-    log_init INFO $SCRPT_LOGS/git.log
-fi
+[[ "$(basename git.sh)" == "$(basename -- $0)" && -f $HOME/.bashrc.dev ]] && { source $HOME/.bashrc.dev; }
 
 function add_ssh_key()
 {
