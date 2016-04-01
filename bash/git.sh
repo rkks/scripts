@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: External diff tool for git
 #  CREATED: 03/20/13 21:55:08 IST
-# MODIFIED: 03/28/16 17:47:03 IST
+# MODIFIED: 04/01/16 01:48:20 PDT
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -13,7 +13,9 @@ function add_ssh_key()
 {
     [[ $# -ne 1 -o ! -e $1 ]] && { echo "usage: add_ssh_key <rsa/dsa-priv-file>"; echo "  ex. ~/.ssh/id_rsa"; return 1; }
     local agent=$(eval "$(ssh-agent -s)")
-    [[ $agent =~ Agent* ]] && { ssh-add $*; }
+    [[ $agent =~ Agent* ]] && { ssh-add $*; } || return 1;
+    ssh -T git@bitbucket.org;   # watch for username printed in 'logged in as rkks'
+    ssh -T git@github.com;      # watch for username printed in "Hi rkks! You've successfully authenticated""'"
 }
 
 function usage()
