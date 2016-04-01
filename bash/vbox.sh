@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Virtual Box create/modify/update
 #  CREATED: 03/28/16 15:13:58 IST
-# MODIFIED: 03/28/16 17:50:11 IST
+# MODIFIED: 03/30/16 14:23:18 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -56,17 +56,18 @@ usage()
 {
     echo "Usage: vbox.sh [-h|-b|-i|-s]"
     echo "Options:"
-    echo "  -b          - boot the virtual machine"
-    echo "  -p          - power-off the virtual machine"
-    echo "  -s          - hibernate the virtual machine"
-    echo "  -h          - print this help"
+    echo "  -b <vm-name>    - boot the given virtual machine"
+    echo "  -p <vm-name>    - power-off the given virtual machine"
+    echo "  -s <vm-name>    - hibernate the given virtual machine"
+    echo "  -t <type>       - gui|headless|separate. default: headless"
+    echo "  -h              - print this help"
 }
 
 # Each shell script has to be independently testable.
 # It can then be included in other files for functions.
 main()
 {
-    PARSE_OPTS="hb:p:s:"
+    PARSE_OPTS="hb:p:s:t:"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -89,6 +90,7 @@ main()
         usage && exit $EINVAL;
     fi
 
+    ((opt_t)) && { VM_TYPE=$optarg_t; } || { VM_TYPE=headless; }
     ((opt_b)) && { bootup_vm $optarg_b; }
     ((opt_p)) && { poweroff_vm $optarg_p; }
     ((opt_s)) && { savestate_vm $optarg_s; }
