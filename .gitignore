@@ -96,3 +96,4 @@ _darcs
 # scripts/bin directory. only symbolic links
 bin/
 .DS_Store
+.nfs*
