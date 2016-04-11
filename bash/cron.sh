@@ -3,7 +3,7 @@
 #
 #   AUTHOR: Ravikiran K.S. (ravikirandotks@gmail.com)
 #  CREATED: 11/08/11 13:35:02 PST
-# MODIFIED: 03/28/16 17:44:57 IST
+# MODIFIED: 04/10/16 20:29:22 PDT
 
 # Cron has defaults below. Redefining to suite yours(if & only if necessary).
 # HOME=user-home-directory  # LOGNAME=user.s-login-id
@@ -20,7 +20,7 @@ function backup()
 
     [[ ! -z "$(grep -w backup $CUST_CONFS/cronskip)" ]] && return;  # skip if configured so
 
-    local backup_list=$1
+    local backup_list=$1; local dir_list=""; local dir="";
     while read dir; do
         [[ "$dir" == \#* || ! -d $dir ]] && { continue; } ||  { dir_list+=" $dir"; }
     done < $backup_list
@@ -45,31 +45,32 @@ function nightly()
     [[ ! -z "$(grep -w cron $CUST_CONFS/cronskip)" ]] && return;  # skip if configured so
 
     # take backup before SCM changes the contents
-    backup $CUST_CONFS/backup
-    build $COMPANY_CONFS/workspaces
-    [[ "$(date +'%a')" == "Fri" ]] && { reserve $COMPANY_CONFS/reserve; sync; }
-    download
-    report
+    run_on Now backup $CUST_CONFS/backup;
+    run_on Now build $COMPANY_CONFS/workspaces;
+    run_on Fri reserve $COMPANY_CONFS/reserve;
+    run_on Fri sync;
+    run_on Now download;
+    run_on Now report;
 }
 
 function build()
 {
     [[ $# -eq 0 ]] && { echo "Usage: build <[path1|path2|...]>"; return $EINVAL; }
 
-    [[ ! -z "$(grep -w jbuild $CUST_CONFS/cronskip)" ]] && return;  # skip if configured so
+    [[ ! -z "$(grep -w cbuild $CUST_CONFS/cronskip)" ]] && return;  # skip if configured so
 
     local blddir_list=$1; local SVNLOG=svn.log; local STATUS=status.log
     while read dir; do
         [[ "$dir" == \#* || ! -d $dir ]] && { continue; } || { local conflicts=0; cdie $dir; }
         log INFO "Update & status check sandbox: $dir"
-        shell jbuild.sh -w $dir;
+        shell cbuild.sh -w $dir;
         shell svn.sh -b $dir; shell svn.sh -s $dir; shell svn.sh -r $STATUS changes.log;
         [[ -f $SVNLOG ]] && { conflicts=$(cat $SVNLOG | grep "^\? "| cut -d " " -f 2 | wc -l | tr -d ' '); }
         [[ $conflicts -ne 0 ]] && { log ERROR "Conflicts found in $SVNLOG. Resolve & retry."; continue; }
         log INFO "Build cscope/ctags db for $dir"
         shell cscope_cgtags.sh -c $dir;
         log INFO "Build sandbox: $dir conflicts: $conflicts"
-        shell jbuild.sh -j $dir;
+        shell cbuild.sh -j $dir;
     done < $blddir_list
 }
 
@@ -118,12 +119,13 @@ function usage()
     echo "  -r <reserve-file>   - reserve routers listed in given file"
     echo "  -s <crontab-file>   - start user cronjob with given crontab file"
     echo "  -t                  - stop the cronjob for user"
+    echo "  -z                  - test the environment variables"
     echo "  -h                  - print this help message"
 }
 
 function main()
 {
-    local PARSE_OPTS="hb:c:d:lnr:s:t"
+    local PARSE_OPTS="hb:c:d:lnr:s:tz"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -154,6 +156,7 @@ function main()
     ((opt_r)) && reserve $optarg_r;
     ((opt_s)) && crontab $optarg_s;
     ((opt_t)) && crontab -r;
+    ((opt_z)) && { for i in {1..79}; do echo -n "-"; done; echo "-"; set; alias; }
     ((opt_h)) && { usage; exit 0; }
 
     exit 0

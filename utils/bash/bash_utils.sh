@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 03/27/16 19:02:08 IST
+# MODIFIED: 04/10/16 20:26:24 PDT
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -215,8 +215,30 @@ function term()
 
 function via() { local file; for file in $*;do vim $file; done; }
 
-function ps1-brief() { export PS1_BRIEF=TRUE; }
-function ps1-long() { unset PS1_BRIEF; }
+function run_on()
+{
+    local when=$1; shift;
+    case $when in
+    Now)
+        run "$*";
+        ;;
+    Mon|Tue|Wed|Thu|Fri|Sat|Sun)
+        [[ "$(date +'%a')" == "$when" ]] && { run "$*"; }
+        ;;
+    Date)
+        local day=$1; shift;        # Day-of-Year: 01Apr2016
+        [[ "$(date +'%d%b%Y')" == "$day" ]] && { run "$*"; }
+        ;;
+    DoM)
+        local day=$1; shift;        # Day-of-Month: 02May
+        [[ "$(date +'%d%b')" == "$day" ]] && { run "$*"; }
+        ;;
+    Day)
+        local day=$1; shift;        # Day of current Month: 03
+        [[ "$(date +'%d')" == "$day" ]] && { run "$*"; }
+        ;;
+    esac
+}
 
 usage()
 {
