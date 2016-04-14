@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 04/10/16 20:26:24 PDT
+# MODIFIED: 04/13/16 13:47:32 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -98,9 +98,9 @@ function ps1_prompt()
         ;;
     esac
     # default/short PS1
-    [[ $# -eq 0 ]] && { export PS1="$B[$U\D{%y/%b/%d} \t$B|$G\w$B]\$\[\033[0m\] "; return 0; }
+    [[ $# -eq 0 ]] && { export PS1="$B[$U\D{%b/%d} \t$B|$G\w$B]\$\[\033[0m\] "; return 0; }
     # long PS1
-    export PS1="$B[$U\D{%Y/%b/%d} \t$B|$P\u$R@$P\h$R:$G\w$B]\$\[\033[0m\] "
+    export PS1="$B[$U\D{%Y/%b/%d} \t$B|$P\u$R@$P\h$R:$G\w$B]\$\[\033[0m\] "; return 0;
 }
 
 # toggle PS1
