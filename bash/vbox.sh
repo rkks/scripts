@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Virtual Box create/modify/update
 #  CREATED: 03/28/16 15:13:58 IST
-# MODIFIED: 04/14/16 22:45:05 IST
+# MODIFIED: 04/15/16 08:10:38 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -69,6 +69,7 @@ function savestate_vm()
 function connect_vm()
 {
     echo "1.1.1.101";                    # welcome yourself
+    ssh.exp 1.1.1.101;
 }
 
 function list_vms()
@@ -79,10 +80,11 @@ function list_vms()
 
 usage()
 {
-    echo "Usage: vbox.sh [-h|-b|-i|-s]"
+    echo "Usage: vbox.sh [-h|-b|-l|-p|-r|-s]"
     echo "Options:"
     echo "  -b <vm-name>    - boot the given virtual machine"
     echo "  -l              - list all virtual machines"
+    echo "  -c <vm-name>    - connect over ssh to virtual machine"
     echo "  -p <vm-name>    - power-off the given virtual machine"
     echo "  -r              - list all running virtual machines"
     echo "  -s <vm-name>    - hibernate the given virtual machine"
@@ -123,7 +125,7 @@ main()
     ((opt_r)) && { RUN=running; }
     ((opt_l || opt_r)) && { list_vms; }
     ((opt_p)) && { poweroff_vm $*; }
-    ((opt_s)) && { savestate_vm $*; }
+    ((opt_i)) && { savestate_vm $*; }
     ((opt_h)) && { usage; }
 
     exit 0;
