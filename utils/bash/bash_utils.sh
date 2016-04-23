@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 04/10/16 20:26:24 PDT
+# MODIFIED: 04/23/16 15:15:30 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -86,7 +86,8 @@ function bash_dircolors()
 function ps1_prompt()
 {
     [[ -z $PS1_COLOR ]] && { echo "ps1_prompt: PS1_COLOR not set"; return 1; }
-    # B=BLACK, W=WHITE, Y=YELLOW, R=RED, G=GREEN, P=PURPLE, U=BLUE, C=CYAN
+    # B=BLACK, W=WHITE, Y=YELLOW, R=RED, G=GREEN, P=PURPLE, U=BLUE, C=CYAN, N=NO COLOR
+    local N="\[\033[0m\]";
     case $PS1_COLOR in
     dark)
         local B="\[\033[1;30m\]"; local R="\[\033[1;31m\]"; local G="\[\033[1;32m\]"; local Y="\[\033[1;33m\]";
@@ -97,10 +98,10 @@ function ps1_prompt()
         local U="\[\033[0;34m\]"; local P="\[\033[0;35m\]"; local C="\[\033[0;36m\]"; local W="\[\033[0;37m\]";
         ;;
     esac
-    # default/short PS1
-    [[ $# -eq 0 ]] && { export PS1="$B[$U\D{%y/%b/%d} \t$B|$G\w$B]\$\[\033[0m\] "; return 0; }
-    # long PS1
-    export PS1="$B[$U\D{%Y/%b/%d} \t$B|$P\u$R@$P\h$R:$G\w$B]\$\[\033[0m\] "
+    # default/long PS1. To know hex-code for UFT-8 char, do: echo <char> | hexdump -C; First byte is always e2.
+    [[ $# -eq 0 ]] && { export PS1="$B[$U\D{%d/%b/%Y} \t$B|$P\u$R@$P\h$B:$G\w$B!$C$?$B]\$\r\n`echo -e '\xe2\x86\x92'`$N "; return 0; }
+
+    export PS1="$B[$U\D{%b/%d} \t$B|$G\w$B]\$$N "; return 0;    # short PS1
 }
 
 # toggle PS1
