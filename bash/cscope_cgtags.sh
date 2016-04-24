@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Cscope Utils
 #  CREATED: 06/25/13 11:05:14 IST
-# MODIFIED: 03/28/16 17:45:17 IST
+# MODIFIED: 04/18/16 03:03:54 PDT
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -12,6 +12,7 @@
 # Source .bashrc.dev only if invoked as a sub-shell. Not if sourced.
 [[ "$(basename cscope_cgtags.sh)" == "$(basename -- $0)" && -f $HOME/.bashrc.dev ]] && { source $HOME/.bashrc.dev; }
 
+export PATH="$HOME/tools/$UNAMES/bin:$PATH";
 SRC_FILES=src.list
 
 # Do not use cscope-indexer. This is slow but flexible.
@@ -40,6 +41,7 @@ function findsrc()
 
 function cscope_db_clean()
 {
+    (own cscope) || { echo "cscope binary not found in PATH"; return 0; };
     log DEBUG "Clean cscope db in $PWD"
     run rm -f cscope.*;
 }
@@ -54,6 +56,7 @@ function cscope_db_create()
 
 function cscope_db_update()
 {
+    (own cscope) || { echo "cscope binary not found in PATH"; return 0; };
     [[ ! -f $SRC_FILES ]] && { echo "$PWD/$SRC_FILES doesn't exist. Use findsrc to build file list"; return; }
 
     # -qUbe for inverted index, -cUbe for normal index. -k to refer kernel headers. 
@@ -63,6 +66,7 @@ function cscope_db_update()
 
 function global_db_clean()
 {
+    (own gtags) || { echo "gtags binary not found in PATH"; return 0; };
     log DEBUG "Clean GNU global db in $PWD"
     run rm -f G*TAGS GPATH;
 }
@@ -77,6 +81,7 @@ function global_db_create()
 
 function global_db_update()
 {
+    (own gtags) || { echo "gtags binary not found in PATH"; return 0; };
     [[ ! -f $SRC_FILES ]] && { echo "$PWD/$SRC_FILES doesn't exist. Use findsrc to build file list"; return; }
 
     log DEBUG "Build global database for $PWD using $(which gtags)"
@@ -85,6 +90,7 @@ function global_db_update()
 
 function ctags_db_clean()
 {
+    (own ctags) || { echo "ctags binary not found in PATH"; return 0; };
     log DEBUG "Clean ctags db in $PWD"
     run rm -f tags TAGS;
 }
@@ -100,6 +106,7 @@ function ctags_db_create()
 # copy exuberant ctags to every machine. Otherwise '--declarations -d --globals -I --members -T' opts wouldn't work.
 function ctags_db_update()
 {
+    (own ctags) || { echo "ctags binary not found in PATH"; return 0; };
     [[ ! -f $SRC_FILES ]] && { echo "$PWD/$SRC_FILES doesn't exist. Use findsrc to build file list"; return; }
 
     log DEBUG "Build ctags database for $PWD using $(which ctags)"
