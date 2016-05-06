@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Installer script for my tools. Downloads and installs locally.
 #  CREATED: 09/23/14 09:31:11 IST
-# MODIFIED: 03/28/16 17:47:47 IST
+# MODIFIED: 05/06/16 19:29:44 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2014, Ravikiran K.S.
@@ -24,6 +24,7 @@ usage()
     echo "  -a <arch>   - compile for arch"
     echo "  -c          - install cscope+ctags"
     echo "  -e          - install expect"
+    echo "  -g          - install global"
     echo "  -m          - install pmtools"
     echo "  -o          - install openssl"
 #    echo "  -p         - install p7zip"
@@ -99,6 +100,11 @@ function expect_install()
     sinstall expect.tar.gz http://sourceforge.net/projects/expect/files/Expect/5.45/expect5.45.tar.gz
 }
 
+function global_install()
+{
+    sinstall global.tar.gz http://tamacom.com/global/global-6.5.4.tar.gz
+}
+
 function pmtools_install()
 {
     downld pmtools-2.0.0.tar.gz http://search.cpan.org/CPAN/authors/id/M/ML/MLFISHER/pmtools-2.0.0.tar.gz
@@ -136,7 +142,7 @@ function set_arch()
 # It can then be included in other files for functions.
 main()
 {
-    PARSE_OPTS="ha:cemoprtw"
+    PARSE_OPTS="ha:cegmoprtw"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -167,6 +173,7 @@ main()
     ((opt_a)) && { set_arch $optarg_a; }
     ((opt_c)) && { cscope-tags_install; }
     ((opt_e)) && { expect_install; }
+    ((opt_g)) && { global_install; }
     ((opt_m)) && { pmtools_install; }
     ((opt_o)) && { openssl_install; }
 #    ((opt_p)) && { p7zip_install; }
