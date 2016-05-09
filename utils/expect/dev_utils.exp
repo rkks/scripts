@@ -25,6 +25,54 @@ proc print_args {args} {
     send_user "\n"
 }
 
+# scp to host
+# Input: host loc file name user pass
+proc hscp {h l f n u p} {
+    global spawn_id
+    global timeout
+    global prompt
+
+    set procid [spawn scp $l/$f $u@$h:$n]
+    if { $procid <= 0 } {
+       send_user "ERROR: Failed to connect to host $h\n"
+       return 1
+    }
+
+    expect {
+        -nocase -re "\(yes/no\)" {
+            send "yes\r"
+            exp_continue
+
+        } -nocase -re "\(y/n\)" {
+            send "y\r"
+            exp_continue
+
+        } -nocase -re "word:" {
+            send "$p\r"
+            exp_continue
+
+        } -nocase -re "Connection refused" {
+            puts "Connection refused"; exit 1
+
+        } -nocase -re "Authentication failed" {
+            puts "Login incorrect"; exit 1
+
+        } -nocase -re "Permission denied" {
+            puts "Login incorrect"; exit 1
+
+        } timeout {
+            puts "ERROR: Connection timeout\n"
+            return 3
+
+        } eof {
+            # Completed the transfer
+            return 4
+        }
+    }
+
+    return 0
+}
+
 # scp to switch
 # Input: host loc file name user pass
 proc cscp {h l f n u p} {

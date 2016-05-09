@@ -3,7 +3,7 @@
 #
 #   AUTHOR: Ravikiran K.S. (ravikirandotks@gmail.com)
 #  CREATED: 11/08/11 13:35:02 PST
-# MODIFIED: 04/10/16 20:29:22 PDT
+# MODIFIED: 05/08/16 22:56:31 PDT
 
 # Cron has defaults below. Redefining to suite yours(if & only if necessary).
 # HOME=user-home-directory  # LOGNAME=user.s-login-id
@@ -26,6 +26,7 @@ function backup()
     done < $backup_list
 
     log INFO "Backing up: $dir_list";
+    # Git Backup: Preferred way to sync text stuff
     shell backup.sh "$dir_list";
 }
 
@@ -35,7 +36,8 @@ function sync()
 
     [[ ! -z "$(grep -w rsync $CUST_CONFS/cronskip)" ]] && return;  # skip if configured so
 
-    shell rsync.sh -c $HOME eng-shell1:
+    # Manual Sync: What can't be synced using revision control.
+    shell rsync.sh -l $CUST_CONFS/rsync.lst $HOME eng-shell1:
 }
 
 function nightly()
@@ -46,6 +48,8 @@ function nightly()
 
     # take backup before SCM changes the contents
     run_on Now backup $CUST_CONFS/backup;
+    run_on Now revision $COMPANY_CONFS/workspaces;
+    run_on Now database $COMPANY_CONFS/workspaces;
     run_on Now build $COMPANY_CONFS/workspaces;
     run_on Fri reserve $COMPANY_CONFS/reserve;
     run_on Fri sync;
@@ -53,33 +57,68 @@ function nightly()
     run_on Now report;
 }
 
-function build()
+function svn_revision_update()
 {
-    [[ $# -eq 0 ]] && { echo "Usage: build <[path1|path2|...]>"; return $EINVAL; }
+    [[ $# -eq 0 ]] && { echo "Usage: svn_revision <dir-path>"; return $EINVAL; }
+    local SVNLOG=svn.log; local STATUS=status.log; local dir=$1;
+    shell svn.sh -b $dir; shell svn.sh -s $dir; shell svn.sh -r $STATUS changes.log;
+}
 
-    [[ ! -z "$(grep -w cbuild $CUST_CONFS/cronskip)" ]] && return;  # skip if configured so
+function no_revision_conflicts()
+{
+    [[ -f $SVNLOG ]] && { conflicts=$(cat $SVNLOG | grep "^\? "| cut -d " " -f 2 | wc -l | tr -d ' '); }
+    [[ $conflicts -eq 0 ]] && { log INFO "No conflicts found"; return 0; }
+    log ERROR "Conflicts found in $SVNLOG. Resolve & retry."; return 1;
+}
 
-    local blddir_list=$1; local SVNLOG=svn.log; local STATUS=status.log
+# Provide callback function to be called for each item in list
+function run_forall_in_file()
+{
+    [[ $# -eq 0 ]] && { echo "Usage: $FUNCNAME <list-file>"; return $EINVAL; }
+    local fname=$1; shift; local dir_list=$2; shift; local rval=0;
     while read dir; do
         [[ "$dir" == \#* || ! -d $dir ]] && { continue; } || { local conflicts=0; cdie $dir; }
-        log INFO "Update & status check sandbox: $dir"
-        shell cbuild.sh -w $dir;
-        shell svn.sh -b $dir; shell svn.sh -s $dir; shell svn.sh -r $STATUS changes.log;
-        [[ -f $SVNLOG ]] && { conflicts=$(cat $SVNLOG | grep "^\? "| cut -d " " -f 2 | wc -l | tr -d ' '); }
-        [[ $conflicts -ne 0 ]] && { log ERROR "Conflicts found in $SVNLOG. Resolve & retry."; continue; }
-        log INFO "Build cscope/ctags db for $dir"
-        shell cscope_cgtags.sh -c $dir;
-        log INFO "Build sandbox: $dir conflicts: $conflicts"
-        shell cbuild.sh -j $dir;
-    done < $blddir_list
+        log INFO "$fname $dir"
+        run "$fname $dir"; [[ $? -ne 0 ]] && { rval=1; }      # reflects if any of runs failed
+    done < $dir_list
+    return rval;
+}
+
+function revision()
+{
+    log INFO "$FUNCNAME: Update revision of workspaces list in file $1"
+    [[ ! -z "$(grep -w $FUNCNAME $CUST_CONFS/cronskip)" ]] && return;  # skip if configured so
+    run_forall_in_file svn_revision_update $1
+}
+
+function database_update()
+{
+    shell cscope_cgtags.sh -c $1;
+}
+
+function database()
+{
+    log INFO "Build cscope/ctags db for workspaces list in file $1"
+    [[ ! -z "$(grep -w $FUNCNAME $CUST_CONFS/cronskip)" ]] && return;  # skip if configured so
+    run_forall_in_file database_update $1
+}
+
+function build_target()
+{
+    no_revision_conflicts && cdie $1/build && shell cbuild.sh -9 all;
+}
+
+function build()
+{
+    log INFO "Build code for workspaces list in file $1"
+    [[ ! -z "$(grep -w build $CUST_CONFS/cronskip)" ]] && return;  # skip if configured so
+    run_forall_in_file build_target $1
 }
 
 function download()
 {
     log INFO "Start pending downloads"
-
     [[ ! -z "$(grep -w download $CUST_CONFS/cronskip)" ]] && return;  # skip if configured so
-
     shell download.sh $CUST_CONFS/downlinks;
 }
 

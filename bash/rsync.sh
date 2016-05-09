@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Invokes rsyncs with well known better options.
 #  CREATED: 06/29/13 16:14:34 IST
-# MODIFIED: 03/28/16 17:49:44 IST
+# MODIFIED: 05/06/16 05:27:58 PDT
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -70,25 +70,11 @@ function rsync_list()
     unset LIST_FILE && unset SRC && unset DST && unset tmpSrc && unset tmpDst
 }
 
-function rsync_cron()
-{
-    if [ "$#" != "2" ]; then
-        usage
-        return
-    fi
-
-    # Directory path names must be terminated with a "/" or "/."
-    CRON_RSYNC_LIST=$CUST_CONFS/rsync.lst
-
-    rsync_list $CRON_RSYNC_LIST $*
-}
-
 usage()
 {
-    echo "usage: rsync.sh <-c|-d|-l <list-file>|-n> <src-dir> <dst-dir>"
+    echo "usage: rsync.sh [-d|-l <list-file>|-n] <src-dir> <dst-dir>"
     echo "Options:"
-    echo "  -c              - kick-off rsync as part of cron job using pre-defined list"
-    echo "  -d              - start recursive rsync between given directory pair"
+    echo "  -r              - start recursive rsync between given directory pair"
     echo "  -l <list-file>  - do recursive rsync on all files/directores listed in given file"
     echo "  -n              - enable DRY_RUN during rsync. Gives list of changes to be done"
     echo "Note: In list-file, dir path names must be terminated with a / or /."
@@ -98,7 +84,7 @@ usage()
 # It can then be included in other files for functions.
 main()
 {
-    PARSE_OPTS="hcdl:n"
+    PARSE_OPTS="hl:rn"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -121,11 +107,10 @@ main()
         usage && exit $EINVAL;
     fi
 
-    ((opt_n)) && export RSYNC_DRY_RUN=TRUE
-    ((opt_c)) && rsync_cron $*
-    ((opt_d)) && rsync_dir $*
-    ((opt_l)) && rsync_list $optarg_l $*
-    ((opt_h)) && (usage; exit 0)
+    ((opt_n)) && { export RSYNC_DRY_RUN=TRUE; }
+    ((opt_r)) && { rsync_dir $*; }
+    ((opt_l)) && { rsync_list "$optarg_l $*"; }
+    ((opt_h)) && { usage; exit 0; }
 
     exit 0
 }
@@ -134,4 +119,3 @@ if [ "$(basename -- $0)" == "$(basename rsync.sh)" ]; then
     main $*
 fi
 # VIM: ts=4:sw=4
-

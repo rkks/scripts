@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 04/24/16 09:37:15 IST
+# MODIFIED: 05/06/16 06:46:07 PDT
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -42,7 +42,7 @@ function export_bash_funcs()
 }
 
 # usage: run <cmd> <args>
-function run() { [[ "yes" == "$SHDEBUG" ]] && echo "$(pwd)\$ $*" || $*; }
+function run() { [[ "yes" == "$SHDEBUG" ]] && echo "$(pwd)\$ $*" || $*; return $?; }
 
 # usage: shell <cmd> <args>
 function shell() { run "$SHELL $*"; }

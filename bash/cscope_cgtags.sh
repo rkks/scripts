@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Cscope Utils
 #  CREATED: 06/25/13 11:05:14 IST
-# MODIFIED: 04/18/16 03:03:54 PDT
+# MODIFIED: 05/06/16 06:16:56 PDT
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -61,7 +61,7 @@ function cscope_db_update()
 
     # -qUbe for inverted index, -cUbe for normal index. -k to refer kernel headers. 
     log DEBUG "Build cscope database for $PWD using $(which cscope)"
-    run cscope -qUbe -k -i $SRC_FILES    #> /dev/null 2>&1
+    run cscope -cUbe -k -i $SRC_FILES    #> /dev/null 2>&1
 }
 
 function global_db_clean()
@@ -129,7 +129,7 @@ function csc_run()
 
 usage()
 {
-    echo "usage: cscope_cgtags.sh <-a|-b|-c|-d|-e|-f|-l|-t|-u|-x [<src-path>]|-h|-g <cscope-num> <pattern>>"
+    echo "usage: cscope_cgtags.sh <-a|-b|-c|-d|-e|-f|-l|-s|-t|-u|-x [<src-path>]|-h|-g <cscope-num> <pattern>>"
     echo "Options:"
     echo "  -a    - append/update all existing source databases"
     echo "  -b    - build all new (cscope/global/ctags) databases (clean)"
@@ -139,6 +139,7 @@ usage()
     echo "  -f    - form new GNU global database (clean)"
     echo "  -g <cscope-num> <pattern> - grep for pattern using line-oriented cscope"
     echo "  -l    - make list of source files under given path (recursive)"
+    echo "  -s    - disable source files list update/create (recursive)"
     echo "  -t    - create ctags database from scratch (clean)"
     echo "  -u    - update existing ctags database"
     echo "  -x    - delete all databases under given path"
@@ -149,7 +150,7 @@ usage()
 # It can then be included in other files for functions.
 main()
 {
-    PARSE_OPTS="habcdefg:ltux"
+    PARSE_OPTS="habcdefg:lstux"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -175,7 +176,7 @@ main()
     ((opt_g)) && { csc_run $optarg_g $*; return; }
 
     [[ $# -ne 0 ]] && { cdie $1; shift; }
-    ((opt_b || opt_c || opt_f || opt_t || opt_l)) && findsrc;
+    ((!opt_s && !opt_h && !opt_g )) && findsrc;
     ((opt_b || opt_c || opt_x)) && cscope_db_clean;
     ((opt_b || opt_f || opt_x)) && global_db_clean;
     ((opt_b || opt_t || opt_x)) && ctags_db_clean;
