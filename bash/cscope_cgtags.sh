@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Cscope Utils
 #  CREATED: 06/25/13 11:05:14 IST
-# MODIFIED: 05/06/16 06:16:56 PDT
+# MODIFIED: 05/09/16 00:05:50 PDT
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -176,7 +176,7 @@ main()
     ((opt_g)) && { csc_run $optarg_g $*; return; }
 
     [[ $# -ne 0 ]] && { cdie $1; shift; }
-    ((!opt_s && !opt_h && !opt_g )) && findsrc;
+    ((!opt_s && !opt_h && !opt_g && !opt_x )) && findsrc;
     ((opt_b || opt_c || opt_x)) && cscope_db_clean;
     ((opt_b || opt_f || opt_x)) && global_db_clean;
     ((opt_b || opt_t || opt_x)) && ctags_db_clean;
