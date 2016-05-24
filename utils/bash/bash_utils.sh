@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 05/06/16 06:46:07 PDT
+# MODIFIED: 05/16/16 09:37:07 PDT
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -42,10 +42,10 @@ function export_bash_funcs()
 }
 
 # usage: run <cmd> <args>
-function run() { [[ "yes" == "$SHDEBUG" ]] && echo "$(pwd)\$ $*" || $*; return $?; }
+function run() { [[ "yes" == "$SHDEBUG" ]] && echo "$*"; $*; return $?; }
 
 # usage: shell <cmd> <args>
-function shell() { run "$SHELL $*"; }
+function shell() { [[ "yes" == "$SHDEBUG" ]] && echo "$(pwd)\$ $*" || "$SHELL $*"; return $?; }
 
 # usage: (own ls) && echo true || echo flase
 function own { which "$1" &>/dev/null; }        # Error moved to /dev/null because on Solaris, 'which' cmd emits stty error
@@ -65,6 +65,15 @@ function bash_trace() { set -x; }
 
 # end bash tracing
 function bash_untrace() { set +x; }
+
+# verified copy
+function cpv()
+{
+    [[ -f $1 && -e $2 ]] && cp -v $1 $2; local src="$1";
+    [[ -d $2 ]] && { local tgt="$2/$1"; } || { local tgt="$2"; }
+    echo -n "md5sum of $src, $tgt does";
+    [[ "$(md5sum $src)" != "$(md5sum $tgt)" ]] && { echo " not match"; } || { echo " match"; }
+}
 
 function hostname_short() { [[ $UNAMES == *SunOS* ]] && { echo $(hostname); } || echo $(hostname -s); }
 

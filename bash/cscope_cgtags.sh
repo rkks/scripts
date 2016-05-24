@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Cscope Utils
 #  CREATED: 06/25/13 11:05:14 IST
-# MODIFIED: 05/09/16 00:05:50 PDT
+# MODIFIED: 05/12/16 07:20:10 PDT
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -110,7 +110,7 @@ function ctags_db_update()
     [[ ! -f $SRC_FILES ]] && { echo "$PWD/$SRC_FILES doesn't exist. Use findsrc to build file list"; return; }
 
     log DEBUG "Build ctags database for $PWD using $(which ctags)"
-    run ctags --extra=+q --fields=afmikKlnsSz --c++-kinds=+p -a -L $SRC_FILES    #> /dev/null 2>&1
+    run ctags --extra=+q --fields=afmikKlnsSz --sort -IATTR_PACKED,ATTR_UNUSED --c-types=+p -a -L $SRC_FILES    #> /dev/null 2>&1
 }
 
 function csc_run()

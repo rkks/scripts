@@ -3,7 +3,7 @@
 #
 #   AUTHOR: Ravikiran K.S. (ravikirandotks@gmail.com)
 #  CREATED: 11/08/11 13:35:02 PST
-# MODIFIED: 05/08/16 22:56:31 PDT
+# MODIFIED: 05/11/16 04:18:37 PDT
 
 # Cron has defaults below. Redefining to suite yours(if & only if necessary).
 # HOME=user-home-directory  # LOGNAME=user.s-login-id
@@ -14,28 +14,38 @@
 # Source .bashrc.dev only if invoked as a sub-shell. Not if sourced.
 [[ "$(basename cron.sh)" == "$(basename -- $0)" && -f $HOME/.bashrc.dev ]] && { source $HOME/.bashrc.dev; }
 
+# Provide callback function to be called for each item in list
+function run_forall_in_file()
+{
+    [[ $# -eq 0 ]] && { echo "Usage: $FUNCNAME <list-file>"; return $EINVAL; }
+    local fname=$1; shift; local dir_list=$2; shift; local rval=0;
+    while read dir; do
+        [[ "$dir" == \#* || ! -d $dir ]] && { continue; } || { local conflicts=0; cdie $dir; }
+        log INFO "$fname $dir"
+        run "$fname $dir"; [[ $? -ne 0 ]] && { rval=1; }      # reflects if any of runs failed
+    done < $dir_list
+    return rval;
+}
+
+function local_backup()
+{
+    [[ $# -eq 0 ]] && { echo "Usage: backup <dir-name>"; return $EINVAL; }
+    log INFO "Backing up: $1";
+    shell backup.sh "$1";
+}
+
 function backup()
 {
-    [[ $# -eq 0 ]] && { echo "Usage: backup <list-with-backup-dir-names>"; return $EINVAL; }
-
-    [[ ! -z "$(grep -w backup $CUST_CONFS/cronskip)" ]] && return;  # skip if configured so
-
-    local backup_list=$1; local dir_list=""; local dir="";
-    while read dir; do
-        [[ "$dir" == \#* || ! -d $dir ]] && { continue; } ||  { dir_list+=" $dir"; }
-    done < $backup_list
-
-    log INFO "Backing up: $dir_list";
+    [[ ! -z "$(grep -w $FUNCNAME $CUST_CONFS/cronskip)" ]] && { echo "$0: Skip $FUNCNAME"; return; }
+    log INFO "Backing up directories list in file $1"
     # Git Backup: Preferred way to sync text stuff
-    shell backup.sh "$dir_list";
+    run_forall_in_file local_backup $1
 }
 
 function sync()
 {
-    log INFO "Syncing Conf & Tools to eng-shell";
-
-    [[ ! -z "$(grep -w rsync $CUST_CONFS/cronskip)" ]] && return;  # skip if configured so
-
+    [[ ! -z "$(grep -w $FUNCNAME $CUST_CONFS/cronskip)" ]] && { echo "$0: Skip $FUNCNAME"; return; }
+    log INFO "Syncing directory list from $1";
     # Manual Sync: What can't be synced using revision control.
     shell rsync.sh -l $CUST_CONFS/rsync.lst $HOME eng-shell1:
 }
@@ -71,23 +81,10 @@ function no_revision_conflicts()
     log ERROR "Conflicts found in $SVNLOG. Resolve & retry."; return 1;
 }
 
-# Provide callback function to be called for each item in list
-function run_forall_in_file()
-{
-    [[ $# -eq 0 ]] && { echo "Usage: $FUNCNAME <list-file>"; return $EINVAL; }
-    local fname=$1; shift; local dir_list=$2; shift; local rval=0;
-    while read dir; do
-        [[ "$dir" == \#* || ! -d $dir ]] && { continue; } || { local conflicts=0; cdie $dir; }
-        log INFO "$fname $dir"
-        run "$fname $dir"; [[ $? -ne 0 ]] && { rval=1; }      # reflects if any of runs failed
-    done < $dir_list
-    return rval;
-}
-
 function revision()
 {
+    [[ ! -z "$(grep -w $FUNCNAME $CUST_CONFS/cronskip)" ]] && { echo "$0: Skip $FUNCNAME"; return; }
     log INFO "$FUNCNAME: Update revision of workspaces list in file $1"
-    [[ ! -z "$(grep -w $FUNCNAME $CUST_CONFS/cronskip)" ]] && return;  # skip if configured so
     run_forall_in_file svn_revision_update $1
 }
 
@@ -98,8 +95,8 @@ function database_update()
 
 function database()
 {
+    [[ ! -z "$(grep -w $FUNCNAME $CUST_CONFS/cronskip)" ]] && { echo "$0: Skip $FUNCNAME"; return; }
     log INFO "Build cscope/ctags db for workspaces list in file $1"
-    [[ ! -z "$(grep -w $FUNCNAME $CUST_CONFS/cronskip)" ]] && return;  # skip if configured so
     run_forall_in_file database_update $1
 }
 
@@ -110,15 +107,15 @@ function build_target()
 
 function build()
 {
+    [[ ! -z "$(grep -w $FUNCNAME $CUST_CONFS/cronskip)" ]] && { echo "$0: Skip $FUNCNAME"; return; }
     log INFO "Build code for workspaces list in file $1"
-    [[ ! -z "$(grep -w build $CUST_CONFS/cronskip)" ]] && return;  # skip if configured so
     run_forall_in_file build_target $1
 }
 
 function download()
 {
+    [[ ! -z "$(grep -w $FUNCNAME $CUST_CONFS/cronskip)" ]] && { echo "$0: Skip $FUNCNAME"; return; }
     log INFO "Start pending downloads"
-    [[ ! -z "$(grep -w download $CUST_CONFS/cronskip)" ]] && return;  # skip if configured so
     shell download.sh $CUST_CONFS/downlinks;
 }
 
@@ -187,6 +184,7 @@ function main()
         usage && exit $EINVAL;
     fi
 
+    export SHDEBUG=yes;
     ((opt_b)) && backup $optarg_b;
     ((opt_c)) && link-confs;
     ((opt_d)) && build $optarg_d;
