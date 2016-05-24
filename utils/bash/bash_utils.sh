@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 05/06/16 06:46:07 PDT
+# MODIFIED: 05/10/16 20:51:43 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -100,7 +100,7 @@ function ps1_prompt()
     esac
     # default/long PS1. To know hex-code for UFT-8 char, do: echo <char> | hexdump -C; First byte is always e2.
     # `echo -e '\xe2\x86\x92'` causes more problems on terminal. Not every terminal/bash is UTF-8 capable.
-    [[ $# -eq 0 ]] && { export PS1="$B[$U\D{%d/%b/%Y} \t$B|$P\u$Y@$P\h$B:$G\w$B!$C$?$B]\r\n$R\$$N "; return 0; }
+    [[ $# -eq 0 ]] && { export PS1="$B[$U\D{%d/%b/%Y} \t$B|$P\u$C@$P\h$B:$G\w$B!$C$?$B]\r\n$R\$$N "; return 0; }
 
     export PS1="$B[$U\D{%b/%d} \t$B|$G\w$B]\$$N "; return 0;    # short PS1
 }
