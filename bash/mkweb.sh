@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Script to build the gh-pages
 #  CREATED: 06/09/17 19:27:48 IST
-# MODIFIED: 06/12/17 10:12:00 IST
+# MODIFIED: 06/23/17 14:40:04 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -32,24 +32,29 @@ set_paths()
 {
     [[ $# -ne 1 ]] && { echo "usage: set_paths <repo-dir>"; exit 1; }
     [[ ! -d $1 ]] && { echo "Invalid repo=$1"; exit 1; } || { cd $1; }
+
     WEBREPO="$1"
-    CONTENT=$WEBREPO/content
-    PUBLISH=$WEBREPO/docs
+    [[ $(basename $1) =~ rkks.github.io ]] && { echo -n "User "; } || { echo -n "Project "; }
+    echo "website repo set to $1";
+    # user website rkks.github.io needs to have everything in base/root directory
+    [[ $(basename $1) =~ rkks.github.io ]] && { PUBLISH=$1; CONTENT=$1; STATIC=$1; CSS=.; IMG=.; }\
+        || { PUBLISH=$1/docs; CONTENT=$1/content; STATIC=$1/static; CSS=./css; IMG=./img; }
     ALLPOST=$PUBLISH/allposts
     LATEST5=$PUBLISH/latest5.$PST
-    STATIC=$WEBREPO/static
     FOOTER=$STATIC/html/footer.html
     NAVBAR=$STATIC/html/navbar.html
 
     # order if css import matters, first bootstrap.css, then color theme
-    PD_OPTS="--smart --standalone -f markdown --template=website.html \
-        --css=./css/bootstrap.css --css=./css/web.css \
-        --css=./css/solarized-light.css -B $NAVBAR -A $FOOTER";
+    PD_CMN_OPTS="--smart --standalone -f markdown ";
+    PD_CV_OPTS="$PD_CMD_OPTS -c $CSS/resume.css -c $CSS/web.css"
+    PD_WIKI_OPTS="--template=website.html -B $NAVBAR -A $FOOTER \
+        -c $CSS/bootstrap.css -c $CSS/theme.css -c $CSS/web.css";
+    PD_OPTS="$PD_CMN_OPTS $PD_WIKI_OPTS"
 }
 
 check_paths()
 {
-    [[ -n $WEBREPO ]] && { echo "Repo set to $WEBREPO"; return; }
+    [[ ! -z $WEBREPO ]] && { echo "Repo already set to $WEBREPO"; return; }
     set_paths "$PWD";
 }
 
@@ -71,11 +76,12 @@ build_post()
 
     local title="$(sed -n '1 s/% //p' "$file")";
     local pdate="$(sed -n '3 s/% //p' "$file")";
-    local ddate="$($DATE "$pdate" '+%a, %d %b %Y %Z')";
+    local ddate="$($DATE "$pdate" '+%a, %d %b %Y 00:00:00 +0530')";    # time important for rss
     local sdate="$($DATE "$pdate" '+%y%m%d')";
+    local btopic=$(tr '[:lower:]' '[:upper:]' <<< ${topic:0:1})${topic:1};
     #echo "[PD] $ddate | $post | $title";
     echo "[PD] $ddate | $post.html";
-    pandoc $PD_OPTS --variable=category:"$topic" --output=$PUBLISH/"$post".html "$file";
+    pandoc $PD_OPTS --variable=category:"${btopic}" --output=$PUBLISH/"$post".html "$file";
 
     local abstract=$(grep -m 1 -Eo '<p>.+</p>' $PUBLISH/"$post".html)
     local topic_lst=$PUBLISH/$topic.$LST
@@ -87,13 +93,13 @@ build_topic()
     [[ $# -ne 1 ]] && { echo "usage: build_topic <topic>"; return; }
     local topic="$1"; local topic_lst=$PUBLISH/$topic.$LST; local topic_pst=$PUBLISH/$topic.$PST;
 
-    [[ ! -f $topic_lst ]] && { echo "$topic_lst not found"; return; }
+    [[ ! -f $topic_lst ]] && { echo "Nothing to build in $topic. $topic_lst empty"; return; }
     [[ ! -f $topic.$HDR ]] && { echo "$topic.$HDR not found"; return; }
 
     cat $topic_lst >> $ALLPOST
     sort -nr $topic_lst | awk 'BEGIN{FS="%"};{print "* ["$2"]("$3") | "$4}' > $topic_pst
 
-    echo "[PD] $(date '+%a, %d %b %Y %Z') | $topic.html";
+    echo "[PD] $(date '+%a, %d %b %Y 00:00:00 +0530') | $topic.html";
     pandoc $PD_OPTS --output=$PUBLISH/$topic.html $CONTENT/$topic.$HDR $topic_pst;
     rm -f $topic_lst $topic_pst
 }
@@ -103,42 +109,60 @@ build_html()
     [[ $# -ne 1 ]] && { echo "usage: build_html <file-path>"; return; }
     [[ ! -f $1 ]] && { echo "$1 file not found"; return; }
     local fpath="$1"; local file=$(basename $fpath); local name=${file%.*};
-    echo "[PD] $(date '+%a, %d %b %Y %Z') | $name.html";
+    echo "[PD] $(date '+%a, %d %b %Y 00:00:00 +0530') | $name.html";
     pandoc $PD_OPTS -o $PUBLISH/$name.html $fpath
+}
+
+build_resume()
+{
+    [[ $# -ne 1 ]] && { echo "usage: build_resume <file-path>"; return; }
+    [[ ! -f $1 ]] && { echo "$1 file not found"; return; }
+    local fpath="$1"; local file=$(basename $fpath); local name=${file%.*};
+    echo "[PD] $(date '+%a, %d %b %Y 00:00:00 +0530') | $name.html";
+    pandoc $PD_CV_OPTS -o $PUBLISH/$name.html $fpath
+    pandoc $PD_CV_OPTS --to docx -o $PUBLISH/$name.docx $fpath
+    #pandoc $PD_CV_OPTS --to plain -o $PUBLISH/$name.txt $fpath
+    wkhtmltopdf $PUBLISH/$name.html $PUBLISH/$name.pdf
 }
 
 build_index()
 {
+    #[[ $WEBREPO =~ *github.io* ]] && { return 0; }  # bypass index.html generation for root
     [[ ! -f $ALLPOST ]] && { echo "$ALLPOST file does not exist"; return; }
     [[ ! -f $CONTENT/index.$HDR ]] && { echo "$CONTENT/index.$HDR does not exist"; return; }
 
     sort -nr $ALLPOST | sed -n '1,5 p' | awk 'BEGIN{FS="%"};{print "* ["$2"]("$3") | "$4}' > $LATEST5
-    echo "[PD] $(date '+%a, %d %b %Y %Z') | index.html";
-    pandoc $PD_OPTS -o $PUBLISH/index.html $CONTENT/index.$HDR $LATEST5
-    rm -f $ALLPOST $LATEST5
-
-    build_html $CONTENT/about.$HDR;
-    build_html $CONTENT/resume/resume.$HDR;
+    echo "[PD] $(date '+%a, %d %b %Y 00:00:00 +0530') | index.html";
+    pandoc $PD_OPTS -o $PUBLISH/index.html $CONTENT/index.$HDR $CONTENT/about.$HDR $LATEST5;
+    rm -f $ALLPOST $LATEST5;
 }
 
 build_rss_feeds()
 {
-    echo "[RSS] $(date '+%a, %d %b %Y %Z') | feed.xml";
+    echo "[RSS] $(date '+%a, %d %b %Y 00:00:00 +0530') | feed.xml";
     cp $STATIC/xml/feed.xml $PUBLISH/feed.xml;
-    sort -nr $ALLPOST | sed -n '1,8 p'|\
-    awk 'BEGIN{FS="%"}
-    {print "\t<item>"}
-    {print "\t\t<title>" $2 "</title>"}
-    {print "\t\t<link>http://rkks.github.io/" $3 "</link>"}
-    {print "\t\t<guid>http://rkks.github.io/" $3 "</guid>"}
-    {print "\t\t<pubDate>" $5 "</pubDate>"}
-    {print "\t\t<description>" $6 "[...]</description>\n\t</item>"}
-    END{print "</channel>\n</rss>"}'\
-    >> $PUBLISH/feed.xml
+    sort -nr $ALLPOST | sed -n '1,8 p' > $PUBLISH/recent_feeds;
+    while read post; do
+        echo "$post" |\
+            awk 'BEGIN{FS="%"}
+                {print "\t<item>"}
+                {print "\t\t<title>" $2 "</title>"}
+                {print "\t\t<link>http://rkks.github.io/wiki/" $3 "</link>"}
+                {print "\t\t<guid>http://rkks.github.io/wiki/" $3 "</guid>"}
+                {print "\t\t<pubDate>" $5 "</pubDate>"}
+                {print "\t\t<description>" $6 "[...]</description>\n\t</item>"}'\
+                >> $PUBLISH/feed.xml
+    done < $PUBLISH/recent_feeds
+    echo '    </channel>' >> $PUBLISH/feed.xml;
+    echo '</rss>' >> $PUBLISH/feed.xml;
+    perl -pi -e 's/<p>//g' $PUBLISH/feed.xml
+    perl -pi -e 's/<\/p>//g' $PUBLISH/feed.xml
+    rm -f $PUBLISH/recent_feeds;
 }
 
-build_website()
+build_proj_website()
 {
+    [[ $(basename $WEBREPO) =~ rkks.github.io ]] && { echo "User website, not project. Exit."; exit 0; }
     [[ ! -d $CONTENT ]] && { echo "Invalid content=$CONTENT"; exit 1; }
     [[ ! -d $PUBLISH ]] && { mkdir -p $PUBLISH; }
 
@@ -164,11 +188,27 @@ build_website()
     cp_static_data;
 }
 
-clean_website()
+build_user_website()
 {
+    [[ $(basename $WEBREPO) != rkks.github.io ]] && { echo "Project website, not User. Exit"; exit 0; }
+    build_resume $CONTENT/resume.$HDR;
+}
+
+clean_proj_website()
+{
+    [[ $(basename $WEBREPO) =~ rkks.github.io ]] && { echo "User website, not project. Exit."; exit 0; }
     [[ ! -d $PUBLISH ]] && { echo "Invalid publish=$PUBLISH"; exit 1; }
 
     rm -rf $PUBLISH/*;
+    echo "Cleaned $PUBLISH/";
+}
+
+clean_user_website()
+{
+    [[ $(basename $WEBREPO) != rkks.github.io ]] && { echo "Project website, not User. Exit."; exit 0; }
+    [[ ! -d $PUBLISH ]] && { echo "Invalid publish=$PUBLISH"; exit 1; }
+
+    rm -rf $PUBLISH/*.html $PUBLISH/*.pdf $PUBLISH/*.docx;
     echo "Cleaned $PUBLISH/";
 }
 
@@ -176,7 +216,7 @@ clean_website()
 # It can then be included in other files for functions.
 main()
 {
-    PARSE_OPTS="ha:bc"
+    PARSE_OPTS="ha:bcrstu"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -199,9 +239,13 @@ main()
         usage && exit $EINVAL;
     fi
 
-    ((opt_a)) && { set_paths "$optarg_a"; clean_website; }
-    ((opt_b)) && { check_paths; build_website; }
-    ((opt_c)) && { check_paths; clean_website; }
+    ((opt_a)) && { set_paths "$optarg_a"; }
+    ((opt_c)) && { check_paths; clean_proj_website; }
+    ((opt_b)) && { check_paths; build_proj_website; }
+    ((opt_r)) && { check_paths; build_rss_feeds; }
+    ((opt_s)) && { check_paths; build_resume $CONTENT/resume.$HDR; }
+    ((opt_t)) && { check_paths; clean_user_website; }
+    ((opt_u)) && { check_paths; build_user_website; }
     ((opt_h)) && { usage; }
 
     exit 0;
