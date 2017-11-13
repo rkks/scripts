@@ -66,7 +66,7 @@ proc hscp {h l f n u p} {
 
         } eof {
             # Completed the transfer
-            return 4
+            return 0
         }
     }
 
@@ -98,7 +98,7 @@ proc cscp {h l f n u p} {
             return 3
         } eof {
             puts "ERROR: Connection to host failed: $expect_out(buffer)\n"
-            return 4
+            return 0
         }
     }
 
