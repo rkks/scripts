@@ -1,16 +1,24 @@
 #!/usr/bin/env bash
 #  DETAILS: Invokes rsyncs with well known better options.
 #  CREATED: 06/29/13 16:14:34 IST
-# MODIFIED: 05/06/16 05:27:58 PDT
+# MODIFIED: 10/24/17 14:36:30 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
+
+#set -uvx           # Warn unset vars as error, Verbose (echo each command), Enable debug mode
 
 # if rsync gives 'command not found' error, it means that non-interactive bash
 # shell on server is unable to find rsync binary. So, use --rsync-path option
 # to specify exact location of rsync binary on target server.
 
-#set -uvx           # Warn unset vars as error, Verbose (echo each command), Enable debug mode
+# To backup more than just home dir, the include file determines what is to be
+# backed up now. The new rsync command (now uses in and excludes and "/" as src)
+# $RSYNC -va --delete --delete-excluded --exclude-from="$EXCLUDES" \
+# --include-from="$INCLUDES" /$SNAPSHOT_RW/home/daily.0;
+
+# Sync ~/scripts on both eng-shell1 and local server (local being mastercopy)
+#rsync -avmz -e ssh ~/scripts/ eng-shell1:~/scripts/
 
 # Source .bashrc.dev only if invoked as a sub-shell. Not if sourced.
 [[ "$(basename rsync.sh)" == "$(basename -- $0)" && -f $HOME/.bashrc.dev ]] && { source $HOME/.bashrc.dev; }
@@ -22,6 +30,7 @@ RSYNC_EXCLUDE=$CUST_CONFS/rsyncexclude
 # -a - sync all file perms/attributes
 # -h - display output in human readable form
 # -i - itemize all changes
+# -m - prune empty directories (let's keep them)
 # -q - not used as -q hides almost every info
 # -R - not used as creates confusion. use relative path names
 # -u - skip files newer on destination (don't overwrite by fault)

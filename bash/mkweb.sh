@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Script to build the gh-pages
 #  CREATED: 06/09/17 19:27:48 IST
-# MODIFIED: 06/23/17 14:40:04 IST
+# MODIFIED: 12/05/17 21:12:08 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -25,6 +25,10 @@ usage()
     echo "  -a <abs-repo-path>  - absolute repo path"
     echo "  -b                  - build web pages"
     echo "  -c                  - clean web pages"
+    echo "  -r                  - build rss feeds"
+    echo "  -s                  - build resume/cv"
+    echo "  -u                  - create user web"
+    echo "  -t                  - delete user web"
     echo "  -h                  - print this help"
 }
 
@@ -46,7 +50,8 @@ set_paths()
 
     # order if css import matters, first bootstrap.css, then color theme
     PD_CMN_OPTS="--smart --standalone -f markdown ";
-    PD_CV_OPTS="$PD_CMD_OPTS -c $CSS/resume.css -c $CSS/web.css"
+#    PD_CV_OPTS+="-c $CSS/font.css -c https://fonts.googleapis.com/css?family=Open+Sans:regular,italic,bold";
+    PD_CV_OPTS="$PD_CMD_OPTS -c $CSS/resume.css ";
     PD_WIKI_OPTS="--template=website.html -B $NAVBAR -A $FOOTER \
         -c $CSS/bootstrap.css -c $CSS/theme.css -c $CSS/web.css";
     PD_OPTS="$PD_CMN_OPTS $PD_WIKI_OPTS"
@@ -104,6 +109,11 @@ build_topic()
     rm -f $topic_lst $topic_pst
 }
 
+build_static()
+{
+    build_html $CONTENT/tech.md
+}
+
 build_html()
 {
     [[ $# -ne 1 ]] && { echo "usage: build_html <file-path>"; return; }
@@ -120,9 +130,9 @@ build_resume()
     local fpath="$1"; local file=$(basename $fpath); local name=${file%.*};
     echo "[PD] $(date '+%a, %d %b %Y 00:00:00 +0530') | $name.html";
     pandoc $PD_CV_OPTS -o $PUBLISH/$name.html $fpath
-    pandoc $PD_CV_OPTS --to docx -o $PUBLISH/$name.docx $fpath
-    #pandoc $PD_CV_OPTS --to plain -o $PUBLISH/$name.txt $fpath
-    wkhtmltopdf $PUBLISH/$name.html $PUBLISH/$name.pdf
+    #pandoc $PD_CV_OPTS --to docx -o $PUBLISH/$name.docx $fpath
+    echo "[PD] $(date '+%a, %d %b %Y 00:00:00 +0530') | $name.pdf";
+    wkhtmltopdf -q --disable-smart-shrinking -s A3 $PUBLISH/$name.html $PUBLISH/$name.pdf
 }
 
 build_index()
@@ -183,6 +193,7 @@ build_proj_website()
         build_topic "$topic"
         echo ""
     done
+    build_static
     build_rss_feeds;
     build_index;
     cp_static_data;
@@ -192,6 +203,11 @@ build_user_website()
 {
     [[ $(basename $WEBREPO) != rkks.github.io ]] && { echo "Project website, not User. Exit"; exit 0; }
     build_resume $CONTENT/resume.$HDR;
+    build_resume $CONTENT/storage.$HDR;
+    build_resume $CONTENT/network.$HDR;
+    build_resume $CONTENT/kernel.$HDR;
+    build_resume $CONTENT/consult.$HDR;
+    build_resume $CONTENT/stoke.$HDR;
 }
 
 clean_proj_website()
