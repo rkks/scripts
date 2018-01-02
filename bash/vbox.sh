@@ -1,7 +1,7 @@
 #!/bin/bash
-#  DETAILS: Virtual Box create/modify/update
+#  DETAILS: Virtual Box create/modify/update -- Vagrant UP alternative
 #  CREATED: 03/28/16 15:13:58 IST
-# MODIFIED: 04/15/16 08:10:38 IST
+# MODIFIED: 04/06/17 15:43:55 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -34,6 +34,13 @@ function create_vm()
     vboxmanage modifyvm $VM_NAME --natpf1 "guestssh,tcp,,2222,,22"
     vboxmanage modifyvm $VM_NAME --natdnshostresolver1 on
     vboxmanage sharedfolder add $VM_NAME --name shared --hostpath $SHARED_PATH --automount
+}
+
+function setup_dpdk()
+{
+    [[ $# -ne 1 ]] && { die "usage: setup_dpdk <VM-Name>"; }
+    VBoxManage setextradata $1 VBoxInternal/CPUM/SSE4.1 1
+    VBoxManage setextradata $1 VBoxInternal/CPUM/SSE4.2 1
 }
 
 function bootup_vm()
@@ -72,6 +79,17 @@ function connect_vm()
     ssh.exp 1.1.1.101;
 }
 
+function details_vm()
+{
+    VBoxManage list -l vms
+    VBoxManage list -l runningvms
+    VBoxManage list -l natnets
+    VBoxManage list -l intnets
+    VBoxManage list -l bridgedifs
+    VBoxManage list -l hostonlyifs
+    VBoxManage list -l dhcpservers
+}
+
 function list_vms()
 {
     local name=vms;
@@ -85,6 +103,7 @@ usage()
     echo "  -b <vm-name>    - boot the given virtual machine"
     echo "  -l              - list all virtual machines"
     echo "  -c <vm-name>    - connect over ssh to virtual machine"
+    echo "  -d <vm-name>    - configure VM settings to install dpdk"
     echo "  -p <vm-name>    - power-off the given virtual machine"
     echo "  -r              - list all running virtual machines"
     echo "  -s <vm-name>    - hibernate the given virtual machine"
@@ -96,7 +115,7 @@ usage()
 # It can then be included in other files for functions.
 main()
 {
-    PARSE_OPTS="hbclprst:"
+    PARSE_OPTS="hbcd:lprst:"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -122,6 +141,7 @@ main()
     ((opt_t)) && { VM_TYPE=$optarg_t; } || { VM_TYPE=headless; }
     ((opt_b)) && { bootup_vm $*; }
     ((opt_c)) && { connect_vm $*; }
+    ((opt_d)) && { setup_dpdk $optarg_d; }
     ((opt_r)) && { RUN=running; }
     ((opt_l || opt_r)) && { list_vms; }
     ((opt_p)) && { poweroff_vm $*; }

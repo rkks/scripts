@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Installer script for my tools. Downloads and installs locally.
 #  CREATED: 09/23/14 09:31:11 IST
-# MODIFIED: 03/30/17 13:34:52 IST
+# MODIFIED: 01/02/18 19:52:03 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2014, Ravikiran K.S.
@@ -39,16 +39,18 @@ function downld()
 {
     [[ $# -ne 2 ]] && { echo "downld <file> <url>"; return $EINVAL; }
     [[ -e $PWD/tar/$1 ]] && { echo "File $1 already exists"; return $EEXIST; }
+    [[ -e $DOWNLOADS/$1 ]] && { echo "File $DOWNLOADS/$1 already exists"; return $EEXIST; }
+    [[ -e $1 ]] && { echo "File $1 already exists"; mv $1 $DOWNLOADS/; return $EEXIST; }
     local fname=$1; shift;
     (own wget) && { wget --limit-rate=1m -O $fname $*; } || { curl --limit-rate 1m -# -L -o $fname $*; }
-    fail_bail; mv $fname $PWD/tar/ ;
+    fail_bail; mv $fname $DOWNLOADS/ ;
 }
 
 function untar()
 {
     [[ $# -ne 1 ]] && { echo "untar <file>"; return; }
     # Avoid mkdir $1 && tar xvzf $2 -C $1 --strip-components=1; fail_bail;
-    tar.sh -x $PWD/tar/$1; fail_bail;
+    tar.sh -x $1; fail_bail;
 }
 
 function config() {
@@ -107,15 +109,14 @@ function global_install()
 
 function pmtools_install()
 {
-    downld pmtools-2.0.0.tar.gz http://search.cpan.org/CPAN/authors/id/M/ML/MLFISHER/pmtools-2.0.0.tar.gz
-    local dir=$(tar.sh -d pmtools-2.0.0.tar.gz);
-    cd $TOOLS && untar $DOWNLOADS/pmtools-2.0.0.tar.gz && cd -;
+    downld pmtools.tar.gz http://search.cpan.org/CPAN/authors/id/M/ML/MLFISHER/pmtools-2.0.0.tar.gz
+    local dir=$(tar.sh -d pmtools.tar.gz); cd $TOOLS && untar pmtools.tar.gz && cd -;
 }
 
 function rsnapshot_install()
 {
     downld rsnapshot.tar.gz http://www.rsnapshot.org/downloads/rsnapshot-latest.tar.gz
-    cd $TOOLS && untar $DOWNLOADS/rsnapshot.tar.gz && cd -;
+    cd $TOOLS && untar rsnapshot.tar.gz && cd -;
 }
 
 function cscope-tags_install()
@@ -138,11 +139,21 @@ function set_arch()
     LDFLAGS="-m$1 $LDFLAGS";
 }
 
+function elk_install()
+{
+    downld logstash.tar.gz https://artifacts.elastic.co/downloads/logstash/logstash-5.0.0.tar.gz
+    downld kibana.tar.gz https://artifacts.elastic.co/downloads/kibana/kibana-5.0.0-darwin-x86_64.tar.gz
+    downld elasticsearch.tar.gz https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-5.0.0.tar.gz
+    untar logstash.tar.gz && mv logstash/ $TOOLS/;
+    untar kibana.tar.gz && mv kibana/ $TOOLS/;
+    untar elasticsearch.tar.gz && mv elasticsearch/ $TOOLS/;
+}
+
 # Each shell script has to be independently testable.
 # It can then be included in other files for functions.
 main()
 {
-    PARSE_OPTS="ha:cegmoprtw"
+    PARSE_OPTS="ha:ceglmoprtw"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -167,7 +178,7 @@ main()
 
     ((own wget) || (own curl)) || { echo "wget/curl not found"; exit $EINVAL; }
     [[ ! -d $TOOLS ]] && { mkdie $TOOLS; }
-    [[ ! -d $DOWNLOADS/tar/ ]] && { mkdie $DOWNLOADS/tar/; }
+    [[ ! -d $DOWNLOADS ]] && { mkdie $DOWNLOADS; }
 
     cdie $DOWNLOADS;
     ((opt_a)) && { set_arch $optarg_a; }
@@ -175,6 +186,7 @@ main()
     ((opt_e)) && { expect_install; }
     ((opt_g)) && { global_install; }
     ((opt_m)) && { pmtools_install; }
+    ((opt_l)) && { elk_install; }
     ((opt_o)) && { openssl_install; }
 #    ((opt_p)) && { p7zip_install; }
     ((opt_r)) && { rsnapshot_install; }

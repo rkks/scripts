@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Find command wrappers
 #  CREATED: 07/16/13 21:22:06 IST
-# MODIFIED: 03/28/16 17:46:46 IST
+# MODIFIED: 08/06/17 22:58:18 PDT
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -27,43 +27,52 @@ function clean_obj()
     find $FINDOPT $dir_path -type f -regex "$OBJ_PAT" -exec rm -f {} \;
 }
 
-function findgrep()
+function findgrep_code()
 {
-    [[ $# -eq 0 ]] && { echo "usage: findgrep <text>"; return $EINVAL; }
+    [[ $# -eq 0 ]] && { echo "usage: findgrep_code <text>"; return $EINVAL; }
 
     local dpath=.; local findexclude=$dpath/findexclude
 
     [[ "$UNAMES" == "Linux" || "$UNAMES" == "SunOS" ]] && { SRC_PAT=".*\.\([cChHlxsSy]\|cpp\|[io]dl\|p[lmy]\|mib\|mk\|sh\)"; }
     [[ "$UNAMES" == "FreeBSD" || "$UNAMES" == "Darwin" ]] && { SRC_PAT=".*\.([cChHlxsSy]|cpp|[io]dl|p[lmy]|mib|mk|sh)"; FINDOPT=-E; }
-
     [[ "" == "$SRC_PAT" ]] && { echo "Unknown machine" && return; }
+    FINDOPT+=" -type f -o -type l";
+
+    [[ ! -f $findexclude ]] && { run find $dpath $FINDOPT -regex "$SRC_PAT" -exec grep -Hni "$@" {} \; 2>/dev/null; return; }
 
     # Recurse through all subdirectories to be included
     for dir in $(ls -d */); do
-        # pruning unwanted stuff
-        [[ -f $findexclude ]] && { local exclude=$(grep -Eo "(^|[[:space:]])$dir($|[[:space:]])" $findexclude | wc -l); } || { local exclude=0; }
+        # pruning unwanted stuff. "(^|[[:space:]])$dir($|[[:space:]])" doesn't work
+        [[ -f $findexclude ]] && { local exclude=$(grep -w "$dir" $findexclude | wc -l); } || { local exclude=0; }
         # Passing $* to grep allows different grep options to be given
-        [[ $exclude -eq 0 ]] && { run find $FINDOPT $dpath/$dir -type f -regex "$SRC_PAT" -exec grep -Hn $* {} \;; }
+        [[ $exclude -eq 0 ]] && { run find $dpath/$dir $FINDOPT -regex "$SRC_PAT" -exec grep -Hn $@ {} \;; }
     done
     # To search files in base directory run find again with '-maxdepth 1'
-    run find $FINDOPT $dpath -type f -maxdepth 1 -regex "$SRC_PAT" -exec grep -Hn $* {} \;
+    run find $FINDOPT $dpath -maxdepth 1 -regex "$SRC_PAT" -exec grep -Hn $* {} \;
 }
 
 function findtxt()
 {
     [[ $# -eq 0 ]] && { echo "usage: findtxt <text>"; return $EINVAL; }
 
-    local dpath=.; local findexclude=$dpath/findexclude
+    local dpath=.; local findexclude=$dpath/findexclude;
+    #local dpath="(^|[[:space:]])$dirpath($|[[:space:]])";
+
+    [[ "$UNAMES" == "Linux" || "$UNAMES" == "SunOS" ]] && { FINDOPT+=" -type f -o -type l"; } # causes problem on LBT
+    [[ "$UNAMES" == "FreeBSD" || "$UNAMES" == "Darwin" ]] && { FINDOPT=-E; }
+
+    [[ ! -f $findexclude ]] && { run find $dpath $FINDOPT -exec grep -Hni "$@" {} \; 2>/dev/null; return; }
 
     # Recurse through all subdirectories to be included
     for dir in $(ls -d */); do
         # pruning unwanted stuff
-        [[ -f $findexclude ]] && { local exclude=$(grep -Eo "(^|[[:space:]])$dir($|[[:space:]])" $findexclude | wc -l); } || { local exclude=0; }
+        #local exclude=$(grep -Eo $dirpat $findexclude | wc -l);
+        [[ -f $findexclude ]] && { local exclude=$(grep -w "$dir" $findexclude | wc -l); } || { local exclude=0; }
         # Passing $* to grep allows different grep options to be given
-        [[ $exclude -eq 0 ]] && { run find $dpath/$dir -type f -name "*" -exec grep -Hn $* {} \;; }
+        [[ $exclude -eq 0 ]] && { run find $dpath/$dir -name "*" -exec grep -Hni '$*' {} \; 2>/dev/null; }
     done
     # To search files in base directory run find again with '-maxdepth 1'
-    run find $FINDOPT $dpath -type f -maxdepth 1 -name "*" -exec grep -Hn $* {} \;
+    run find $FINDOPT $dpath -maxdepth 1 -name "*" -exec grep -Hn $* {} \; 2>/dev/null;
 }
 
 function findexe()
