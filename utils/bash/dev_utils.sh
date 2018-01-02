@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Development Utilities
 #  CREATED: 06/25/13 11:16:41 IST
-# MODIFIED: 03/09/16 08:15:33 PST
+# MODIFIED: 12/06/17 00:55:55 PST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -13,7 +13,7 @@ function export_dev_funcs()
 {
     local FUNCS="chownall cpx dos2unixall reset_tty hide unhide screentab starthttp"
     FUNCS="truncate_file vncs push_ssh_cert f bug rli make_workspace_alias $FUNCS"
-    FUNCS="diffscp compare show_progress encrypt decrypt get_ip_addr $FUNCS"
+    FUNCS="diffscp compare show_progress get_ip_addr $FUNCS"
     export_func $FUNCS;
 }
 
@@ -114,20 +114,6 @@ function show_progress()
         newwc=$(wc -l $file | awk '{print $1}')
     done
     printf "    \b\b\b\b"
-}
-
-# Any string with $ within should be passed as: encrypt 'str' <salt>
-function encrypt()
-{
-    [[ $# -ne 2 ]] && { echo "usage: encrypt <str> <salt>"; return; }
-    (own openssl) && { echo "$1" | openssl enc -aes-256-cbc -a -e -k $2; }
-}
-
-# Encoded key is Base64, so can be input as: decrypt <key> <salt>
-function decrypt()
-{
-    [[ $# -ne 2 ]] && { echo "usage: decrypt <key> <salt>"; return; }
-    (own openssl) && { echo "$1" | openssl enc -aes-256-cbc -a -d -k $2; }
 }
 
 function get_ip_addr()

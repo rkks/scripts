@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Send mail to pre-defined email addresses
 #  CREATED: 11/19/12 14:14:03 IST
-# MODIFIED: 03/28/16 17:48:38 IST
+# MODIFIED: 09/14/17 02:13:14 PDT
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2012, Ravikiran K.S.
@@ -12,9 +12,6 @@
 [[ "$(basename mail.sh)" == "$(basename -- $0)" && -f $HOME/.bashrc.dev ]] && { source $HOME/.bashrc.dev; }
 # Global defines. (Re)define ENV only if necessary.
 
-# ravikirandotks@gmail.com mrksravikiran@gmail.com friends4web@gmail.com
-MAILADDRS=raviks@juniper.net
-
 mail-send()
 {
     args=$#
@@ -23,9 +20,11 @@ mail-send()
         exit 1
     fi
 
-    box=$(hostname_short)
+    [[ -z $MAILADDRS ]] && { echo "No email addresses found"; exit 1; }
+    box="$(hostname)"
     content="$2"
     for email in $MAILADDRS; do
+        echo "Sending email from $box to $email. content: $content";
         # no 'run' for mailx. Gets confused.
         mailx -s "[$1] From $box" $email < $content
     done
@@ -33,10 +32,11 @@ mail-send()
 
 usage()
 {
-    echo "usage: mail.sh <-b <build-log>|-c|-f <file>|-h>"
+    echo "usage: mail.sh <-b <build-log>|-c|-e <email-id>|-f <file>|-h>"
     echo "Options:"
     echo "  -b <build-log>  - mail the build log provided"
     echo "  -c              - mail the log from cron job"
+    echo "  -e <email-id>   - mail address to post email"
     echo "  -f <file>       - mail the file provided"
     echo "  -h              - print this help message"
 }
@@ -45,7 +45,7 @@ usage()
 # It can then be included in other files for functions.
 main()
 {
-    PARSE_OPTS="hb:cf:"
+    PARSE_OPTS="hb:ce:f:"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -68,6 +68,7 @@ main()
         usage && exit $EINVAL;
     fi
 
+    ((opt_e)) && { MAILADDRS="$optarg_e"; } || { MAILADDRS="friends4web@gmail.com"; }
     ((opt_b)) && mail-send "BUILD" $optarg_b
     ((opt_c)) && mail-send "CRON" $SCRPT_LOGS/cron.log
     ((opt_f)) && mail-send "AUTO" $optarg_f

@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 05/24/16 16:24:05 IST
+# MODIFIED: 03/17/17 00:17:16 PDT
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -41,11 +41,14 @@ function export_bash_funcs()
     export_func $FUNCS;
 }
 
+# prints to stderr instead of stdout
+function warn() { >&2 echo $@; }
+
 # usage: run <cmd> <args>
-function run() { [[ "yes" == "$SHDEBUG" ]] && echo "$*"; $*; return $?; }
+function run() { [[ "yes" == "$SHDEBUG" ]] && warn "$*"; $*; return $?; }
 
 # usage: shell <cmd> <args>
-function shell() { [[ "yes" == "$SHDEBUG" ]] && echo "$(pwd)\$ $*" || "$SHELL $*"; return $?; }
+function shell() { [[ "yes" == "$SHDEBUG" ]] && warn "$(pwd)\$ $*" || "$SHELL $*"; return $?; }
 
 # usage: (own ls) && echo true || echo flase
 function own { which "$1" &>/dev/null; }        # Error moved to /dev/null because on Solaris, 'which' cmd emits stty error
@@ -87,14 +90,14 @@ function up() { local d=""; for ((i=1;i<=$1;i++)); do d=../$d; done; echo "cd $d
 # Colors - Enable colors for ls, etc.
 function bash_dircolors()
 {
-    [[ -z $PS1_COLOR ]] && { echo "ps1_prompt: PS1_COLOR not set"; return 1; }
+    [[ -z $PS1_COLOR ]] && { warn "ps1_prompt: PS1_COLOR not set"; return 1; }
     local d="$CUST_CONFS/dir_colors_$PS1_COLOR"; [[ ! -f $d ]] && { return 1; }
     (own dircolors) && { eval $(dircolors -b $d); return 0; }
 }
 
 function ps1_prompt()
 {
-    [[ -z $PS1_COLOR ]] && { echo "ps1_prompt: PS1_COLOR not set"; return 1; }
+    [[ -z $PS1_COLOR ]] && { warn "ps1_prompt: PS1_COLOR not set"; return 1; }
     # B=BLACK, W=WHITE, Y=YELLOW, R=RED, G=GREEN, P=PURPLE, U=BLUE, C=CYAN, N=NO COLOR
     local N="\[\033[0m\]";
     case $PS1_COLOR in
@@ -171,7 +174,7 @@ function becho() { echo $(date +"%Y-%m-%d %H:%M:%S") $(hostname_short) $(basenam
 function decho() { [[ "yes" == "$SHDEBUG" ]] && becho "$*"; }
 
 # Flag error if last command was unsuccessful. Ex: $ cmd <opts>; ret_chk
-function ret_chk() { local ret=$?; [[ $ret -ne 0 ]] && becho "[ERROR] Command Failure. ret=$ret"; }
+function ret_chk() { local ret=$?; [[ $ret -ne 0 ]] && warn "[ERROR] Command Failure. ret=$ret"; }
 
 # given input list of files, source them
 function source_script()
@@ -187,13 +190,13 @@ function source_script()
 # print input string and exit with input error value
 function die()
 {
-    [[ $# -lt 2 ]] && { echo "usage: die <errno> <err-str>"; return $EINVAL; } || { local err=$1; shift; becho $@ >&2; exit $err; }
+    [[ $# -lt 2 ]] && { warn "usage: die <errno> <err-str>"; return $EINVAL; } || { local err=$1; shift; becho $@ >&2; exit $err; }
 }
 
 # ASSERT for a positive value.
 function assert()
 {
-    [[ $# -lt 1 ]] && { echo "usage: assert <value>"; return $EINVAL; }
+    [[ $# -lt 1 ]] && { warn "usage: assert <value>"; return $EINVAL; }
     [[ ! $1 ]] && die $EASSERT "Assertion failed - $1";      # if error, die. else return & continue executing script
 }
 
@@ -253,7 +256,7 @@ function run_on()
 
 usage()
 {
-    echo "usage: bash_utils.sh []"
+    warn "usage: bash_utils.sh []"
 }
 
 # Each shell script has to be independently testable.

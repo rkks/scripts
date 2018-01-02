@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Cscope Utils
 #  CREATED: 06/25/13 11:05:14 IST
-# MODIFIED: 05/12/16 07:20:10 PDT
+# MODIFIED: 05/14/17 01:17:10 PDT
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -22,9 +22,9 @@ function findsrc()
 
     # -follow -name "<pattern>" doesn't work
     if [ "$UNAMES" = "Linux" -o "$UNAMES" = "SunOS" ]; then
-        local SRC_PAT=".*\.\([cChHlxsSy]\|cpp\|[io]dl\|p[lmy]\|mk\|sh\)"; local FINDOPT=
+        local SRC_PAT=".*\.\([cChHlxsSy]\|cpp\|[io]dl\|p[lmy]\|mk\|sh\|inc\)"; local FINDOPT=
     elif [ "$UNAMES" = "FreeBSD" ]; then
-        local SRC_PAT=".*\.([cChHlxsSy]|cpp|[io]dl|p[lmy]|mk|sh)"; local FINDOPT=-E
+        local SRC_PAT=".*\.([cChHlxsSy]|cpp|[io]dl|p[lmy]|mk|sh|inc)"; local FINDOPT=-E
     else
         echo "Unknown machine $UNAMES" && return
     fi

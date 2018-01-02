@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Installer script for my tools. Downloads and installs locally.
 #  CREATED: 09/23/14 09:31:11 IST
-# MODIFIED: 11/11/16 20:32:02 IST
+# MODIFIED: 01/02/18 19:52:03 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2014, Ravikiran K.S.
@@ -38,6 +38,7 @@ usage()
 function downld()
 {
     [[ $# -ne 2 ]] && { echo "downld <file> <url>"; return $EINVAL; }
+    [[ -e $PWD/tar/$1 ]] && { echo "File $1 already exists"; return $EEXIST; }
     [[ -e $DOWNLOADS/$1 ]] && { echo "File $DOWNLOADS/$1 already exists"; return $EEXIST; }
     [[ -e $1 ]] && { echo "File $1 already exists"; mv $1 $DOWNLOADS/; return $EEXIST; }
     local fname=$1; shift;
@@ -84,16 +85,16 @@ function wget_install()
 # download from https://github.com/downloads/libevent/libevent/libevent-xxx.tar.gz gives SSL error
 function tmux_install()
 {
-    sinstall libtool.tar.gz http://ftp.gnu.org/gnu/libtool/libtool-2.4.tar.gz
-    sinstall autoconf.tar.gz http://ftp.gnu.org/gnu/autoconf/autoconf-latest.tar.gz
-    sinstall automake.tar.gz http://ftp.gnu.org/gnu/automake/automake-1.14.tar.gz
-    sinstall gettext.tar.gz http://ftp.gnu.org/gnu/gettext/gettext-latest.tar.gz
+    #sinstall libtool.tar.gz http://ftp.gnu.org/gnu/libtool/libtool-2.4.tar.gz
+#    sinstall autoconf.tar.gz http://ftp.gnu.org/gnu/autoconf/autoconf-latest.tar.gz
+#    sinstall automake.tar.gz http://ftp.gnu.org/gnu/automake/automake-1.14.tar.gz
+#    sinstall gettext.tar.gz http://ftp.gnu.org/gnu/gettext/gettext-latest.tar.gz
 #    --disable-shared
-    sinstall libevent.tar.gz http://sourceforge.net/projects/levent/files/libevent/libevent-2.0/libevent-2.0.21-stable.tar.gz
-    sinstall ncurses.tar.gz ftp://ftp.gnu.org/gnu/ncurses/ncurses-5.9.tar.gz --without-ada
-    CFLAGS+=" -I$HOME/tools/$UNAMES/include/ncurses";
-    LDFLAGS+=" -L$HOME/tools/$UNAMES/include/ncurses -L$HOME/tools/$UNAMES/include"
-    sinstall tmux.tar.gz http://downloads.sourceforge.net/tmux/tmux-1.9a.tar.gz
+#    sinstall libevent.tar.gz http://sourceforge.net/projects/levent/files/libevent/libevent-2.0/libevent-2.0.21-stable.tar.gz
+#    sinstall ncurses.tar.gz ftp://ftp.gnu.org/gnu/ncurses/ncurses-5.9.tar.gz --without-ada
+    CFLAGS+=" -I$HOME/tools/$UNAMES/include/ncurses -I$HOME/tools/$UNAMES/include";
+    LDFLAGS+=" -L$HOME/tools/$UNAMES/lib/ncurses -L$HOME/tools/$UNAMES/lib"
+    sinstall tmux.tar.gz https://github.com/tmux/tmux/releases/download/1.9a/tmux-1.9a.tar.gz
 }
 
 function expect_install()

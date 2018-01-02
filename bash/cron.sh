@@ -3,7 +3,7 @@
 #
 #   AUTHOR: Ravikiran K.S. (ravikirandotks@gmail.com)
 #  CREATED: 11/08/11 13:35:02 PST
-# MODIFIED: 05/11/16 04:18:37 PDT
+# MODIFIED: 07/20/17 21:36:19 PDT
 
 # Cron has defaults below. Redefining to suite yours(if & only if necessary).
 # HOME=user-home-directory  # LOGNAME=user.s-login-id
@@ -115,8 +115,24 @@ function build()
 function download()
 {
     [[ ! -z "$(grep -w $FUNCNAME $CUST_CONFS/cronskip)" ]] && { echo "$0: Skip $FUNCNAME"; return; }
+    local linkfile=$CUST_CONFS/downlinks;
+    [[ ! -f $linkfile ]] && { echo "$linkfile not found. No pending downloads"; return; }
+    [[ ! -d $DOWNLOADS ]] && { run mkdir -p $DOWNLOADS; }
     log INFO "Start pending downloads"
-    shell download.sh $CUST_CONFS/downlinks;
+    run cdie $DOWNLOADS
+    while read line
+    do
+        log INFO "Download $line"
+        run wget -c -o wget-$(basename $line).log -t 3 -b $line;
+        if [ "$?" != "0" ]; then
+            log ERROR "Error downloading $line"
+        fi
+    done<$linkfile
+
+    log INFO "Clean download list"
+    cat /dev/null > $linkfile;
+
+    return 0;
 }
 
 function report()
