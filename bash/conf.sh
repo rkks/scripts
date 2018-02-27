@@ -20,12 +20,12 @@
 
 # .bashrc.dev not sourced as it creates cyclic dependencies during first time setting up of environment.
 
-function link-files()
+function link_files()
 {
-    [[ $# -lt 3 ]] && { echo "Usage: link-files <flag> <src-dir> <dst-dir> [files-list]"; echo "  flag = DOT|NORMAL"; return; }
+    [[ $# -lt 3 ]] && { echo "Usage: link_files <flag> <src-dir> <dst-dir> [files-list]"; echo "  flag = DOT|NORMAL"; return; }
 
     local FLAG=$1; shift; local SRC_DIR=$1; shift; local DST_DIR=$1; shift;
-    [[ ! -d $SRC_DIR ]] && { echo "[ERROR] src: $SRC_DIR doesnt exist"; exit 1; }
+    #[[ ! -d $SRC_DIR ]] && { echo "[ERROR] src: $SRC_DIR doesnt exist"; exit 1; }
     [[ ! -d $DST_DIR ]] && { echo "[INFO] dst: $DST_DIR doesnt exist. Creating new one."; mkdir -p $DST_DIR; }
     if [ $# -eq 3 ]; then
         cd $SRC_DIR || { echo "Unable to change directory to $SRC_DIR"; exit 1; }
@@ -46,7 +46,7 @@ function link-files()
 
 # Don't link: diffexclude rsyncexclude tarexclude dir_colors_dark/light downlinks doxygen.cfg gdb_history logrotate.conf
 # Not applicable for all machines. Solaris hangs with this file. Xdefaults
-link-confs()
+link_confs()
 {
     echo "Linking Configuration Files/Directories - Start"
 
@@ -56,27 +56,27 @@ link-confs()
     CONFS+=" mailrc pinerc screenrc toprc gvimrc vimrc tmux.conf"
     CONFS+=" gdbinit gitattributes gitconfig indent.pro"
     CONFS+=" cookies cvspass mail_aliases rhosts"
-    CONFS+=" hushlogin"
+    CONFS+=" hushlogin xprofile"
 
-    link-files DOT $HOME/conf $HOME $CONFS
-    link-files DOT $HOME/conf/custom $HOME bashrc.dev
+    link_files DOT $HOME/conf $HOME $CONFS
+    link_files DOT $HOME/conf/custom $HOME bashrc.dev
 
     echo "Linking Configuration Files/Directories - Done"
 }
 
 # Do not link: bash_history gdb_history history lesshst
-link-logs()
+link_logs()
 {
     echo "Linking Log Files/Directories - Start"
 
     LOGS=" "
 
-    link-files DOT $HOME/.logs $HOME $LOGS
+    link_files DOT $HOME/.logs $HOME $LOGS
 
     echo "Linking Log Files/Directories - Done"
 }
 
-link-scripts()
+link_scripts()
 {
     [[ ! -d ~/scripts ]] && { echo "$HOME/scripts doesnt exist."; return; }
 
@@ -88,13 +88,13 @@ link-scripts()
     SCRIPTS+=" 3rd-party/bash 3rd-party/perl 3rd-party/python 3rd-party/ruby"
 
     for dir in $SCRIPTS; do
-        [ -d "$HOME/scripts/$dir" ] && link-files REG $HOME/scripts/$dir $HOME/scripts/bin $(cd $HOME/scripts/$dir/ && ls *)
+        [ -d "$HOME/scripts/$dir" ] && link_files REG $HOME/scripts/$dir $HOME/scripts/bin $(cd $HOME/scripts/$dir/ && ls *)
     done
 
     echo "Linking Script Files - Done"
 }
 
-link-tools()
+link_tools()
 {
     [[ ! -d ~/tools ]] && { echo "$HOME/tools doesnt exist."; return; }
 
@@ -129,7 +129,7 @@ link-tools()
     echo "Linking Tool binary Files - Done"
 }
 
-stop-cron()
+stop_cron()
 {
     echo "Configuring Cron - Stop"
     $HOME/scripts/bin/cron.sh -l
@@ -137,12 +137,33 @@ stop-cron()
     echo "Configuring Cron - Done"
 }
 
-start-cron()
+start_cron()
 {
     echo "Configuring Cron - Start"
     $HOME/scripts/bin/cron.sh -s $HOME/conf/custom/crontab
     $HOME/scripts/bin/cron.sh -l
     echo "Configuring Cron - Done"
+}
+
+pull_github()
+{
+    [[ $# -ne 1]] && { echo "usage: pull_github <repo-name>"; return; }
+    git clone https://github.com/rkks/$1.git
+    cd $1 && git remote set-url origin git@github.com:rkks/$1.git && cd -
+}
+
+pull_conf()
+{
+    pull_github conf;
+    pull_github scripts;
+}
+
+pull_extra()
+{
+    pull_github rkks.github.io;
+    pull_github wiki;
+    pull_github notes;
+    pull_github refer;
 }
 
 function usage()
@@ -154,6 +175,7 @@ function usage()
     echo "  -d - delete cron job of user"
     echo "  -l - create symlink of user log files"
     echo "  -n - create symlink of user conf files"
+    echo "  -p - pull github dev setup files"
     echo "  -s - create symlink of user script files"
     echo "  -t - create symlink of user tool binaries"
     echo "  -h - print this help message"
@@ -184,13 +206,14 @@ main()
         usage && exit $EINVAL;
     fi
 
-    ((opt_a)) && (link-confs; link-logs; link-scripts; link-tools; stop-cron; start-cron; exit 0)
-    ((opt_n)) && link-confs
-    ((opt_l)) && link-logs
-    ((opt_s)) && link-scripts
-    ((opt_t)) && link-tools
-    ((opt_c)) && start-cron
-    ((opt_d)) && stop-cron
+    ((opt_a)) && (link_confs; link_logs; link_scripts; link_tools; stop_cron; start_cron; exit 0)
+    ((opt_n)) && link_confs
+    ((opt_l)) && link_logs
+    ((opt_p)) && pull_conf
+    ((opt_s)) && link_scripts
+    ((opt_t)) && link_tools
+    ((opt_c)) && start_cron
+    ((opt_d)) && stop_cron
     ((opt_h)) && (usage; exit 0)
 
     exit 0
