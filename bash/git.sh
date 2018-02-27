@@ -1,13 +1,21 @@
 #!/usr/bin/env bash
 #  DETAILS: External diff tool for git
 #  CREATED: 03/20/13 21:55:08 IST
-# MODIFIED: 04/01/16 01:48:20 PDT
+# MODIFIED: 02/27/18 18:52:48 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
 
 #set -uvx               # Treat unset variables as an error, verbose, debug mode
 [[ "$(basename git.sh)" == "$(basename -- $0)" && -f $HOME/.bashrc.dev ]] && { source $HOME/.bashrc.dev; }
+
+# .mailmap allows users with different email-addrs to be recognized by same name
+function add_mailmap()
+{
+    git shortlog -se | awk -F'[ -' '{print $2,$3,$2,$3}' | sort > .mailmap
+    # Now manually edit .mailmap to name all emails belonging to single person
+    # with same Name/title. So that release-notes generates grouping with name
+}
 
 function add_ssh_key()
 {

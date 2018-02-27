@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Cscope Utils
 #  CREATED: 06/25/13 11:05:14 IST
-# MODIFIED: 05/14/17 01:17:10 PDT
+# MODIFIED: 02/27/18 12:42:38 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -18,7 +18,7 @@ SRC_FILES=src.list
 # Do not use cscope-indexer. This is slow but flexible.
 function findsrc()
 {
-    local dpath=.; local findexclude=$dpath/findexclude
+    local dpath=.; local findexclude=$dpath/findexclude; local d; local dir;
 
     # -follow -name "<pattern>" doesn't work
     if [ "$UNAMES" = "Linux" -o "$UNAMES" = "SunOS" ]; then
@@ -31,12 +31,13 @@ function findsrc()
 
     truncate_file $SRC_FILES
     log DEBUG "Find source files from $PWD"
-    for dir in $(ls -d */); do
+    for d in $(ls -d */); do
+        dir=${d%/};
         [[ -f $findexclude ]] && { local exclude=$(grep -Eo "(^|[[:space:]])$dir($|[[:space:]])" $findexclude | wc -l); } || { local exclude=0; }
         [[ $exclude -eq 0 ]] && { run find $FINDOPT $dpath/$dir -type f -regex "$SRC_PAT" -print >> $SRC_FILES; }
     done
     # look for files in base directory
-    run find $FINDOPT $dpath -type f -maxdepth 1 -regex "$SRC_PAT" -print >> $SRC_FILES
+    run find $FINDOPT $dpath -maxdepth 1 -type f -regex "$SRC_PAT" -print >> $SRC_FILES
 }
 
 function cscope_db_clean()

@@ -20,6 +20,17 @@
 
 # .bashrc.dev not sourced as it creates cyclic dependencies during first time setting up of environment.
 
+function create_user()
+{
+    sudo adduser $1;
+    sudo usermod -aG sudo $1;
+}
+
+function delete_user()
+{
+    sudo deluser $1;
+}
+
 function link_files()
 {
     [[ $# -lt 3 ]] && { echo "Usage: link_files <flag> <src-dir> <dst-dir> [files-list]"; echo "  flag = DOT|NORMAL"; return; }
@@ -178,12 +189,14 @@ function usage()
     echo "  -p - pull github dev setup files"
     echo "  -s - create symlink of user script files"
     echo "  -t - create symlink of user tool binaries"
+    echo "  -u <username> - create user of given name"
+    echo "  -v <username> - delete user of given name"
     echo "  -h - print this help message"
 }
 
 main()
 {
-    PARSE_OPTS="hacdlnst"
+    PARSE_OPTS="hacdlnstu:v:"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -214,6 +227,8 @@ main()
     ((opt_t)) && link_tools
     ((opt_c)) && start_cron
     ((opt_d)) && stop_cron
+    ((opt_u)) && create_user $optarg_u
+    ((opt_v)) && delete_user $optarg_v
     ((opt_h)) && (usage; exit 0)
 
     exit 0
