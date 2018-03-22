@@ -158,7 +158,7 @@ start_cron()
 
 pull_github()
 {
-    [[ $# -ne 1]] && { echo "usage: pull_github <repo-name>"; return; }
+    [[ $# -ne 1 ]] && { echo "usage: pull_github <repo-name>"; return; }
     git clone https://github.com/rkks/$1.git
     cd $1 && git remote set-url origin git@github.com:rkks/$1.git && cd -
 }
