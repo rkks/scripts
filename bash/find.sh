@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Find command wrappers
 #  CREATED: 07/16/13 21:22:06 IST
-# MODIFIED: 08/06/17 22:58:18 PDT
+# MODIFIED: 03/07/18 13:34:07 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -13,6 +13,12 @@
 [[ "$(basename find.sh)" == "$(basename -- $0)" && -f $HOME/.bashrc.dev ]] && { source $HOME/.bashrc.dev; }
 
 function findcores() { find ${1:-.} -type f -name "*core*.gz"; }
+
+# Find files belonging to removed users and user-groups on system
+function find_nouser_nogroup_files()
+{
+    find / -nouser -o -nogroup 2> /dev/null
+}
 
 function clean_obj()
 {

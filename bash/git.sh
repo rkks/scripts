@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: External diff tool for git
 #  CREATED: 03/20/13 21:55:08 IST
-# MODIFIED: 02/27/18 18:52:48 IST
+# MODIFIED: 03/01/18 20:02:50 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -17,13 +17,31 @@ function add_mailmap()
     # with same Name/title. So that release-notes generates grouping with name
 }
 
+function configure_local_repo()
+{
+    [[ $# -ne 1 ]] && { echo "usage: set_local_repo_user <key-value-conf-file-path>"; return 1; }
+    while IFS== read -r key value; do
+        echo "git config $key \"$value\"";
+        git config $key "$value";
+    done < $1;
+}
+
 function add_ssh_key()
 {
-    [[ $# -ne 1 -o ! -e $1 ]] && { echo "usage: add_ssh_key <rsa/dsa-priv-file>"; echo "  ex. ~/.ssh/id_rsa"; return 1; }
+    [[ $# -ne 1 ]] && { echo "usage: add_ssh_key <rsa/dsa-priv-file>"; echo "  ex. ~/.ssh/id_rsa"; return 1; }
+    [[ ! -e $1 ]] && { echo "$1 not found"; return 1; }
     local agent=$(eval "$(ssh-agent -s)")
     [[ $agent =~ Agent* ]] && { ssh-add $*; } || return 1;
     ssh -T git@bitbucket.org;   # watch for username printed in 'logged in as rkks'
     ssh -T git@github.com;      # watch for username printed in "Hi rkks! You've successfully authenticated""'"
+}
+
+function track_branch_all()
+{
+    # Tracks all branches with remote
+    for branch in `git branch -a | grep remotes | grep -v HEAD | grep -v master `; do
+        git branch --track ${branch#remotes/origin/} $branch
+    done
 }
 
 function usage()
@@ -32,8 +50,10 @@ function usage()
     echo "Usual set of arguments provided by git while invoking external diff program"
     echo "OR"
     echo "usage: git.sh [-h|-a]"
-    echo "  -a <ssh-priv-key>       - add ssh private key to agent. ex: ~/.ssh/id_rsa"
-    echo "  -h                      - print this help message"
+    echo "  -a <ssh-priv-key>   - add ssh private key to agent. ex: ~/.ssh/id_rsa"
+    echo "  -c <kv-conf-path>   - use given key-val file to configure local repo"
+    echo "  -t                  - track all branches in remote repo"
+    echo "  -h                  - print this help message"
 }
 
 # Each shell script has to be independently testable.
@@ -41,9 +61,9 @@ function usage()
 main()
 {
     local DIFF=$(which diff 2>/dev/null);
-    [[ $# -eq 7 -a ! -z $DIFF ]] && { $DIFF "$2" "$5"; exit 0; }       # echo $*
+    [[ $# -eq 7 ]] && { [[ ! -z $DIFF ]] && $DIFF "$2" "$5"; exit 0; }  # echo $*
 
-    PARSE_OPTS="ha:"
+    PARSE_OPTS="ha:c:t"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -67,6 +87,8 @@ main()
     fi
 
     ((opt_a)) && { add_ssh_key $optarg_a; }
+    ((opt_c)) && { configure_local_repo $optarg_c; }
+    ((opt_t)) && { track_branch_all $optarg_t; }
     ((opt_h)) && { usage; }
 
     exit 0;
