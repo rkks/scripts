@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Cscope Utils
 #  CREATED: 06/25/13 11:05:14 IST
-# MODIFIED: 02/27/18 12:42:38 IST
+# MODIFIED: 03/22/18 12:20:41 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -18,7 +18,7 @@ SRC_FILES=src.list
 # Do not use cscope-indexer. This is slow but flexible.
 function findsrc()
 {
-    local dpath=.; local findexclude=$dpath/findexclude; local d; local dir;
+    local dpath=.; local findexclude=$dpath/.findexc; local d; local dir;
 
     # -follow -name "<pattern>" doesn't work
     if [ "$UNAMES" = "Linux" -o "$UNAMES" = "SunOS" ]; then
