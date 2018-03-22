@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Find command wrappers
 #  CREATED: 07/16/13 21:22:06 IST
-# MODIFIED: 03/07/18 13:34:07 IST
+# MODIFIED: 03/22/18 12:21:22 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -37,7 +37,7 @@ function findgrep_code()
 {
     [[ $# -eq 0 ]] && { echo "usage: findgrep_code <text>"; return $EINVAL; }
 
-    local dpath=.; local findexclude=$dpath/findexclude
+    local dpath=.; local findexclude=$dpath/.findexc
 
     [[ "$UNAMES" == "Linux" || "$UNAMES" == "SunOS" ]] && { SRC_PAT=".*\.\([cChHlxsSy]\|cpp\|[io]dl\|p[lmy]\|mib\|mk\|sh\)"; }
     [[ "$UNAMES" == "FreeBSD" || "$UNAMES" == "Darwin" ]] && { SRC_PAT=".*\.([cChHlxsSy]|cpp|[io]dl|p[lmy]|mib|mk|sh)"; FINDOPT=-E; }
@@ -61,7 +61,7 @@ function findtxt()
 {
     [[ $# -eq 0 ]] && { echo "usage: findtxt <text>"; return $EINVAL; }
 
-    local dpath=.; local findexclude=$dpath/findexclude;
+    local dpath=.; local findexclude=$dpath/.findexc;
     #local dpath="(^|[[:space:]])$dirpath($|[[:space:]])";
 
     [[ "$UNAMES" == "Linux" || "$UNAMES" == "SunOS" ]] && { FINDOPT+=" -type f -o -type l"; } # causes problem on LBT
@@ -87,12 +87,12 @@ function findexe()
 
     FIND_PAT="application/x-executable|application/x-object"
     # For additional options and pruning unwanted stuff
-    if [ -f $dir_path/findinc ]; then
+    if [ -f $dir_path/.findinc ]; then
         # Recurse through all subdirectories to be included
-        for dir in $(cat $dir_path/findinc); do
+        for dir in $(cat $dir_path/.findinc); do
             find . -type f -exec file -i '{}' \; | grep -E "$FIND_PAT" | awk -F : '{print $1}'
         done
-        # To search files in base directory add . as an entry to findinc. Alternately, run find again with '-maxdepth 1'
+        # To search files in base directory add . as an entry to .findinc. Alternately, run find again with '-maxdepth 1'
     else
         find . -type f -exec file -i '{}' \; | grep -E "$FIND_PAT" | awk -F : '{print $1}'
     fi
