@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: 
 #  CREATED: 12/06/2017 12:44:14 AM PST
-# MODIFIED: 03/21/18 12:55:30 IST
+# MODIFIED: 04/04/18 18:45:28 PDT
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -9,13 +9,15 @@
 
 #set -uvx   # Warn unset vars, Verbose (echo each command), Enable debug mode
 
+# By default enable base64 encoding and salt inclusion in output
+BASE64="-a";
+SALT=" -salt";
+
 usage()
 {
     echo "Usage: crypt.sh [-h|]"
     echo "Options:"
     echo "  -h              - print this help"
-    echo "  -a              - auto-name output file"
-    echo "  -b              - base64 encode/decode"
     echo "  -c <cipher>     - cipher to use"
     echo "  -d              - decrypt input"
     echo "  -e              - encrypt input"
@@ -24,7 +26,6 @@ usage()
     echo "  -i <in_file>    - input file path"
     echo "  -o <out_file>   - output file path"
     echo "  -p <pass>       - passphrase file to use"
-    echo "  -s              - include salt in output"
 }
 
 function sign()
@@ -55,70 +56,29 @@ function sign()
     rm /tmp/$filename.sha256
 }
 
-function drun()
-{
-    echo "$*";
-    $*;
-}
+function decho() { [[ ! -z $DEBUG ]] && echo "$*"; }
 
-# -k : salt
-function encrypt_file()
-{
-    [[ -z $OUT_FILE ]] && { OUT_FILE=$IN_FILE.enc; }
-    openssl enc $CIPHER $PASS $SALT $BASE64 -e -in $IN_FILE -out $OUT_FILE;
-}
-
-function decrypt_file()
-{
-    [[ -z $OUT_FILE ]] && { OUT_FILE=$IN_FILE.dec; }
-    openssl enc $CIPHER $PASS $SALT $BASE64 -d -in $IN_FILE -out $OUT_FILE;
-}
-
-# -a : base64 encoded/decoded
 # Any string with $ within should be passed as: encrypt 'str'
-function encrypt_str()
-{
-    [[ $# -eq 1 ]] && { local input="$1"; } || { local input="$(cat $IN_FILE)"; }
-    if [ ! -z $OUT_FILE ]; then
-        echo "$input" | openssl enc $CIPHER $PASS $SALT $BASE64 -e > $OUT_FILE;
-    else
-        echo "$input" | openssl enc $CIPHER $PASS $SALT $BASE64 -e;
-    fi
-}
-
 # Encoded key is Base64, so can be input as: decrypt <key>
-function decrypt_str()
-{
-    [[ $# -eq 1 ]] && { local input="$1"; } || { local input="$(cat $IN_FILE)"; }
-    if [ ! -z $OUT_FILE ]; then
-        echo "$input" | openssl enc $CIPHER $PASS $SALT $BASE64 -d > $OUT_FILE;
-    else
-        echo "$input" | openssl enc $CIPHER $PASS $SALT $BASE64 -d | tr -d '\n';
-    fi
-}
-
-function encrypt()
+function crypt()
 {
     if [ ! -z $IN_FILE ]; then
-        [[ ! -z $AUTONAME ]] && [[ -z $OUT_FILE ]] && OUT_FILE="$IN_FILE.enc";
         [[ ! -e $IN_FILE ]] && { echo "File: $IN_FILE does not exist"; return; }
     else
-        [[ $# -ne 1 ]] && { echo "usage: encrypt <str> or -i <file>"; return; }
-        [[ ! -z $FILEENC ]] && { echo "usage: encrypt -f -i <in-file>"; return; }
+        [[ $# -ne 1 ]] && { echo "usage: crypt <str> or -i <file>"; return; }
+        [[ ! -z $FILEENC ]] && { echo "usage: crypt -f -i <in-file>"; return; }
     fi
-    [[ ! -z $FILEENC ]] && { encrypt_file $*; } || { encrypt_str $*; }
-}
 
-function decrypt()
-{
-    if [ ! -z $IN_FILE ]; then
-        [[ ! -z $AUTONAME ]] && [[ -z $OUT_FILE ]] && OUT_FILE="$IN_FILE.dec";
-        [[ ! -e $IN_FILE ]] && { echo "File: $IN_FILE does not exist"; return; }
+    [[ $# -eq 1 ]] && { local in="$1"; } || { local in="$(cat $IN_FILE | tr -d '\n')"; }
+
+    decho "CIPHER:$CIPHER PASS:$PASS SALT:$SALT BASE64:$BASE64 OP:$OP IN:$IN_FILE OUT:$OUT_FILE";
+    if [ ! -z $FILEENC ]; then
+        [[ -z $OUT_FILE ]] && { OUT_FILE=$IN_FILE.$EXT; }
+        openssl enc $CIPHER $PASS $SALT $BASE64 $OP -in $IN_FILE -out $OUT_FILE;
     else
-        [[ $# -ne 1 ]] && { echo "usage: encrypt <str> or -i <file>"; return; }
-        [[ ! -z $FILEENC ]] && { echo "usage: encrypt -f -i <in-file>"; return; }
+        [[ -z $OUT_FILE ]] && { OUT_FILE=/dev/null; }
+        echo "$in" | openssl enc $CIPHER $PASS $SALT $BASE64 $OP | tr -d '\n' | tee $OUT_FILE;
     fi
-    [[ ! -z $FILEENC ]] && { decrypt_file $*; } || { decrypt_str $*; }
 }
 
 function generate_passphrase()
@@ -130,7 +90,7 @@ function generate_passphrase()
 # It can then be included in other files for functions.
 main()
 {
-    PARSE_OPTS="habc:degi:o:p:s"
+    PARSE_OPTS="hc:degi:o:p:"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -154,9 +114,6 @@ main()
     fi
 
     ((opt_h)) && { usage; }
-    ((opt_a)) && { AUTONAME="1"; } || { unset AUTONAME; }  # auto-names output file-name
-    ((opt_b)) && { BASE64="-a"; } || { unset BASE64; }  # base64 encoding of output or not?
-    ((opt_s)) && { SALT=" -salt"; } || { unset SALT; }  # include salt in output or not?
     ((opt_f)) && { FILEENC="1"; } || { unset FILEENC; } # input is file encoding or string?
     ((opt_c)) && { CIPHER=$optarg_c; } || { CIPHER="-des3"; }   # cipher algo to be used
     ((opt_i)) && { IN_FILE=$optarg_i; } || { unset IN_FILE; }
@@ -164,8 +121,8 @@ main()
     # -k is deprecated. pass:filepath points to password with which to encode
     ((opt_p)) && { [[ -e $optarg_p ]] && PASS="-pass pass:$optarg_p"; }
     #echo "PASS: $PASS CIPHER: $CIPHER IN: $IN_FILE BASE64: $BASE64";
-    ((opt_e)) && { encrypt $*; }
-    ((opt_d)) && { decrypt $*; }
+    ((opt_e)) && { OP="-e"; EXT=enc; crypt $*; }
+    ((opt_d)) && { OP="-d"; EXT=dec; crypt $*; }
     ((opt_g)) && { generate_passphrase; }
 
     exit 0;
