@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: prints funny motd (message of the day) messages on login
 #  CREATED: 04/06/18 13:38:31 PDT
-# MODIFIED: 04/06/18 13:39:52 PDT
+# MODIFIED: 04/06/18 13:50:55 PDT
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -43,7 +43,7 @@ main()
         shift $((OPTIND-1)) && OPTIND=1 && local opts_found=1;
     done
 
-    exec /usr/games/fortune
+    exec /usr/games/fortune | /usr/games/cowsay -n
 
     ((opt_h)) && { usage; }
 
