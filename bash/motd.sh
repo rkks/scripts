@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: prints funny motd (message of the day) messages on login
 #  CREATED: 04/06/18 13:38:31 PDT
-# MODIFIED: 04/06/18 13:50:55 PDT
+# MODIFIED: 12/Apr/2018 11:35:32 PDT
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -10,8 +10,6 @@
 #set -uvx   # Warn unset vars, Verbose (echo each command), Enable debug mode
 
 PATH=/usr/bin:/usr/sbin:.:/auto/opt/bin:/bin
-
-[[ "$(basename motd.sh)" == "$(basename -- $0)" && -f $HOME/.bashrc.dev ]] && { source $HOME/.bashrc.dev; }
 
 usage()
 {

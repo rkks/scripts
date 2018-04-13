@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: External diff tool for git
 #  CREATED: 03/20/13 21:55:08 IST
-# MODIFIED: 03/22/18 12:50:51 IST
+# MODIFIED: 11/Apr/2018 11:12:14 PDT
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -20,7 +20,7 @@ function add_mailmap()
     # with same Name/title. So that release-notes generates grouping with name
 }
 
-function configure_local_repo()
+function config_local_repo()
 {
     [[ $# -ne 1 ]] && { echo "usage: set_local_repo_user <key-value-conf-file-path>"; return 1; }
     while IFS== read -r key value; do
@@ -54,6 +54,15 @@ function git_diff()
     git dir > $output;
 }
 
+function clone_repo()
+{
+    [[ $# -ne 1 ]] && { echo "usage: clone_repo <ws_name>"; return; }
+    [[ -z $GIT_REPO ]] && { echo "env \$GIT_REPO not found"; return; }
+    local ws_name=$1;
+    git clone $GIT_REPO $ws_name;
+    cdie $ws_name;
+}
+
 function usage()
 {
     echo "usage: git.sh <path> <old-file> <old-hex> <old-mode> <new-file> <new-hex> <new-mode>"
@@ -61,7 +70,7 @@ function usage()
     echo "OR"
     echo "usage: git.sh [-h|-a]"
     echo "  -a <ssh-priv-key>   - add ssh private key to agent. ex: ~/.ssh/id_rsa"
-    echo "  -c <kv-conf-path>   - use given key-val file to configure local repo"
+    echo "  -c <kv-conf-path>   - use given key-val file to config local repo"
     echo "  -d <diff-name>      - use given diff-name generate diff-file"
     echo "  -t                  - track all branches in remote repo"
     echo "  -h                  - print this help message"
@@ -97,11 +106,13 @@ main()
         usage && exit $EINVAL;
     fi
 
-    ((opt_a)) && { add_ssh_key $optarg_a; }
-    ((opt_d)) && { git_diff $optarg_d; }
-    ((opt_c)) && { configure_local_repo $optarg_c; }
-    ((opt_t)) && { track_branch_all $optarg_t; }
     ((opt_h)) && { usage; }
+    ((opt_a)) && { add_ssh_key $optarg_a; }
+    ((opt_l)) && { clone_repo $optarg_l $*; }
+    [[ ! -d .git ]] && { echo "Unknown git repo, .git not found"; return; }
+    ((opt_d)) && { git_diff $optarg_d; }
+    ((opt_c)) && { config_local_repo $optarg_c; }
+    ((opt_t)) && { track_branch_all $*; }
 
     exit 0;
 }

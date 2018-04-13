@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Create directory structure based on need
 #  CREATED: 03/21/13 11:01:09 IST
-# MODIFIED: 10/06/14 14:21:08 IST
+# MODIFIED: 10/Apr/2018 17:38:56 PDT
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -16,7 +16,7 @@ fi
 
 AUTHOR="Ravikiran K.S."
 AUTHOR_EMAIL="ravikirandotks@gmail.com"
-CREATED=$(/bin/date +'%d/%m/%Y %T %Z')
+CREATED=$(/bin/date +'%d/%b/%Y %T %Z')
 COPYRIGHT="Copyright (c) $(/bin/date +'%Y'), $AUTHOR"
 DETAIL="...details here..."
 DEVEL_TEMPS=$HOME/conf/template     # development templates
@@ -26,7 +26,7 @@ make_pr_dir()
     [[ "$#" != "1" ]] && (usage; exit $EINVAL)
 
     PR=$(basename $1)
-    mkdie $PR && cdie $PR && mkdir -p logs mails tests
+    mkdie $PR && cdie $PR;  # && mkdir -p logs mails tests
     sed -e "s;@AUTHOR@;$AUTHOR;" \
         -e "s;@AUTHOR_EMAIL@;$AUTHOR_EMAIL;" \
         -e "s;@CREATED_DATE@;$CREATED;" \

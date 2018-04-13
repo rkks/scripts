@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: ubuntu quirks and it's remedies
 #  CREATED: 04/05/18 10:34:37 PDT
-# MODIFIED: 04/05/18 10:38:58 PDT
+# MODIFIED: 10/Apr/2018 14:04:18 PDT
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -23,6 +23,16 @@ function apt_cleanup()
     sudo apt autoremove -f
 }
 
+function reinstall_unity()
+{
+    sudo apt-get autoremove
+    sudo apt-get install unity
+    sudo apt-get install --reinstall ubuntu-desktop
+    sudo apt-get update
+    rm -rf .compiz/
+    rm -rf .config/
+}
+
 usage()
 {
     echo "Usage: ubuntu.sh [-h|]"
@@ -35,7 +45,7 @@ usage()
 # It can then be included in other files for functions.
 main()
 {
-    PARSE_OPTS="hc"
+    PARSE_OPTS="hcu"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -60,6 +70,7 @@ main()
 
     ((opt_h)) && { usage; }
     ((opt_c)) && { apt_cleanup $*; }
+    ((opt_u)) && { reinstall_unity $*; }
 
     exit 0;
 }
