@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: External diff tool for git
 #  CREATED: 03/20/13 21:55:08 IST
-# MODIFIED: 16/Apr/2018 08:59:32 PDT
+# MODIFIED: 18/Apr/2018 11:55:46 PDT
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -22,12 +22,14 @@ function add_mailmap()
 
 function new_remote()
 {
-    [[ $# -ne 2 ]] && { echo "usage: new_remote <remote-name> <url>"; return; } || { local remote=$1; local url=$2; }
+    [[ $# -ne 2 ]] && { echo "usage: new_remote <remote-name> <url>"; return; }
+    local remote=$1; local url=$2;
     # git remote add bitbucket git@bitbucket.org:mrksravikiran/wiki.git
     git remote add $remote $url;
     git push --all $remote;
     git push --tags $remote;
 }
+
 function config_local_repo()
 {
     [[ $# -ne 1 ]] && { echo "usage: set_local_repo_user <key-value-conf-file-path>"; return 1; }
@@ -62,13 +64,11 @@ function git_diff()
     git dir > $output;
 }
 
-function clone_repo()
+function git_clone()
 {
-    [[ $# -ne 1 ]] && { echo "usage: clone_repo <ws_name>"; return; }
+    [[ $# -ne 1 ]] && { echo "usage: git_clone <ws_name>"; return; }
     [[ -z $GIT_REPO ]] && { echo "env \$GIT_REPO not found"; return; }
-    local ws_name=$1;
-    git clone $GIT_REPO $ws_name;
-    cdie $ws_name;
+    git clone $GIT_REPO $BRANCH $1 && cdie $1;
 }
 
 function usage()
@@ -78,8 +78,10 @@ function usage()
     echo "OR"
     echo "usage: git.sh [-h|-a]"
     echo "  -a <ssh-priv-key>       - add ssh private key to agent. ex: ~/.ssh/id_rsa"
+    echo "  -b <branch>             - pull branch of given name"
     echo "  -c <kv-conf-path>       - use given key-val file to config local repo"
     echo "  -d <diff-name>          - use given diff-name generate diff-file"
+    echo "  -l <ws-name>            - clone repo from GIT_REPO url with opts"
     echo "  -r <remote-name> <url>  - move git repo to different hosting"
     echo "  -t                      - track all branches in remote repo"
     echo "  -h                      - print this help message"
@@ -92,7 +94,7 @@ main()
     local DIFF=$(which diff 2>/dev/null);
     [[ $# -eq 7 ]] && { [[ ! -z $DIFF ]] && $DIFF "$2" "$5"; exit 0; }  # echo $*
 
-    PARSE_OPTS="ha:d:c:r:t"
+    PARSE_OPTS="ha:b:c:d:l:r:t"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -117,11 +119,12 @@ main()
 
     ((opt_h)) && { usage; }
     ((opt_a)) && { add_ssh_key $optarg_a; }
-    ((opt_l)) && { clone_repo $optarg_l $*; }
+    ((opt_b)) && { BRANCH=" -b $optarg_b"; } || { unset BRANCH; }
+    ((opt_l)) && { git_clone $optarg_l $*; }
     [[ ! -d .git ]] && { echo "Unknown git repo, .git not found"; return; }
     ((opt_d)) && { git_diff $optarg_d; }
     ((opt_c)) && { config_local_repo $optarg_c; }
-    ((opt_r)) && { new_remote $(optarg_r) $*; }
+    ((opt_r)) && { new_remote $optarg_r $*; }
     ((opt_t)) && { track_branch_all $*; }
 
     exit 0;
