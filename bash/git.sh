@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: External diff tool for git
 #  CREATED: 03/20/13 21:55:08 IST
-# MODIFIED: 18/Apr/2018 11:55:46 PDT
+# MODIFIED: 18/Apr/2018 12:13:05 PDT
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -34,6 +34,7 @@ function config_local_repo()
 {
     [[ $# -ne 1 ]] && { echo "usage: set_local_repo_user <key-value-conf-file-path>"; return 1; }
     while IFS== read -r key value; do
+        [[ $key == \#* ]] && { continue; }
         echo "git config $key \"$value\"";
         git config $key "$value";
     done < $1;
