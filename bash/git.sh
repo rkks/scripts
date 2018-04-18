@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: External diff tool for git
 #  CREATED: 03/20/13 21:55:08 IST
-# MODIFIED: 11/Apr/2018 11:12:14 PDT
+# MODIFIED: 16/Apr/2018 08:59:32 PDT
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -20,6 +20,14 @@ function add_mailmap()
     # with same Name/title. So that release-notes generates grouping with name
 }
 
+function new_remote()
+{
+    [[ $# -ne 2 ]] && { echo "usage: new_remote <remote-name> <url>"; return; } || { local remote=$1; local url=$2; }
+    # git remote add bitbucket git@bitbucket.org:mrksravikiran/wiki.git
+    git remote add $remote $url;
+    git push --all $remote;
+    git push --tags $remote;
+}
 function config_local_repo()
 {
     [[ $# -ne 1 ]] && { echo "usage: set_local_repo_user <key-value-conf-file-path>"; return 1; }
@@ -69,11 +77,12 @@ function usage()
     echo "Usual set of arguments provided by git while invoking external diff program"
     echo "OR"
     echo "usage: git.sh [-h|-a]"
-    echo "  -a <ssh-priv-key>   - add ssh private key to agent. ex: ~/.ssh/id_rsa"
-    echo "  -c <kv-conf-path>   - use given key-val file to config local repo"
-    echo "  -d <diff-name>      - use given diff-name generate diff-file"
-    echo "  -t                  - track all branches in remote repo"
-    echo "  -h                  - print this help message"
+    echo "  -a <ssh-priv-key>       - add ssh private key to agent. ex: ~/.ssh/id_rsa"
+    echo "  -c <kv-conf-path>       - use given key-val file to config local repo"
+    echo "  -d <diff-name>          - use given diff-name generate diff-file"
+    echo "  -r <remote-name> <url>  - move git repo to different hosting"
+    echo "  -t                      - track all branches in remote repo"
+    echo "  -h                      - print this help message"
 }
 
 # Each shell script has to be independently testable.
@@ -83,7 +92,7 @@ main()
     local DIFF=$(which diff 2>/dev/null);
     [[ $# -eq 7 ]] && { [[ ! -z $DIFF ]] && $DIFF "$2" "$5"; exit 0; }  # echo $*
 
-    PARSE_OPTS="ha:d:c:t"
+    PARSE_OPTS="ha:d:c:r:t"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -112,6 +121,7 @@ main()
     [[ ! -d .git ]] && { echo "Unknown git repo, .git not found"; return; }
     ((opt_d)) && { git_diff $optarg_d; }
     ((opt_c)) && { config_local_repo $optarg_c; }
+    ((opt_r)) && { new_remote $(optarg_r) $*; }
     ((opt_t)) && { track_branch_all $*; }
 
     exit 0;
