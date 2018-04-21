@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 03/17/17 00:17:16 PDT
+# MODIFIED: 21/Apr/2018 02:40:01 PDT
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -27,6 +27,10 @@ export EOVERFLOW=79  # variable overflow
 export ETIMEDOUT=145 # Operation timedout
 export EASSERT=199   # Assertion failed
 
+FILE_MAX_SZ=10240                   # In KB
+FILE_MAX_BKUPS=1                    # max num of backup files
+FILE_EMAIL=friends4web@gmail.com    # if file_rotate() were to email
+
 # {} - used for command grouping. if all commands are on single line, last command should end with a semi-colon ';'
 # invoke any program with 'env -i <prog>' for clearing all ENV variables while invoking program
 
@@ -35,20 +39,44 @@ function export_func() { local func; export -f $FUNCNAME; for func in $*; do exp
 
 function export_bash_funcs()
 {
-    local FUNCS="run shell own have cdie mkdie hostname_short fail_bail up die via"
-    FUNCS="bash_trace bash_untrace becho decho term assert pause ret_chk $FUNCS"
+    local FUNCS="run shell own have cdie mkdie hostnm fail_bail up die via mkfile"
+    FUNCS="bash_trace bash_untrace warn dwarn prnt decho term assert pause $FUNCS"
+    FUNCS="drun chk run_on file_sz page_brkr file_rotate bkup now myname $FUNCS"
     FUNCS="puniq ppop pvalid prm pappend pprepend pshift pls source_script $FUNCS"
     export_func $FUNCS;
 }
 
+# prints local date/time. date-format suitable for logs. ".%N"=MSEC, not supported on FreeBSD
+function now() { date "+%Y-%m-%d %H:%M:%S"; }
+
+# prints script-name
+function myname() { echo "$(basename -- $0)"; }
+
+# $(date +%b%d%T) has display spacing issues. For line number tracing, use: $ decho "+$(echo $LINENO)" "message"
+function prnt() { local m="$(now) $(hostnm) $(myname)[$$] $*"; [[ -z $STDERR ]] && echo "$m" || >&2 echo "$m"; unset STDERR; return 0; }
+function decho() { [[ "yes" == "$SHDEBUG" ]] && prnt $*; return $?; }
+
 # prints to stderr instead of stdout
-function warn() { >&2 echo $@; }
+function warn() { STDERR=1; prnt $@; return $?; }
+function dwarn() { [[ "yes" == "$SHDEBUG" ]] && warn $*; return $?; }
+
+# print input string and exit with input error value
+function die() { chk GE 2 $# && { local e=$1; shift; warn $@ >&2; exit $e; } || return $?; }
+
+# ASSERT for a positive value.
+function assert() { [[ $# -ge 2 ]] && { [[ $1 -ne $2 ]] && { warn "ASSERT! $1 != $2. $*"; return $EASSERT; } || return 0; } || return $EINVAL; }
+
+# bail-out if last command returned error. success == 0
+function fail_bail() { [[ $? -ne 0 ]] && { die $? "$! failed w/ err: $?. $*"; } || return 0; }
 
 # usage: run <cmd> <args>
-function run() { [[ "yes" == "$SHDEBUG" ]] && warn "$*"; $*; return $?; }
+function run() { [[ -z $RUN_LOG ]] && $* || $* 2>&1 | tee -a $RUN_LOG 2>&1; return $?; }
+
+# usage: drun <cmd> <args>
+function drun() { [[ "no" == "$SHDEBUG" ]] && { run $*; return $?; } || { echo "$*"; return 0; }; }
 
 # usage: shell <cmd> <args>
-function shell() { [[ "yes" == "$SHDEBUG" ]] && warn "$(pwd)\$ $*" || "$SHELL $*"; return $?; }
+function shell() { drun $SHELL $*; return $?; }
 
 # usage: (own ls) && echo true || echo flase
 function own { which "$1" &>/dev/null; }        # Error moved to /dev/null because on Solaris, 'which' cmd emits stty error
@@ -57,10 +85,19 @@ function own { which "$1" &>/dev/null; }        # Error moved to /dev/null becau
 function have { type -t "$1" &>/dev/null; }
 
 # usage: cdie <path>
-function cdie { [[ -d $1 ]] && cd $1 || die $EINVAL "Path $1 doesn't exist. Quitting!"; }
+function cdie { chk DE EX $1 && cd $1 || return $?; }
 
-# usage: mkdie <path>
-function mkdie { [[ -e $1 ]] && die $EINVAL "Path $1 already exists" || mkdir -pv $1; }
+# usage: mkdie <path>. Create directory if doesn't exist, otherwise just update timestamp.
+function mkdie { chk EQ 1 $# && { chk PE NE $1 && { mkdir -pv $1 && chmod 740 "$1"; return $?; } || return $?; } || return $?; }
+
+# create file and directory path (if doesn't exist); else just update timestamp. return no error for already existing files.
+function mkfile() { chk EQ 1 $# && { chk PE NE $1 && { mkdie "$(dirname $1)" && touch $1 && chmod 640 $1; return $?; } || return 0; } || return $?; }
+
+# encode file and send as attachment. uuencode 2nd arg is attachment filename (as appears in mail). mutt not available on FreeBSD 
+function email() { [[ $# -eq 1 ]] && uuencode $1 $(basename $1) | mail -s "[ARCHIVE] Old logs" $LOG_EMAIL; }
+
+# usage: bkup <path>
+function bkup() { [[ -e $1 ]] && { local ext="$RANDOM.$(stat --printf="%Y" $1)"; mv $1 $1.$ext && gzip $1.$ext; }; }
 
 # Bash tracing functions
 # begin bash tracing
@@ -68,6 +105,49 @@ function bash_trace() { set -x; }
 
 # end bash tracing
 function bash_untrace() { set +x; }
+
+# Check if conditions are met. If not, die.
+function chk()
+{
+    [[ $# -ne 3 ]] && { warn "usage: chk <COND> <req-num-args> <input-num-args>\nCOND:LT|LE|EQ|NE|GE|GT|PE, REQ-PE|DE|FE:NE|EX"; return $EINVAL; }
+    local cond=$1; local req=$2; local in=$3; local r=0; local ae="already exists"; local dne="does not exist";
+    case $cond in
+    LT) [[ $in -lt $req ]] && { r=0; } || { r=1; local m=" < "; }; ;;
+    LE) [[ $in -le $req ]] && { r=0; } || { r=1; local m=" <= "; }; ;;
+    EQ) [[ $in -eq $req ]] && { r=0; } || { r=1; local m=" == "; }; ;;
+    NE) [[ $in -ne $req ]] && { r=0; } || { r=1; local m=" != "; }; ;;
+    GE) [[ $in -ge $req ]] && { r=0; } || { r=1; local m=" >= "; }; ;;
+    GT) [[ $in -gt $req ]] && { r=0; } || { r=1; local m=" > "; }; ;;
+    PE) [[ NE == $req ]] && { [[ -e $in ]] && { r=2; n=$ae; }; } || { [[ ! -e $in ]] && { r=2; n=$dne; }; }; local m="Path"; ;;
+    DE) [[ NE == $req ]] && { [[ -d $in ]] && { r=2; n=$ae; }; } || { [[ ! -d $in ]] && { r=2; n=$dne; }; }; local m="Dir"; ;;
+    FE) [[ NE == $req ]] && { [[ -f $in ]] && { r=2; n=$ae; }; } || { [[ ! -f $in ]] && { r=2; n=$dne; }; }; local m="File"; ;;
+    esac
+    [[ $r -eq 1 ]] && { warn "Invalid #num of args. Failed check: in($in) $m req($req)"; return $EINVAL; }
+    [[ $r -eq 2 ]] && { warn "$m $in $n"; return $EEXIST; }
+    return 0;
+}
+
+# usage: file_sz <file-path>
+function file_sz() { [[ $# -eq 1 ]] && { echo "$(wc -l "$1" | awk '{print $1}')"; return 0; } || return $EINVAL; }
+
+# usage: page_brkr <num-chars>. useful to add page-breaker for new content to start. default 80 char wide.
+function page_brkr() { local c; [[ $# -eq 1 ]] && c=$1 || c=8; local p; local i; for i in $(seq $c); do p+="=========="; done; echo "$p"; return 0; }
+
+# usage: file_rotate <file-path> [max-backups]
+function file_rotate()
+{
+    chk EQ $# 1 && { local file="$1"; local sz=$(file_sz $file); } || { return $EINVAL; }
+    local max=0; local f; local i; local num; local len=$((${#file} + 1))   # file len+1 to account for . (as in log.1 log.2)
+    [[ $sz -gt 0 ]] && { page_brkr >> $file.0; cat $file >> $file.0 && cat /dev/null > $file; }
+    touch $file.0 && sz=$(file_sz $file.0) || return $?;    # unwritable file;
+    [[ $sz -lt $FILE_MAX_SZ ]] && return 0;                 # do nothing if size within limit. du -k unreliable for small files
+    # Find out upto which sequence file.0..9 the archive has grown. ${f:$len} extracts .suffix-num. Ex. 3 for log.3
+    for f in ${file}.[0-$FILE_MAX_BKUPS]*; do [ -f "$f" ] && num=${f:$len} && [ $num -gt $max ] && max=$num; done
+    f="$file.$(($max + 1))";
+    [[ $max -ge $FILE_MAX_BKUPS && -f "$f" ]] && { [[ ! -z $FILE_EMAIL ]] && { gzip $f && email $f.gz; rm -f $f $f.gz; } || { rm -f $f; }; }
+    for ((i = $max;i >= 0;i -= 1)); do [[ -f "$file.$i" ]] && mv -f $file.$i "$file.$(($i + 1))" > /dev/null 2>&1; done
+    return 0;
+}
 
 # verified copy
 function cpv()
@@ -78,10 +158,7 @@ function cpv()
     [[ "$(md5sum $src)" != "$(md5sum $tgt)" ]] && { echo " not match"; } || { echo " match"; }
 }
 
-function hostname_short() { [[ $UNAMES == *SunOS* ]] && { echo $(hostname); } || echo $(hostname -s); }
-
-# bail-out if last command returned error. success == 0
-function fail_bail() { [[ $? -ne 0 ]] && { die $? "$! returns error $?"; } || return; }
+function hostnm() { [[ $UNAMES == *SunOS* ]] && { echo $(hostname); } || echo $(hostname -s); }
 
 # no more cd ../../../../ just -- up 4
 function up() { local d=""; for ((i=1;i<=$1;i++)); do d=../$d; done; echo "cd $d"; cd $d; }
@@ -168,13 +245,6 @@ function pvalid()
 }
 
 # bash scripting helper functions
-# $(date +%b%d%T) has display spacing issues. For line number tracing, use: $ becho "+$(echo $LINENO)" "message"
-function becho() { echo $(date +"%Y-%m-%d %H:%M:%S") $(hostname_short) $(basename -- $0)[$$]: $*; }
-
-function decho() { [[ "yes" == "$SHDEBUG" ]] && becho "$*"; }
-
-# Flag error if last command was unsuccessful. Ex: $ cmd <opts>; ret_chk
-function ret_chk() { local ret=$?; [[ $ret -ne 0 ]] && warn "[ERROR] Command Failure. ret=$ret"; }
 
 # given input list of files, source them
 function source_script()
@@ -185,19 +255,6 @@ function source_script()
     for us in $*; do
         [[ ! -f $us ]] && { $cmd $level "[OPTOUT] $us"; return $ENOENT; } || { source $us; $cmd $level "[SOURCE] $us"; }
     done
-}
-
-# print input string and exit with input error value
-function die()
-{
-    [[ $# -lt 2 ]] && { warn "usage: die <errno> <err-str>"; return $EINVAL; } || { local err=$1; shift; becho $@ >&2; exit $err; }
-}
-
-# ASSERT for a positive value.
-function assert()
-{
-    [[ $# -lt 1 ]] && { warn "usage: assert <value>"; return $EINVAL; }
-    [[ ! $1 ]] && die $EASSERT "Assertion failed - $1";      # if error, die. else return & continue executing script
 }
 
 function pause()
@@ -282,7 +339,3 @@ else
     export_bash_funcs
 fi
 # VIM: ts=4:sw=4
-
-#source_utils() { }
-#main() { source_utils; exit 0; }
-#[[ "$(basename $0)" == "$(basename utils.sh)" ]] && main $* || source_utils

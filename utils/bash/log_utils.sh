@@ -3,7 +3,7 @@
 #   https://github.com/nischithbm/bash-logger
 #   http://sourceforge.net/projects/bash-logger
 #  CREATED: 06/21/13 23:58:09 IST
-# MODIFIED: 03/10/16 02:46:42 PST
+# MODIFIED: 21/Apr/2018 02:41:10 PDT
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -12,162 +12,49 @@
 
 # Logger Usage Guideline
 #-----------------------
-# 1. Load the source file
-# source log_utils.sh
-# 2. Init logger with new config
-# log_init <LOG_LEVEL> <LOG_FILE_PATH>
-# 3. Use logger api for logging
-# log <LOG_LEVEL> "Your message here"
+# 1. Load the source file:          source log_utils.sh
+# 2. Init logger with new config:   log_init <LOG_LEVEL> <LOG_FILE>
+# 3. Use logger api for logging:    log <LOG_LEVEL> "Your message here"
 
-# Date in MSEC is not supported on all platforms. Like FreeBSD. So, removing support in logs
-# [[ ! -z $LOG_DATE_ENABLE_MSEC ]] && { local date_time_msec=$(date +"$LOG_DATE_FORMAT"".%N" | sed 's/......$//g'); }
 # Truncate last 6 digits: sed 's/......$//g' & sed 's/[0-9][0-9][0-9][0-9][0-9][0-9]$//g' same.
-
-: ${PATH=/usr/local/bin:/usr/sbin:/usr/bin:/bin}
+# [[ ! -z $LOG_DATE_ENABLE_MSEC ]] && { local date_time_msec=$(date +"$DATE_FMT"".%N" | sed 's/......$//g'); }
 
 # Tunable Config Options (Defaults)
-[[ -z $USER ]] && { USER=$(id -un); }
-LOG_FILE_PATH="$SCRPT_LOGS/log_utils.log"
-LOG_LEVEL=INFO
-LOG_DATE_FORMAT="%Y-%m-%d %H:%M:%S"
-LOG_MSG_FORMAT="%s %s\n"
-LOG_MAX_FILE_SIZE=10000              # In KB
-LOG_MAX_BACKUPS=1
-#LOG_TO_TTY=TRUE                 # Set variable for logging to console
-LOG_MAIL_OLD_LOGS=TRUE
-#LOG_EMAIL_ID=ravikks@cisco.com
+LOG_FILE="$SCRPT_LOGS/log_utils.log"
+#LOG_TTY=TRUE                        # console logging
 
-function export_log_funcs()
-{
-    local FUNCS="verify_create_dirs verify_create_files log_env_verify_update"
-    FUNCS="log_init log_rotate log $FUNCS"
-    export_func $FUNCS;
-}
-
-# create directory path (if doesn't exist). Otherwise just update timestamp.
-function verify_create_dirs()
-{
-    [[ $# -lt 1 ]] && { echo "usage: verify_create_dirs [<dir1> <dir2> ...]"; return; }
-    local d; for d in $*; do mkdir -pv "$d" && chmod 740 "$d" && chown $USER "$d"; done
-}
-
-# create file and directory path (if doesn't exist). Otherwise just update timestamp.
-function verify_create_files()
-{
-    [[ $# -lt 1 ]] && { echo "usage: verify_create_files [<file1> <file2> ...]"; return; }
-    local f; for f in $*; do verify_create_dirs "$(dirname $f)"; touch "$f" && chmod 640 "$f" && chown $USER "$f"; done
-}
-
-function log_env_verify_update()
-{
-    [[ -z $LOG_HOSTNAME ]]      && export LOG_HOSTNAME=$(hostname_short)         # solaris doesnt support -s
-    [[ -z $LOG_PROCID ]]        && export LOG_PROCID=$(echo $$)
-    [[ -z $LOG_SCRIPTNAME ]]    && export LOG_SCRIPTNAME=$(basename -- $(echo $0))
-}
+function export_log_funcs() { local FUNCS="log_init log"; export_func $FUNCS; }
 
 # RFC 5424 defines 8 levels of severity
 function log_init()
 {
-    [[ "" != "$1" ]] && LOG_LEVEL=$1
-    [[ "" != "$2" ]] && LOG_FILE_PATH=$2
+    [[ $# -eq 0 ]] && { return $EINVAL; } || { LOG_LEVEL=$1; [[ $# -eq 2 ]] && LOG_FILE="$2" || LOG_FILE="$(myname).log"; }
 
-    verify_create_files $LOG_FILE_PATH;
+    mkfile $LOG_FILE && file_rotate $LOG_FILE; [[ $? -ne 0 ]] && return $?; # any problem writing to file, return.
 
-    log_rotate $LOG_FILE_PATH;
-
-    log_env_verify_update
-
-    # LOG_LEVELS_ENABLED setting should be last thing during init. Other functions depend on it.
+    # LOG_LVLS_ON set is last step during init. log() depends on it.
     case "$LOG_LEVEL" in
-        "EMERG")
-            LOG_LEVELS_ENABLED=( "<EMERG>" )
-            ;;
-        "ALERT")
-            LOG_LEVELS_ENABLED=( "<ALERT>" "<EMERG>" )
-            ;;
-        "CRIT")
-            LOG_LEVELS_ENABLED=( "<CRIT>" "<ALERT>" "<EMERG>" )
-            ;;
-        "ERROR")
-            LOG_LEVELS_ENABLED=( "<ERROR>" "<CRIT>" "<ALERT>" "<EMERG>" )
-            ;;
-        "WARN")
-            LOG_LEVELS_ENABLED=( "<WARN>" "<ERROR>" "<CRIT>" "<ALERT>" "<EMERG>" )
-            ;;
-        "NOTE")
-            LOG_LEVELS_ENABLED=( "<NOTE>" "<WARN>" "<ERROR>" "<CRIT>" "<ALERT>" "<EMERG>" )
-            ;;
-        "INFO")
-            LOG_LEVELS_ENABLED=( "<INFO>" "<NOTE>" "<WARN>" "<ERROR>" "<CRIT>" "<ALERT>" "<EMERG>" )
-            ;;
-        "DEBUG")
-            LOG_LEVELS_ENABLED=( "<DEBUG>" "<INFO>" "<NOTE>" "<WARN>" "<ERROR>" "<CRIT>" "<ALERT>" "<EMERG>" )
-            ;;
-        *)
-            # Default Log level is INFO
-            echo "Unsupport log level $LOG_LEVEL. Setting log level to default -- INFO"
-            LOG_LEVELS_ENABLED=( "<INFO>" "<NOTE>" "<WARN>" "<ERROR>" "<CRIT>" "<ALERT>" "<EMERG>" )
-            ;;
+        "EMERG") LOG_LVLS_ON=( "<EMERG>" ); ;;
+        "ALERT") LOG_LVLS_ON=( "<ALERT>" "<EMERG>" ); ;;
+        "CRIT")  LOG_LVLS_ON=( "<CRIT>" "<ALERT>" "<EMERG>" ); ;;
+        "ERROR") LOG_LVLS_ON=( "<ERROR>" "<CRIT>" "<ALERT>" "<EMERG>" ); ;;
+        "WARN")  LOG_LVLS_ON=( "<WARN>" "<ERROR>" "<CRIT>" "<ALERT>" "<EMERG>" ); ;;
+        "NOTE")  LOG_LVLS_ON=( "<NOTE>" "<WARN>" "<ERROR>" "<CRIT>" "<ALERT>" "<EMERG>" ); ;;
+        "INFO")  LOG_LVLS_ON=( "<INFO>" "<NOTE>" "<WARN>" "<ERROR>" "<CRIT>" "<ALERT>" "<EMERG>" ); ;;
+        "DEBUG") LOG_LVLS_ON=( "<DEBUG>" "<INFO>" "<NOTE>" "<WARN>" "<ERROR>" "<CRIT>" "<ALERT>" "<EMERG>" ); ;;
+        *) LOG_LVLS_ON=( "<INFO>" "<NOTE>" "<WARN>" "<ERROR>" "<CRIT>" "<ALERT>" "<EMERG>" ); ;; # Invalid log-level, reset to default (INFO)
     esac
+    return 0;
 }
 
-function log_rotate()
-{
-    [[ $# -ne 1 ]] && (echo "usage: log_rotate <log-file>"; return $EINVAL)
-
-    local logFile="$1";
-    verify_create_files $logFile;
-
-    if [ $(wc -l "$logFile" | awk '{print $1}') -gt 0 ]; then
-        echo "================================================================================" >> $logFile.0
-        cat $logFile >> $logFile.0 && cat /dev/null > $logFile;
-    fi
-
-    touch $logFile.0;
-    # do nothing if either size is below limit OR new (0 size) file. du -k isn't reliable for small files.
-    [[ $(wc -l "$logFile.0" | awk '{print $1}') -lt $LOG_MAX_FILE_SIZE ]] && return;
-
-    local length=$((${#logFile} + 1))   # filename length + 1 (to account for . as in log.1 log.2)
-    local max=0; local f; local num;
-
-    # Find out upto which sequence logFile.0..9 the archive has grown
-    for f in ${logFile}.[0-$LOG_MAX_BACKUPS]*; do
-        # ${f:$length} extracts the last value in filename. Ex. 3 for log.3
-        [ -f "$f" ] && num=${f:$length} && [ $num -gt $max ] && max=$num
-    done
-
-    if [ $max -ge $LOG_MAX_BACKUPS -a -f "$logFile.$(($max + 1))" -a "$LOG_MAIL_OLD_LOGS" == "TRUE" ]; then
-        local oldFile="$logFile.$(($max + 1))"; gzip $oldFile; local tarFile="$oldFile.gz";
-        # uuencode 2nd arg is attachment filename (as appears in mail). mutt isn't available on all machines.
-        [[ ! -z $LOG_EMAIL_ID ]] && uuencode $tarFile $(basename $tarFile) | mail -s "[ARCHIVE] Old logs" $LOG_EMAIL_ID
-        rm -f ${oldFile} ${tarFile}
-    fi
-
-    local i;
-    for ((i = $max;i >= 0;i -= 1)); do
-        [ -f "$logFile.$i" ] && mv -f $logFile.$i "$logFile.$(($i + 1))" > /dev/null 2>&1
-    done
-}
-
+# usage: log <LOG_LVL> <log-msg>. LOG_LVL=EMERG/ALERT/CRIT/ERROR/WARN/NOTE/INFO/DEBUG
 function log()
 {
-    if [ $# -ne 2 ]; then
-        echo "usage: log <LOG_LEVEL> <log-message>\nLOG_LEVEL=EMERG/ALERT/CRIT/ERROR/WARN/NOTE/INFO/DEBUG";
-        return;
-    fi
-
-    # If LOG_LEVELS_ENABLED is enabled, all initializations are done.
-    [[ -z $LOG_LEVELS_ENABLED ]] && { return; }
-
-    local is_log_level_enabled=$(echo ${LOG_LEVELS_ENABLED[@]} | grep "<$1>")
-    [[ -z ${is_log_level_enabled} ]] && { return; }
-
-    local log_severity=$1; shift;
-    local local_date_time=$(date +"$LOG_DATE_FORMAT")
-    local log_prefix="$local_date_time $LOG_HOSTNAME $LOG_SCRIPTNAME[$LOG_PROCID] $log_severity:"
-    local is_crit_log=$(echo ${log_severity} | grep -E "EMERG|ALERT|CRIT")
-    printf "$LOG_MSG_FORMAT" "$log_prefix" "$*" >> $LOG_FILE_PATH;
-    [[ ! -z ${LOG_TO_TTY} || ! -z ${is_crit_log} ]] && { printf "$LOG_MSG_FORMAT" "$log_prefix" "$*" 1>&2; }
+    [[ $# -ne 2 ]] && { return $EINVAL; } || { local is_log_lvl_on; }
+    [[ -z $LOG_LVLS_ON ]] && { return $ENOENT; } || { is_log_lvl_on=$(echo ${LOG_LVLS_ON[@]} | grep "<$1>"); } # If LOG_LVLS_ON set, log_init done
+    [[ -z ${is_log_lvl_on} ]] && { return 0; } || { local is_crit=$(echo ${log_sev} | grep -E "EMERG|ALERT|CRIT"); } # return if below log-sev filter
+    [[ ! -z $LOG_TTY || ! -z $is_crit ]] && { warn "$*" | tee -a $LOG_FILE; } || { prnt "$*" >> $LOG_FILE; } # log-sev prints in log(), not in prnt()
+    return 0;
 }
 
 usage()
@@ -183,10 +70,7 @@ usage()
 # It can then be included in other files for functions.
 main()
 {
-    # save current settings. log_init function can be called to reinitialse the logger
-    log_rotate $LOG_FILE_PATH && log_init
-
-    local PARSE_OPTS="hl:r:"
+    local PARSE_OPTS="hi:l:r:"
     local opts_found=0; local opt;
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -209,8 +93,10 @@ main()
         usage && exit $EINVAL;
     fi
 
-    ((opt_l)) && log $optarg_l $*
-    ((opt_r)) && log_rotate $optarg_r
+    #log_init $LOG_FILE
+    ((opt_i)) && { LOG_FILE="$*"; log_init $optarg_i $LOG_FILE; }
+    ((opt_l)) && { log $optarg_l $*; }
+    ((opt_r)) && { file_rotate $optarg_r; }
     ((opt_h)) && (usage; exit 0)
 
     exit 0
