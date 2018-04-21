@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: 
 #  CREATED: 12/06/2017 12:44:14 AM PST
-# MODIFIED: 04/04/18 18:45:28 PDT
+# MODIFIED: 20/Apr/2018 16:54:48 PDT
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -26,6 +26,8 @@ usage()
     echo "  -i <in_file>    - input file path"
     echo "  -o <out_file>   - output file path"
     echo "  -p <pass>       - passphrase file to use"
+    echo "Examples:"
+    echo "crypt.sh -i abc.txt -p SECRET/rand -e | tr -d '\n' > abc.pass"
 }
 
 function sign()

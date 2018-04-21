@@ -61,7 +61,7 @@ link_confs()
 {
     echo "Linking Configuration Files/Directories - Start"
 
-    CONFS="elinks links vim vnc"
+    CONFS="elinks links vim"
     CONFS+=" alias bashrc bash_profile bash_logout cshrc login login_conf profile shrc"
     CONFS+=" cvsignore gitignore svnignore"
     CONFS+=" mailrc pinerc screenrc toprc gvimrc vimrc tmux.conf"
@@ -71,6 +71,7 @@ link_confs()
 
     link_files DOT $HOME/conf $HOME $CONFS
     link_files DOT $HOME/conf/custom $HOME bashrc.dev
+    link_files REG $HOME/conf/vnc $HOME/.vnc xstartup xstartup_safe
 
     echo "Linking Configuration Files/Directories - Done"
 }
