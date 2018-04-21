@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 21/Apr/2018 02:40:01 PDT
+# MODIFIED: 21/Apr/2018 11:23:02 PDT
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -43,6 +43,7 @@ function export_bash_funcs()
     FUNCS="bash_trace bash_untrace warn dwarn prnt decho term assert pause $FUNCS"
     FUNCS="drun chk run_on file_sz page_brkr file_rotate bkup now myname $FUNCS"
     FUNCS="puniq ppop pvalid prm pappend pprepend pshift pls source_script $FUNCS"
+    FUNCS="read_tty $FUNCS"
     export_func $FUNCS;
 }
 
@@ -69,8 +70,8 @@ function assert() { [[ $# -ge 2 ]] && { [[ $1 -ne $2 ]] && { warn "ASSERT! $1 !=
 # bail-out if last command returned error. success == 0
 function fail_bail() { [[ $? -ne 0 ]] && { die $? "$! failed w/ err: $?. $*"; } || return 0; }
 
-# usage: run <cmd> <args>
-function run() { [[ -z $RUN_LOG ]] && $* || $* 2>&1 | tee -a $RUN_LOG 2>&1; return $?; }
+# usage: run <cmd> <args>. can-not check exec-perms in all inputs, some are internal cmds
+function run() { test -n "$RUN_LOG" && { $* 2>&1 | tee -a $RUN_LOG 2>&1; } || $*; return $?; }
 
 # usage: drun <cmd> <args>
 function drun() { [[ "no" == "$SHDEBUG" ]] && { run $*; return $?; } || { echo "$*"; return 0; }; }
@@ -131,9 +132,9 @@ function chk()
 function file_sz() { [[ $# -eq 1 ]] && { echo "$(wc -l "$1" | awk '{print $1}')"; return 0; } || return $EINVAL; }
 
 # usage: page_brkr <num-chars>. useful to add page-breaker for new content to start. default 80 char wide.
-function page_brkr() { local c; [[ $# -eq 1 ]] && c=$1 || c=8; local p; local i; for i in $(seq $c); do p+="=========="; done; echo "$p"; return 0; }
+function page_brkr() { local c=8; [[ $# -eq 1 ]] && c=$1; local p; local i; for i in $(seq $c); do p+="=========="; done; echo "$p" && return $?; }
 
-# usage: file_rotate <file-path> [max-backups]
+# usage: file_rotate <file-path> [max-backups]. Useless: 'LOGGER=/usr/bin/logger -t logrotate'
 function file_rotate()
 {
     chk EQ $# 1 && { local file="$1"; local sz=$(file_sz $file); } || { return $EINVAL; }
@@ -309,6 +310,11 @@ function run_on()
         [[ "$(date +'%d')" == "$day" ]] && { run "$*"; }
         ;;
     esac
+}
+
+function read_tty()
+{
+    test -n "$EDITOR" && { local f="$(mktemp)"; cat $TMPLTS/read_tty > $f && $EDITOR $f && echo "$(cat $f)" && rm $f; return $?; } || return $ENOTSUP;
 }
 
 usage()
