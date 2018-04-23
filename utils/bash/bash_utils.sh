@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 21/Apr/2018 11:23:02 PDT
+# MODIFIED: 21/Apr/2018 14:51:22 PDT
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -92,7 +92,7 @@ function cdie { chk DE EX $1 && cd $1 || return $?; }
 function mkdie { chk EQ 1 $# && { chk PE NE $1 && { mkdir -pv $1 && chmod 740 "$1"; return $?; } || return $?; } || return $?; }
 
 # create file and directory path (if doesn't exist); else just update timestamp. return no error for already existing files.
-function mkfile() { chk EQ 1 $# && { chk PE NE $1 && { mkdie "$(dirname $1)" && touch $1 && chmod 640 $1; return $?; } || return 0; } || return $?; }
+function mkfile() { chk EQ 1 $# && { [[ ! -e $1 ]] && { mkdie "$(dirname $1)" && touch $1 && chmod 640 $1; return $?; } || return 0; } || return $?; }
 
 # encode file and send as attachment. uuencode 2nd arg is attachment filename (as appears in mail). mutt not available on FreeBSD 
 function email() { [[ $# -eq 1 ]] && uuencode $1 $(basename $1) | mail -s "[ARCHIVE] Old logs" $LOG_EMAIL; }
