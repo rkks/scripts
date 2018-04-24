@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: SVN related actions
 #  CREATED: 11/07/12 12:54:25 IST
-# MODIFIED: 10/06/14 14:21:35 IST
+# MODIFIED: 24/Apr/2018 09:49:56 PDT
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2012, Ravikiran K.S.
@@ -175,7 +175,7 @@ main()
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
             [a-zA-Z0-9])
-                decho DEBUG "-$opt was triggered, Parameter: $OPTARG"
+                dbg DEBUG "-$opt was triggered, Parameter: $OPTARG"
                 local "opt_$opt"=1 && local "optarg_$opt"="$OPTARG"
                 ;;
             \?)

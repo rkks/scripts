@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 21/Apr/2018 14:51:22 PDT
+# MODIFIED: 24/Apr/2018 10:42:51 PDT
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -40,26 +40,33 @@ function export_func() { local func; export -f $FUNCNAME; for func in $*; do exp
 function export_bash_funcs()
 {
     local FUNCS="run shell own have cdie mkdie hostnm fail_bail up die via mkfile"
-    FUNCS="bash_trace bash_untrace warn dwarn prnt decho term assert pause $FUNCS"
-    FUNCS="drun chk run_on file_sz page_brkr file_rotate bkup now myname $FUNCS"
+    FUNCS="bash_trace bash_untrace warn prnt term assert pause read_tty log $FUNCS"
+    FUNCS="chk run_on file_sz page_brkr file_rotate bkup now myname log_init $FUNCS"
     FUNCS="puniq ppop pvalid prm pappend pprepend pshift pls source_script $FUNCS"
-    FUNCS="read_tty $FUNCS"
+    FUNCS="chownall cpx dos2unixall reset_tty screentab starthttp $FUNCS"
+    FUNCS="truncate_file vncs bug rli make_workspace_alias $FUNCS"
+    FUNCS="diffscp compare show_progress get_ip_addr ssh_key ssh_pass $FUNCS"
     export_func $FUNCS;
 }
 
-# prints local date/time. date-format suitable for logs. ".%N"=MSEC, not supported on FreeBSD
+# Delete these. And bring in syslog filtering to echo as well.
+
+# prints local date/time. date-format suitable for logs. ".%N"=NSEC, not supported on FreeBSD
+# msec=$(date +"$FMT"".%N" | sed 's/......$//g');    # truncate last 6 digits: sed 's/......$//g' & sed 's/[0-9][0-9][0-9][0-9][0-9][0-9]$//g' same.
 function now() { date "+%Y-%m-%d %H:%M:%S"; }
 
 # prints script-name
 function myname() { echo "$(basename -- $0)"; }
 
-# $(date +%b%d%T) has display spacing issues. For line number tracing, use: $ decho "+$(echo $LINENO)" "message"
+# $(date +%b%d%T) has display spacing issues. For line number tracing, use: $ echo "+$(echo $LINENO)" "message"
 function prnt() { local m="$(now) $(hostnm) $(myname)[$$] $*"; [[ -z $STDERR ]] && echo "$m" || >&2 echo "$m"; unset STDERR; return 0; }
-function decho() { [[ "yes" == "$SHDEBUG" ]] && prnt $*; return $?; }
 
 # prints to stderr instead of stdout
-function warn() { STDERR=1; prnt $@; return $?; }
-function dwarn() { [[ "yes" == "$SHDEBUG" ]] && warn $*; return $?; }
+function warn() { LOG_TTY=1; log WARN $@; unset LOG_TTY; return 0; }
+
+function dbg() { LOG_TTY=1; log DEBUG $@; unset LOG_TTY; return 0; }
+
+function err() { LOG_TTY=1; log ERROR $@; unset LOG_TTY; return 0; }
 
 # print input string and exit with input error value
 function die() { chk GE 2 $# && { local e=$1; shift; warn $@ >&2; exit $e; } || return $?; }
@@ -71,13 +78,10 @@ function assert() { [[ $# -ge 2 ]] && { [[ $1 -ne $2 ]] && { warn "ASSERT! $1 !=
 function fail_bail() { [[ $? -ne 0 ]] && { die $? "$! failed w/ err: $?. $*"; } || return 0; }
 
 # usage: run <cmd> <args>. can-not check exec-perms in all inputs, some are internal cmds
-function run() { test -n "$RUN_LOG" && { $* 2>&1 | tee -a $RUN_LOG 2>&1; } || $*; return $?; }
-
-# usage: drun <cmd> <args>
-function drun() { [[ "no" == "$SHDEBUG" ]] && { run $*; return $?; } || { echo "$*"; return 0; }; }
+function run() { test -n "$DRY_RUN" && { echo "$*"; return 0; }; test -n "$RUN_LOG" && { $* 2>&1 | tee -a $RUN_LOG 2>&1; } || $*; return $?; }
 
 # usage: shell <cmd> <args>
-function shell() { drun $SHELL $*; return $?; }
+function shell() { run $SHELL $*; return $?; }
 
 # usage: (own ls) && echo true || echo flase
 function own { which "$1" &>/dev/null; }        # Error moved to /dev/null because on Solaris, 'which' cmd emits stty error
@@ -251,16 +255,15 @@ function pvalid()
 function source_script()
 {
     local us;   # user script
-    [[ "yes" == "$SHDEBUG" ]] && { local level=CRIT; } || { local level=NOTE; }
-    [[ ! -z $LOG_LEVELS_ENABLED ]] && { local cmd=log; } || { local cmd=decho; }
+    [[ ! -z $LOG_LEVELS_ENABLED ]] && { local cmd=log; } || { local cmd=prnt; }
     for us in $*; do
-        [[ ! -f $us ]] && { $cmd $level "[OPTOUT] $us"; return $ENOENT; } || { source $us; $cmd $level "[SOURCE] $us"; }
+        [[ ! -f $us ]] && { $cmd "[OPTOUT] $us"; return $ENOENT; } || { source $us; $cmd "[SOURCE] $us"; }
     done
 }
 
 function pause()
 {
-    [[ "yes" == "$SHDEBUG" ]] && echo -n $* "Continue (Y/n)? " || return;
+    [[ ! -z $DRY_RUN ]] && echo -n $* "Continue (Y/n)? " || return 0;
     TIMEOUT=3; local reply=y; read -t $TIMEOUT reply; unset TIMEOUT;
     [[ "$?" == "142" ]] && { reply=y; echo $reply; }    # On Timeout choose the default answer
     [[ "$reply" == "n" ]] && die $ECANCELED "Operation Cancelled. Exiting." || { echo ""; }
@@ -317,25 +320,169 @@ function read_tty()
     test -n "$EDITOR" && { local f="$(mktemp)"; cat $TMPLTS/read_tty > $f && $EDITOR $f && echo "$(cat $f)" && rm $f; return $?; } || return $ENOTSUP;
 }
 
+export LOG_LVLS=( "<DEBUG>" "<INFO>" "<NOTE>" "<WARN>" "<ERROR>" "<CRIT>" "<ALERT>" "<EMERG>" ); # RFC 5424 defines 8 levels of severity
+
+# Logger Usage Guideline
+#-----------------------
+# 1. Load the source file:          source log_utils.sh
+# 2. Init logger with new config:   log_init <LOG_LEVEL> <LOG_FILE>
+# 3. Use logger api for logging:    log <LOG_LEVEL> "Your message here"
+function log_init()
+{
+    [[ $# -eq 0 ]] && { return $EINVAL; } || { LOG_LEVEL=$1; [[ $# -eq 2 ]] && LOG_FILE="$2" || LOG_FILE="$(myname).log"; }
+
+    mkfile $LOG_FILE && file_rotate $LOG_FILE; [[ $? -ne 0 ]] && return $?; # any problem writing to file, return.
+
+    # LOG_LVLS_ON set is last step during init. log() depends on it.
+    case "$LOG_LEVEL" in
+        "EMERG") LOG_LVLS_ON=( "<EMERG>" ); ;;
+        "ALERT") LOG_LVLS_ON=( "<ALERT>" "<EMERG>" ); ;;
+        "CRIT")  LOG_LVLS_ON=( "<CRIT>" "<ALERT>" "<EMERG>" ); ;;
+        "ERROR") LOG_LVLS_ON=( "<ERROR>" "<CRIT>" "<ALERT>" "<EMERG>" ); ;;
+        "WARN")  LOG_LVLS_ON=( "<WARN>" "<ERROR>" "<CRIT>" "<ALERT>" "<EMERG>" ); ;;
+        "NOTE")  LOG_LVLS_ON=( "<NOTE>" "<WARN>" "<ERROR>" "<CRIT>" "<ALERT>" "<EMERG>" ); ;;
+        "INFO")  LOG_LVLS_ON=( "<INFO>" "<NOTE>" "<WARN>" "<ERROR>" "<CRIT>" "<ALERT>" "<EMERG>" ); ;;
+        "DEBUG") LOG_LVLS_ON=( "<DEBUG>" "<INFO>" "<NOTE>" "<WARN>" "<ERROR>" "<CRIT>" "<ALERT>" "<EMERG>" ); ;;
+        *) LOG_LVLS_ON=( "<INFO>" "<NOTE>" "<WARN>" "<ERROR>" "<CRIT>" "<ALERT>" "<EMERG>" ); ;; # Invalid log-level, reset to default (INFO)
+    esac
+    return 0;
+}
+
+# syslog style logger library for bash scripts (https://github.com/nischithbm/bash-logger, http://sourceforge.net/projects/bash-logger)
+# usage: log <LOG_LVL> <log-msg>. LOG_LVL=EMERG/ALERT/CRIT/ERROR/WARN/NOTE/INFO/DEBUG
+function log()
+{
+    [[ $# -lt 2 ]] && { return $EINVAL; } || { local s=$(echo ${LOG_LVLS[@]} | grep "<$1>"); [[ -z ${s} ]] && return $EINVAL; }
+    [[ -z $LOG_LVLS_ON ]] && { return $ENOENT; } || { local is_log_lvl_on=$(echo ${LOG_LVLS_ON[@]} | grep "<$1>"); } # check if log_init() done
+    [[ -z ${is_log_lvl_on} ]] && { return 0; } || { local is_crit=$(echo ${1} | grep -E "EMERG|ALERT|CRIT"); } # return if below log-sev filter
+    [[ ! -z $is_crit ]] && { STDERR=1; }; [[ ! -z $LOG_TTY ]] && { prnt "$*"; } || { prnt "$*" >> $LOG_FILE; }
+    return 0;
+}
+
+# grab ownership of given file/directory
+function chownall() { sudo chown -R ${USER} ${1:-.}; }
+
+# cpx : 'Expert' cp : uses tar to preserve ownership and permissions
+function cpx () { [[ $# -ne 2 ]] && { echo "Usage: cpx src dest"; return $EINVAL; } || { tar cpf - $1 | (cdie $2 && tar xvpBf -); return $?; }; }
+
+function dos2unixall() { local file; for file in $(find ${1:-.} -type f -print | xargs file | grep -v ELF | cut -d: -f1); do dos2unix $file; done; }
+
+# fixtty : reset TTY after it has turned unusable (cat binary file to tty, scp failed, etc.). Alternate: alias r='echo -e \\033c'
+function reset_tty() { stty sane; reset; [[ "$UNAMES" != "SunOS" ]] && { stty stop '' -ixoff; stty erase '^?'; }; }
+
+# Using octal codes (ex. 0755 for dir/0644 for files) overwrites all old settings with new perms. go-rwx only affects given perms.
+
+function screentab() { test -z $1 && { echo "usage: screentab <name>"; return $EINVAL; } || screen -t $1 bash; }
+
+# You should be able to reach index.html through 8080 port of machine. usage: cd <doc-root> && starthttp
+function starthttp() { python -m SimpleHTTPServer 8080; }
+
+function truncate_file() { run cat /dev/null > $1; }
+
+function vncs() { test -z $1 && { echo "usage: vncs <geometry>\nEx:1600x900,1360x760"; return $EINVAL; } || (own vncserver) && vncserver -geometry $*; }
+
+# Enable password less login over SSH by exchanging public key to remote box
+function ssh_key() { [[ ! -e $HOME/.ssh/id_rsa.pub ]] && ssh-keygen -t rsa; }
+function ssh_pass() { ssh_key; local h; for h in "$@"; do echo $h; ssh $h 'cat >> ~/.ssh/authorized_keys' < $HOME/.ssh/id_rsa.pub; done; }
+
+# development helper functions
+function bug() { [[ $# -eq 0 ]] && { ls ~/work/PR/; return; } || cdie ~/work/PR/$1; }
+
+function rli() { [[ $# -eq 0 ]] && { ls ~/work/RLI/; return; } || cdie ~/work/RLI/$1; }
+
+# make workspace aliases. easy to jump between different workspaces
+function make_workspace_alias()
+{
+    [[ $# -ne 1 ]] && { echo "usage: make_workspace_alias <sb-parent-dir>"; return $EINVAL; }
+    [[ ! -d "$1" ]] && { echo "[ERROR] directory $1 not found"; return $ENOENT; }
+
+    local PARENT=$1; local SB;
+    for SB in $(ls $PARENT); do
+        [[ "" != "$(alias $SB 2>/dev/null)" ]] && continue;     # already exists
+        [[ -d "$PARENT/$SB" && -d "$PARENT/$SB/src" ]] && alias "$SB"="cd $PARENT/$SB/src";
+    done
+}
+
+# usage: diffscp <relative-dir-path> <dst-server>. GUI. if relative paths are not given, we need to do circus like: echo ${file#$1}
+# CLI: ssh $2 cat $file | vim - -c ':vnew $file |windo diffthis' OR ssh $2 cat $file | diff - $file
+function diffscp() { chk EQ $# 2 && { local file; for file in $(find $1 -type f); do vimdiff $file scp://$2/$file; done; } || { return $EINVAL; }; }
+
+# usage: compare <file1> <file2>
+function compare()
+{
+    # lengthy: cksum11=$(echo $(cksum $1) | awk -F ' ' '{print $1}'); cksum12=$(echo $(cksum $1) | awk -F ' ' '{print $2}');
+    chk EQ $# 2 && { read cksum11 cksum12 file1 <<< $(cksum $1); read cksum21 cksum22 file2 <<< $(cksum $2); } || { return $EINVAL; }
+    [[ $cksum11 -ne $cksum21 || $cksum12 -ne $cksum22 ]] && echo "Files $1 and $2 are different" || echo "Files $1 and $2 are identical";
+    echo "Checksums:"; echo "$file1: $cksum11 $cksum12"; echo "$file2: $cksum21 $cksum22";
+}
+
+function show_progress()
+{
+    [[ $# -eq 1 && -f $1 ]] && { local file=$1; } || { echo "usage: show_progress <file-path>"; return; }
+    local delay=0.75
+    local spinstr='|/-\'
+    local oldwc=0
+    local newwc=$(wc -l $file | awk '{print $1}')
+    while [ $newwc -gt $oldwc ]; do
+        oldwc=$newwc
+        local temp=${spinstr#?}
+        printf " [%c]  " "$spinstr"
+        local spinstr=$temp${spinstr%"$temp"}
+        sleep $delay
+        printf "\b\b\b\b\b\b"
+        newwc=$(wc -l $file | awk '{print $1}')
+    done
+    printf "    \b\b\b\b"
+}
+
+function get_ip_addr()
+{
+    [[ $UNAMES == "Linux" ]] && { local addr=$(ifconfig eth0 | grep -w inet | awk -F: '{print $2}' | awk '{print $1}'); echo $addr; }
+    [[ $UNAMES == "Darwin" ]] && { local addr=$(ifconfig en0 | grep -w inet | awk '{print $2}'); echo $addr; }
+}
+
 usage()
 {
-    warn "usage: bash_utils.sh []"
+    warn "Usage: bash_utils.sh <-h|-l <log-level> <log-message>|-r <log-file>>"
+    warn "Options:"
+    warn "  -l <log-level> <log-message>- log given message at given log-level"
+    warn "  -r <log-file>               - rotate given log file"
+    warn "  -h                          - print this help message"
 }
 
 # Each shell script has to be independently testable.
 # It can then be included in other files for functions.
 main()
 {
-    if [ "$#" == "0" ]; then
-        usage
-        exit 1
+    local PARSE_OPTS="hi:l:r:"
+    local opts_found=0; local opt;
+    while getopts ":$PARSE_OPTS" opt; do
+        case $opt in
+            [a-zA-Z0-9])
+                log DEBUG "-$opt was triggered, Parameter: $OPTARG"
+                local "opt_$opt"=1 && local "optarg_$opt"="$OPTARG"
+                ;;
+            \?)
+                echo "Invalid option: -$OPTARG"; usage; exit $EINVAL;
+                ;;
+            :)
+                echo "[ERROR] Option -$OPTARG requires an argument";
+                usage; exit $EINVAL;
+                ;;
+        esac
+        shift $((OPTIND-1)) && OPTIND=1 && local opts_found=1;
+    done
+
+    if ((!opts_found)); then
+        usage && exit $EINVAL;
     fi
 
-    case $1 in
-        *)
-            usage
-            ;;
-    esac
+    #log_init $LOG_FILE
+    ((opt_i)) && { LOG_FILE="$*"; log_init $optarg_i $LOG_FILE; }
+    ((opt_l)) && { log $optarg_l $*; }
+    ((opt_r)) && { file_rotate $optarg_r; }
+    ((opt_h)) && (usage; exit 0)
+
     exit 0
 }
 
