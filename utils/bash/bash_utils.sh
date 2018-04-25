@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 24/Apr/2018 10:42:51 PDT
+# MODIFIED: 25/Apr/2018 10:26:43 PDT
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -27,9 +27,10 @@ export EOVERFLOW=79  # variable overflow
 export ETIMEDOUT=145 # Operation timedout
 export EASSERT=199   # Assertion failed
 
-FILE_MAX_SZ=10240                   # In KB
-FILE_MAX_BKUPS=1                    # max num of backup files
-FILE_EMAIL=friends4web@gmail.com    # if file_rotate() were to email
+export FILE_MAX_SZ=10240                   # In KB
+export FILE_MAX_BKUPS=1                    # max num of backup files
+export FILE_EMAIL=friends4web@gmail.com    # if file_rotate() were to email
+export LOG_LVLS=( "<DEBUG>" "<INFO>" "<NOTE>" "<WARN>" "<ERROR>" "<CRIT>" "<ALERT>" "<EMERG>" ); # RFC 5424 defines 8 levels of severity
 
 # {} - used for command grouping. if all commands are on single line, last command should end with a semi-colon ';'
 # invoke any program with 'env -i <prog>' for clearing all ENV variables while invoking program
@@ -252,14 +253,7 @@ function pvalid()
 # bash scripting helper functions
 
 # given input list of files, source them
-function source_script()
-{
-    local us;   # user script
-    [[ ! -z $LOG_LEVELS_ENABLED ]] && { local cmd=log; } || { local cmd=prnt; }
-    for us in $*; do
-        [[ ! -f $us ]] && { $cmd "[OPTOUT] $us"; return $ENOENT; } || { source $us; $cmd "[SOURCE] $us"; }
-    done
-}
+function source_script() { local us; for us in $*; do chk FE EX $us && { warn "[SOURCE] $us"; source $us; } || { warn "[OPTOUT] $us"; }; done; }
 
 function pause()
 {
@@ -273,45 +267,31 @@ function term()
 {
     case "$UNAMES" in
         "SunOS")
-            # Needed for color console in Solaris. But breaks Vim (problem in vim)
-            # on other platforms.
-            export TERM=xterm-color;
-            ;;
+            export TERM=xterm-color; ;;     # Needed for color console in Solaris. But breaks Vim (problem in vim) on other platforms.
         "FreeBSD")
-            # Required to prevent vim leaving behind text on terminal on FreeBSD
-            export TERM=rxvt;
-            ;;
+            export TERM=rxvt; ;;            # Required to prevent vim leaving behind text on terminal on FreeBSD
         *)
-            # On other machines, TERM is automatically set by respective GUIs like
-            # GNU screen/xterm.
-            ;;
+            ;;                              # On other machines, TERM is automatically set by respective GUIs like: GNU screen/xterm.
     esac
 }
 
 function via() { local file; for file in $*;do vim $file; done; }
 
+# usage: run_on Mon abc.sh
 function run_on()
 {
     local when=$1; shift;
     case $when in
     Now)
-        run "$*";
-        ;;
+        run "$*"; ;;
     Mon|Tue|Wed|Thu|Fri|Sat|Sun)
-        [[ "$(date +'%a')" == "$when" ]] && { run "$*"; }
-        ;;
+        [[ "$(date +'%a')" == "$when" ]] && { run "$*"; }; ;;
     Date)
-        local day=$1; shift;        # Day-of-Year: 01Apr2016
-        [[ "$(date +'%d%b%Y')" == "$day" ]] && { run "$*"; }
-        ;;
+        local day=$1; shift; [[ "$(date +'%d%b%Y')" == "$day" ]] && { run "$*"; }; ;;    # Day-of-Year: 01Apr2016
     DoM)
-        local day=$1; shift;        # Day-of-Month: 02May
-        [[ "$(date +'%d%b')" == "$day" ]] && { run "$*"; }
-        ;;
+        local day=$1; shift; [[ "$(date +'%d%b')" == "$day" ]] && { run "$*"; }; ;;    # Day-of-Month: 02May
     Day)
-        local day=$1; shift;        # Day of current Month: 03
-        [[ "$(date +'%d')" == "$day" ]] && { run "$*"; }
-        ;;
+        local day=$1; shift; [[ "$(date +'%d')" == "$day" ]] && { run "$*"; }; ;;    # Day of current Month: 03
     esac
 }
 
@@ -319,8 +299,6 @@ function read_tty()
 {
     test -n "$EDITOR" && { local f="$(mktemp)"; cat $TMPLTS/read_tty > $f && $EDITOR $f && echo "$(cat $f)" && rm $f; return $?; } || return $ENOTSUP;
 }
-
-export LOG_LVLS=( "<DEBUG>" "<INFO>" "<NOTE>" "<WARN>" "<ERROR>" "<CRIT>" "<ALERT>" "<EMERG>" ); # RFC 5424 defines 8 levels of severity
 
 # Logger Usage Guideline
 #-----------------------
