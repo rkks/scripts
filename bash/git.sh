@@ -1,16 +1,13 @@
 #!/usr/bin/env bash
 #  DETAILS: External diff tool for git
 #  CREATED: 03/20/13 21:55:08 IST
-# MODIFIED: 18/Apr/2018 12:13:05 PDT
+# MODIFIED: 25/Apr/2018 17:41:20 PDT
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
 
 #set -uvx               # Treat unset variables as an error, verbose, debug mode
 [[ "$(basename git.sh)" == "$(basename -- $0)" && -f $HOME/.bashrc.dev ]] && { source $HOME/.bashrc.dev; }
-
-# To change remote url for github repo from https to ssh, do
-# git remote set-url origin git@github.com:rkks/scripts.git
 
 # .mailmap allows users with different email-addrs to be recognized by same name
 function add_mailmap()
