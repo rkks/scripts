@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: ubuntu quirks and it's remedies
 #  CREATED: 04/05/18 10:34:37 PDT
-# MODIFIED: 10/Apr/2018 14:04:18 PDT
+# MODIFIED: 25/Apr/2018 12:29:06 PDT
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -19,8 +19,10 @@ function apt_cleanup()
     sudo apt update
     sudo apt clean
     sudo apt autoclean
-    [[ $# -ne 0 ]] && sudo dpkg --remove --force-remove-reinstreq $*
+    sudo dpkg --get-selections > packages
+    sudo dpkg --clear-selections
     sudo apt autoremove -f
+    [[ $# -ne 0 ]] && { sudo dpkg --remove --force-remove-reinstreq $*; sudo apt-get install --force-reinstall true $*; }
 }
 
 function reinstall_unity()

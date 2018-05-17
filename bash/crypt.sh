@@ -1,13 +1,31 @@
 #!/bin/bash
-#  DETAILS: 
+#  DETAILS:
 #  CREATED: 12/06/2017 12:44:14 AM PST
-# MODIFIED: 21/Apr/2018 11:31:08 PDT
+# MODIFIED: 27/Apr/2018 14:48:12 PDT
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2017, Ravikiran K.S.
 
 #set -uvx   # Warn unset vars, Verbose (echo each command), Enable debug mode
+
+# Since the password is visible, this form should only be used where security is not important.
+# By default a user is prompted to enter the password.
+#
+# If you are creating a BASH script, you may want to set the password in non interactive way, using -k option.
+# Public key cryptography was invented just for such cases.
+#
+# Encrypt a file using a supplied password :
+# $ openssl enc -aes-256-cbc -salt -in file.txt -out file.txt.enc -k PASS
+#
+# Decrypt a file using a supplied password :
+# $ openssl enc -aes-256-cbc -d -in file.txt.enc -out file.txt -k PASS
+#
+# Encrypt a string using a supplied password :
+# $ echo 'REAL-PASS' | openssl enc -aes-256-cbc -a -e -k <PASS>       // Remember PASS is to derive REAL-PASS
+#
+# Decrypt a string using a supplied password :
+# $ echo 'HASH-KEY' | openssl enc -aes-256-cbc -a -d -k <PASS>
 
 # By default enable base64 encoding and salt inclusion in output
 BASE64="-a";

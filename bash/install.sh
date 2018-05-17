@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Installer script for my tools. Downloads and installs locally.
 #  CREATED: 09/23/14 09:31:11 IST
-# MODIFIED: 01/02/18 19:52:03 IST
+# MODIFIED: 25/Apr/2018 15:08:15 PDT
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2014, Ravikiran K.S.
@@ -67,7 +67,7 @@ function build()
 
 function sinstall()
 {
-    [[ $# -lt 2 ]] && { echo "install <file> <url> [conf-args]"; }
+    [[ $# -lt 2 ]] && { echo "sinstall <file> <url> [conf-args]"; }
     local file=$1; shift; local url=$1; shift; local dir=$(tar.sh -d $file);
     downld $file $url; untar $file; build $dir $*;
 }
@@ -75,6 +75,12 @@ function sinstall()
 function wget_install()
 {
     sinstall wget.tar.gz http://ftp.gnu.org/gnu/wget/wget-1.15.tar.gz
+}
+
+function ginstall()
+{
+    [[ $# -lt 2 ]] && { echo "ginstall <url> <dir-name> [conf-args]"; return $EINVAL; }
+    local url=$1; shift; local dir=$2; shift; git clone $url $dir; build $dir $*;
 }
 
 #function p7zip_install()
@@ -95,6 +101,7 @@ function tmux_install()
     CFLAGS+=" -I$HOME/tools/$UNAMES/include/ncurses -I$HOME/tools/$UNAMES/include";
     LDFLAGS+=" -L$HOME/tools/$UNAMES/lib/ncurses -L$HOME/tools/$UNAMES/lib"
     sinstall tmux.tar.gz https://github.com/tmux/tmux/releases/download/1.9a/tmux-1.9a.tar.gz
+    ginstall https://codeload.github.com/twaugh/patchutils/zip/master patchutils;       # for diff between patch files for incremental patch
 }
 
 function expect_install()

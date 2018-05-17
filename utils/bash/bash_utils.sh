@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 25/Apr/2018 10:26:43 PDT
+# MODIFIED: 17/May/2018 11:32:59 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -63,11 +63,17 @@ function myname() { echo "$(basename -- $0)"; }
 function prnt() { local m="$(now) $(hostnm) $(myname)[$$] $*"; [[ -z $STDERR ]] && echo "$m" || >&2 echo "$m"; unset STDERR; return 0; }
 
 # prints to stderr instead of stdout
-function warn() { LOG_TTY=1; log WARN $@; unset LOG_TTY; return 0; }
+function warn() { log WARN $@; return 0; }
 
-function dbg() { LOG_TTY=1; log DEBUG $@; unset LOG_TTY; return 0; }
+function note() { log NOTE $@; return 0; }
 
-function err() { LOG_TTY=1; log ERROR $@; unset LOG_TTY; return 0; }
+function crit() { log CRIT $@; return 0; }
+
+function alrt() { log ALERT $@; return 0; }
+
+function dbg() { log DEBUG $@; return 0; }
+
+function err() { log ERROR $@; return 0; }
 
 # print input string and exit with input error value
 function die() { chk GE 2 $# && { local e=$1; shift; warn $@ >&2; exit $e; } || return $?; }
@@ -94,10 +100,10 @@ function have { type -t "$1" &>/dev/null; }
 function cdie { chk DE EX $1 && cd $1 || return $?; }
 
 # usage: mkdie <path>. Create directory if doesn't exist, otherwise just update timestamp.
-function mkdie { chk EQ 1 $# && { chk PE NE $1 && { mkdir -pv $1 && chmod 740 "$1"; return $?; } || return $?; } || return $?; }
+function mkdie { chk EQ 1 $# && { [[ ! -e $1 ]] && { mkdir -pv $1 && chmod 740 "$1"; return $?; } || return 0; } || return $?; }
 
 # create file and directory path (if doesn't exist); else just update timestamp. return no error for already existing files.
-function mkfile() { chk EQ 1 $# && { [[ ! -e $1 ]] && { mkdie "$(dirname $1)" && touch $1 && chmod 640 $1; return $?; } || return 0; } || return $?; }
+function mkfile() { chk EQ 1 $# && { [[ ! -e $1 ]] && { mkdie "$(dirname -- $1)" && touch -- $1 && chmod 640 $1; return $?; } || return 0; } || return $?; }
 
 # encode file and send as attachment. uuencode 2nd arg is attachment filename (as appears in mail). mutt not available on FreeBSD 
 function email() { [[ $# -eq 1 ]] && uuencode $1 $(basename $1) | mail -s "[ARCHIVE] Old logs" $LOG_EMAIL; }
@@ -124,9 +130,9 @@ function chk()
     NE) [[ $in -ne $req ]] && { r=0; } || { r=1; local m=" != "; }; ;;
     GE) [[ $in -ge $req ]] && { r=0; } || { r=1; local m=" >= "; }; ;;
     GT) [[ $in -gt $req ]] && { r=0; } || { r=1; local m=" > "; }; ;;
-    PE) [[ NE == $req ]] && { [[ -e $in ]] && { r=2; n=$ae; }; } || { [[ ! -e $in ]] && { r=2; n=$dne; }; }; local m="Path"; ;;
-    DE) [[ NE == $req ]] && { [[ -d $in ]] && { r=2; n=$ae; }; } || { [[ ! -d $in ]] && { r=2; n=$dne; }; }; local m="Dir"; ;;
-    FE) [[ NE == $req ]] && { [[ -f $in ]] && { r=2; n=$ae; }; } || { [[ ! -f $in ]] && { r=2; n=$dne; }; }; local m="File"; ;;
+    PE) [[ NE == $req ]] && { [[ -e $in ]] && { r=2; n=$ae; } || r=0; } || { [[ ! -e $in ]] && { r=2; n=$dne; } || r=0; }; local m="Path"; ;;       # extra r=0 to keep bash sane
+    DE) [[ NE == $req ]] && { [[ -d $in ]] && { r=2; n=$ae; } || r=0; } || { [[ ! -d $in ]] && { r=2; n=$dne; } || r=0; }; local m="Dir"; ;;
+    FE) [[ NE == $req ]] && { [[ -f $in ]] && { r=2; n=$ae; } || r=0; } || { [[ ! -f $in ]] && { r=2; n=$dne; } || r=0; }; local m="File"; ;;
     esac
     [[ $r -eq 1 ]] && { warn "Invalid #num of args. Failed check: in($in) $m req($req)"; return $EINVAL; }
     [[ $r -eq 2 ]] && { warn "$m $in $n"; return $EEXIST; }
@@ -253,7 +259,7 @@ function pvalid()
 # bash scripting helper functions
 
 # given input list of files, source them
-function source_script() { local us; for us in $*; do chk FE EX $us && { warn "[SOURCE] $us"; source $us; } || { warn "[OPTOUT] $us"; }; done; }
+function source_script() { local us; for us in $*; do chk FE EX $us && { note "[SOURCE] $us"; source $us; } || { note "[OPTOUT] $us"; }; done; }
 
 function pause()
 {
@@ -275,7 +281,7 @@ function term()
     esac
 }
 
-function via() { local file; for file in $*;do vim $file; done; }
+function via() { local file; for file in $*;do vim "$file"; done; }
 
 # usage: run_on Mon abc.sh
 function run_on()
@@ -295,10 +301,28 @@ function run_on()
     esac
 }
 
-function read_tty()
+function mktmp() { local f=$(mktemp); [[ $# -eq 1 ]] && cat $1 > $f || cat $TMPLTS/read_tty > $f; echo $f; }
+
+function clean_kv() { local i; for i in "${!R[@]}"; do unset $i; done; unset R; }
+
+function read_kv()
 {
-    test -n "$EDITOR" && { local f="$(mktemp)"; cat $TMPLTS/read_tty > $f && $EDITOR $f && echo "$(cat $f)" && rm $f; return $?; } || return $ENOTSUP;
+    [[ $# -ne 1 ]] && return $EINVAL || { local k; local v; local i; }
+    # Only issue with below line is, unsetting vars imported is not straight forward
+    #while read -r l; do declare $l; done< $F;
+    declare -g -A R; while IFS="=" read -r k v; do R[$k]="$v"; done< $1;
+    for i in "${!R[@]}"; do dbg "$i=${R[$i]}"; declare -g $i=${R[$i]}; done;
+    return 0;
 }
+
+function clean_tty() { rm $F; unset F; }
+
+function read_tty() { declare -g F; F=$(mktmp $*); ${EDITOR:-vim} $F && [[ -s $F ]] && return 0 || return $?; }
+
+function clean_cfg() { clean_tty && clean_kv; }
+
+# usage: read_cfg <kv-file-path>
+function read_cfg() { read_tty $* && read_kv $F; }
 
 # Logger Usage Guideline
 #-----------------------
@@ -307,7 +331,7 @@ function read_tty()
 # 3. Use logger api for logging:    log <LOG_LEVEL> "Your message here"
 function log_init()
 {
-    [[ $# -eq 0 ]] && { return $EINVAL; } || { LOG_LEVEL=$1; [[ $# -eq 2 ]] && LOG_FILE="$2" || LOG_FILE="$(myname).log"; }
+    [[ $# -eq 0 ]] && { return $EINVAL; } || { LOG_LEVEL=$1; [[ $# -eq 2 ]] && LOG_FILE="$2" || LOG_FILE="$SCRPT_LOGS/$(myname).log"; }
 
     mkfile $LOG_FILE && file_rotate $LOG_FILE; [[ $? -ne 0 ]] && return $?; # any problem writing to file, return.
 
@@ -332,7 +356,7 @@ function log()
 {
     [[ $# -lt 2 ]] && { return $EINVAL; } || { local s=$(echo ${LOG_LVLS[@]} | grep "<$1>"); [[ -z ${s} ]] && return $EINVAL; }
     [[ -z $LOG_LVLS_ON ]] && { return $ENOENT; } || { local is_log_lvl_on=$(echo ${LOG_LVLS_ON[@]} | grep "<$1>"); } # check if log_init() done
-    [[ -z ${is_log_lvl_on} ]] && { return 0; } || { local is_crit=$(echo ${1} | grep -E "EMERG|ALERT|CRIT"); } # return if below log-sev filter
+    [[ -z ${LOG_TTY} && -z ${is_log_lvl_on} ]] && { return 0; } || { local is_crit=$(echo ${1} | grep -E "EMERG|ALERT|CRIT"); } # filter on sev
     [[ ! -z $is_crit ]] && { STDERR=1; }; [[ ! -z $LOG_TTY ]] && { prnt "$*"; } || { prnt "$*" >> $LOG_FILE; }
     return 0;
 }

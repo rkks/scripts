@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Network utilities
 #  CREATED: 07/17/13 16:00:40 IST
-# MODIFIED: 03/28/16 17:48:56 IST
+# MODIFIED: 17/May/2018 11:31:24 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -27,14 +27,25 @@ function pingwait()
     done
 }
 
+function set_ip_addr()
+{
+    read_cfg $HOME/conf/template/ifconfig;
+    #export LOG_TTY=1; DRY_RUN=1;
+    run sudo ifconfig $1 $ADDRESS netmask $NETMASK up
+    run sudo route add default gw $GATEWAY
+    run echo \"nameserver $NAMESVR\" \>\> /etc/resolv.conf
+    clean_cfg;
+}
+
 usage()
 {
     echo "usage: network.sh []"
     echo "usage: find.sh <-a|-d [host-name]|-p <host-name>|-h>"
     echo "Options:"
-    echo "  -a              - clear arp database on this machine"
+    echo "  -c              - clear arp database on this machine"
     echo "  -d [host-name]  - check dns query for give host (google.com - default)"
     echo "  -p [host-name]  - check ping reachability of given host (google.com - default)"
+    echo "  -i <interface>  - configure ip address, gateway, dns server on interface"
     echo "  -h              - print this help"
 }
 
@@ -42,7 +53,7 @@ usage()
 # It can then be included in other files for functions.
 main()
 {
-    PARSE_OPTS="hadps"
+    PARSE_OPTS="hcdi:p"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -65,9 +76,10 @@ main()
         usage && exit $EINVAL;
     fi
 
-    ((opt_a)) && arpclear;
+    ((opt_c)) && arpclear;
     ((opt_d)) && dnscheck $*;
     ((opt_p)) && pingwait $*;
+    ((opt_i)) && set_ip_addr $optarg_i;
     ((opt_h)) && { usage; exit 0; }
 
     exit 0
