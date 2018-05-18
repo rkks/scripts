@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 17/May/2018 11:32:59 IST
+# MODIFIED: 17/May/2018 14:15:01 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -45,7 +45,7 @@ function export_bash_funcs()
     FUNCS="chk run_on file_sz page_brkr file_rotate bkup now myname log_init $FUNCS"
     FUNCS="puniq ppop pvalid prm pappend pprepend pshift pls source_script $FUNCS"
     FUNCS="chownall cpx dos2unixall reset_tty screentab starthttp $FUNCS"
-    FUNCS="truncate_file vncs bug rli make_workspace_alias $FUNCS"
+    FUNCS="truncate_file vncs bug rli make_workspace_alias bash_colors $FUNCS"
     FUNCS="diffscp compare show_progress get_ip_addr ssh_key ssh_pass $FUNCS"
     export_func $FUNCS;
 }
@@ -177,11 +177,12 @@ function up() { local d=""; for ((i=1;i<=$1;i++)); do d=../$d; done; echo "cd $d
 
 # Coloring functions
 # Colors - Enable colors for ls, etc.
-function bash_dircolors()
+function bash_colors()
 {
-    [[ -z $PS1_COLOR ]] && { warn "ps1_prompt: PS1_COLOR not set"; return 1; }
-    local d="$CUST_CONFS/dir_colors_$PS1_COLOR"; [[ ! -f $d ]] && { return 1; }
-    (own dircolors) && { eval $(dircolors -b $d); return 0; }
+    [[ -z $PS1_COLOR ]] && { warn "ps1_prompt: PS1_COLOR not set"; return $EINVAL; } || { local d; }
+    d="$CUST_CONFS/dir_colors_$PS1_COLOR"; [[ -f $d ]] && { (own dircolors) && { eval $(dircolors -b $d); }; }
+    [[ -e $CONFS/Xdefaults ]] && { (own xrdb) && xrdb $CONFS/Xdefaults; } || return 0;
+    d="$CUST_CONFS/Xresources_$PS1_COLOR"; [[ -f $d ]] && { (own xrdb) && xrdb -merge $d; }
 }
 
 function ps1_prompt()
@@ -210,7 +211,7 @@ function ps1_prompt()
 function ps1_toggle()
 {
     [[ "$PS1_COLOR" == "light" ]] && { export PS1_COLOR=dark; } || { export PS1_COLOR=light; }
-    (have ps1_prompt) && ps1_prompt; (have bash_dircolors) && bash_dircolors;
+    (have ps1_prompt) && ps1_prompt; (have bash_colors) && bash_colors;
 }
 
 # Path management functions
