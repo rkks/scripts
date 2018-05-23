@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Tar wrappers
 #  CREATED: 07/17/13 15:53:58 IST
-# MODIFIED: 03/28/16 17:49:59 IST
+# MODIFIED: 21/May/2018 07:10:28 PDT
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -47,7 +47,7 @@ function extract()
         *.Z)        uncompress $fpath ;;
         *)          echo "$fpath can not be extracted via extract()" ;;
     esac
-    fail_bail;
+    bail;
 }
 
 function list()

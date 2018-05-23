@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 17/May/2018 14:15:01 IST
+# MODIFIED: 21/May/2018 08:53:37 PDT
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -40,7 +40,7 @@ function export_func() { local func; export -f $FUNCNAME; for func in $*; do exp
 
 function export_bash_funcs()
 {
-    local FUNCS="run shell own have cdie mkdie hostnm fail_bail up die via mkfile"
+    local FUNCS="run shell own have cdie mkdie hostnm bail up die via mkfile"
     FUNCS="bash_trace bash_untrace warn prnt term assert pause read_tty log $FUNCS"
     FUNCS="chk run_on file_sz page_brkr file_rotate bkup now myname log_init $FUNCS"
     FUNCS="puniq ppop pvalid prm pappend pprepend pshift pls source_script $FUNCS"
@@ -82,7 +82,7 @@ function die() { chk GE 2 $# && { local e=$1; shift; warn $@ >&2; exit $e; } || 
 function assert() { [[ $# -ge 2 ]] && { [[ $1 -ne $2 ]] && { warn "ASSERT! $1 != $2. $*"; return $EASSERT; } || return 0; } || return $EINVAL; }
 
 # bail-out if last command returned error. success == 0
-function fail_bail() { [[ $? -ne 0 ]] && { die $? "$! failed w/ err: $?. $*"; } || return 0; }
+function bail() { [[ $? -ne 0 ]] && { die $? "$! failed w/ err: $?. $*"; } || return 0; }
 
 # usage: run <cmd> <args>. can-not check exec-perms in all inputs, some are internal cmds
 function run() { test -n "$DRY_RUN" && { echo "$*"; return 0; }; test -n "$RUN_LOG" && { $* 2>&1 | tee -a $RUN_LOG 2>&1; } || $*; return $?; }

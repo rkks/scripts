@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Installer script for my tools. Downloads and installs locally.
 #  CREATED: 09/23/14 09:31:11 IST
-# MODIFIED: 25/Apr/2018 15:08:15 PDT
+# MODIFIED: 21/May/2018 07:10:15 PDT
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2014, Ravikiran K.S.
@@ -43,26 +43,26 @@ function downld()
     [[ -e $1 ]] && { echo "File $1 already exists"; mv $1 $DOWNLOADS/; return $EEXIST; }
     local fname=$1; shift;
     (own wget) && { wget --limit-rate=1m -O $fname $*; } || { curl --limit-rate 1m -# -L -o $fname $*; }
-    fail_bail; mv $fname $DOWNLOADS/ ;
+    bail; mv $fname $DOWNLOADS/ ;
 }
 
 function untar()
 {
     [[ $# -ne 1 ]] && { echo "untar <file>"; return; }
-    # Avoid mkdir $1 && tar xvzf $2 -C $1 --strip-components=1; fail_bail;
-    tar.sh -x $1; fail_bail;
+    # Avoid mkdir $1 && tar xvzf $2 -C $1 --strip-components=1; bail;
+    tar.sh -x $1; bail;
 }
 
 function config() {
     local args="$*";
     [[ ! -e ./configure ]] && { ./autogen.sh; }
-    ./configure --prefix=$TOOLS CFLAGS="$CFLAGS" CPPFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" $args; fail_bail;
+    ./configure --prefix=$TOOLS CFLAGS="$CFLAGS" CPPFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" $args; bail;
 }
 
 function build()
 {
     [[ $# -lt 1 ]] && { echo "build <dir> [args]"; return; }
-    local d=$1; shift; cdie $d*; config "$*"; make && make install; fail_bail; d=$(basename $PWD); cd -; rm -rf $d;
+    local d=$1; shift; cdie $d*; config "$*"; make && make install; bail; d=$(basename $PWD); cd -; rm -rf $d;
 }
 
 function sinstall()
@@ -135,8 +135,8 @@ function cscope-tags_install()
 function openssl_install()
 {
     local wflag='--no-check-certificate'; local file='openssl-1.0.1j.tar.gz'; local dir=$(tar.sh -d $file);
-    [[ ! -e $file ]] && { wget $wflag -O $file https://www.openssl.org/source/openssl-1.0.1j.tar.gz; fail_bail; }
-    untar $file; cd $dir && ./config --prefix=$TOOLS; fail_bail;
+    [[ ! -e $file ]] && { wget $wflag -O $file https://www.openssl.org/source/openssl-1.0.1j.tar.gz; bail; }
+    untar $file; cd $dir && ./config --prefix=$TOOLS; bail;
     make && make install && cd - && rm -rf $dir
 }
 

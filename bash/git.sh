@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: External diff tool for git
 #  CREATED: 03/20/13 21:55:08 IST
-# MODIFIED: 25/Apr/2018 17:41:20 PDT
+# MODIFIED: 21/May/2018 03:04:41 PDT
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -62,12 +62,7 @@ function git_diff()
     git dir > $output;
 }
 
-function git_clone()
-{
-    [[ $# -ne 1 ]] && { echo "usage: git_clone <ws_name>"; return; }
-    [[ -z $GIT_REPO ]] && { echo "env \$GIT_REPO not found"; return; }
-    git clone $GIT_REPO $BRANCH $1 && cdie $1;
-}
+function git_clone() { [[ -z $GIT_REPO ]] && { return $EINVAL; } || { git clone $GIT_REPO $BRANCH $*; }; }
 
 function usage()
 {
@@ -79,7 +74,7 @@ function usage()
     echo "  -b <branch>             - pull branch of given name"
     echo "  -c <kv-conf-path>       - use given key-val file to config local repo"
     echo "  -d <diff-name>          - use given diff-name generate diff-file"
-    echo "  -l <ws-name>            - clone repo from GIT_REPO url with opts"
+    echo "  -l [ws-name]            - clone repo from GIT_REPO url with opts"
     echo "  -r <remote-name> <url>  - move git repo to different hosting"
     echo "  -t                      - track all branches in remote repo"
     echo "  -h                      - print this help message"
@@ -92,7 +87,7 @@ main()
     local DIFF=$(which diff 2>/dev/null);
     [[ $# -eq 7 ]] && { [[ ! -z $DIFF ]] && $DIFF "$2" "$5"; exit 0; }  # echo $*
 
-    PARSE_OPTS="ha:b:c:d:l:r:t"
+    PARSE_OPTS="ha:b:c:d:lr:t"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -118,7 +113,7 @@ main()
     ((opt_h)) && { usage; }
     ((opt_a)) && { add_ssh_key $optarg_a; }
     ((opt_b)) && { BRANCH=" -b $optarg_b"; } || { unset BRANCH; }
-    ((opt_l)) && { git_clone $optarg_l $*; }
+    ((opt_l)) && { git_clone $*; }
     [[ ! -d .git ]] && { echo "Unknown git repo, .git not found"; return; }
     ((opt_d)) && { git_diff $optarg_d; }
     ((opt_c)) && { config_local_repo $optarg_c; }
