@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 21/May/2018 08:53:37 PDT
+# MODIFIED: 30/May/2018 22:20:15 PDT
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -31,6 +31,7 @@ export FILE_MAX_SZ=10240                   # In KB
 export FILE_MAX_BKUPS=1                    # max num of backup files
 export FILE_EMAIL=friends4web@gmail.com    # if file_rotate() were to email
 export LOG_LVLS=( "<DEBUG>" "<INFO>" "<NOTE>" "<WARN>" "<ERROR>" "<CRIT>" "<ALERT>" "<EMERG>" ); # RFC 5424 defines 8 levels of severity
+export LOG_FILE="$SCRPT_LOGS/$(basename -- $0).log";
 
 # {} - used for command grouping. if all commands are on single line, last command should end with a semi-colon ';'
 # invoke any program with 'env -i <prog>' for clearing all ENV variables while invoking program
@@ -44,7 +45,7 @@ function export_bash_funcs()
     FUNCS="bash_trace bash_untrace warn prnt term assert pause read_tty log $FUNCS"
     FUNCS="chk run_on file_sz page_brkr file_rotate bkup now myname log_init $FUNCS"
     FUNCS="puniq ppop pvalid prm pappend pprepend pshift pls source_script $FUNCS"
-    FUNCS="chownall cpx dos2unixall reset_tty screentab starthttp $FUNCS"
+    FUNCS="chownall cpx dos2unixall reset_tty screentab starthttp log_lvl $FUNCS"
     FUNCS="truncate_file vncs bug rli make_workspace_alias bash_colors $FUNCS"
     FUNCS="diffscp compare show_progress get_ip_addr ssh_key ssh_pass $FUNCS"
     export_func $FUNCS;
@@ -85,7 +86,12 @@ function assert() { [[ $# -ge 2 ]] && { [[ $1 -ne $2 ]] && { warn "ASSERT! $1 !=
 function bail() { [[ $? -ne 0 ]] && { die $? "$! failed w/ err: $?. $*"; } || return 0; }
 
 # usage: run <cmd> <args>. can-not check exec-perms in all inputs, some are internal cmds
-function run() { test -n "$DRY_RUN" && { echo "$*"; return 0; }; test -n "$RUN_LOG" && { $* 2>&1 | tee -a $RUN_LOG 2>&1; } || $*; return $?; }
+# local c="$1"; shift; dbg "$c $a"; eval $c "$a"
+function run()
+{
+    test -n "$DRY_RUN" && { echo "$*"; return 0; } || { local p; local a=""; for p in "$@"; do a="${a} \"${p}\""; done; }
+    test -z "$RUN_LOG" && { RUN_LOG=/dev/null; }; dbg "$a"; eval "$a" 2>&1 | tee -a $RUN_LOG 2>&1; return $?;
+}
 
 # usage: shell <cmd> <args>
 function shell() { run $SHELL $*; return $?; }
@@ -139,7 +145,7 @@ function chk()
     return 0;
 }
 
-# usage: file_sz <file-path>
+# usage: file_sz <file-path>. du -k unreliable for small files
 function file_sz() { [[ $# -eq 1 ]] && { echo "$(wc -l "$1" | awk '{print $1}')"; return 0; } || return $EINVAL; }
 
 # usage: page_brkr <num-chars>. useful to add page-breaker for new content to start. default 80 char wide.
@@ -148,11 +154,10 @@ function page_brkr() { local c=8; [[ $# -eq 1 ]] && c=$1; local p; local i; for 
 # usage: file_rotate <file-path> [max-backups]. Useless: 'LOGGER=/usr/bin/logger -t logrotate'
 function file_rotate()
 {
-    chk EQ $# 1 && { local file="$1"; local sz=$(file_sz $file); } || { return $EINVAL; }
-    local max=0; local f; local i; local num; local len=$((${#file} + 1))   # file len+1 to account for . (as in log.1 log.2)
+    chk EQ $# 1 && { [[ ! -e $1 ]] && return $ENOENT; local file="$1"; local sz=$(file_sz $file); } || { return $EINVAL; }
+    local max=0; local f=""; local i=0; local num=0; local len=$((${#file} + 1))   # len+1 to account for . in filename (as in log.1 log.2)
     [[ $sz -gt 0 ]] && { page_brkr >> $file.0; cat $file >> $file.0 && cat /dev/null > $file; }
-    touch $file.0 && sz=$(file_sz $file.0) || return $?;    # unwritable file;
-    [[ $sz -lt $FILE_MAX_SZ ]] && return 0;                 # do nothing if size within limit. du -k unreliable for small files
+    touch $file.0 && sz=$(file_sz $file.0) || return $?; [[ $sz -lt $FILE_MAX_SZ ]] && return 0;    # do nothing if size within limit.
     # Find out upto which sequence file.0..9 the archive has grown. ${f:$len} extracts .suffix-num. Ex. 3 for log.3
     for f in ${file}.[0-$FILE_MAX_BKUPS]*; do [ -f "$f" ] && num=${f:$len} && [ $num -gt $max ] && max=$num; done
     f="$file.$(($max + 1))";
@@ -332,12 +337,14 @@ function read_cfg() { read_tty $* && read_kv $F; }
 # 3. Use logger api for logging:    log <LOG_LEVEL> "Your message here"
 function log_init()
 {
-    [[ $# -eq 0 ]] && { return $EINVAL; } || { LOG_LEVEL=$1; [[ $# -eq 2 ]] && LOG_FILE="$2" || LOG_FILE="$SCRPT_LOGS/$(myname).log"; }
+    [[ $# -eq 0 ]] && { return $EINVAL; } || { local LVL=$1; [[ $# -eq 2 ]] && LOG_FILE="$2"; }
+    log_lvl $LVL && mkfile $LOG_FILE && file_rotate $LOG_FILE; return $?;
+}
 
-    mkfile $LOG_FILE && file_rotate $LOG_FILE; [[ $? -ne 0 ]] && return $?; # any problem writing to file, return.
-
+function log_lvl()
+{
     # LOG_LVLS_ON set is last step during init. log() depends on it.
-    case "$LOG_LEVEL" in
+    case "$1" in
         "EMERG") LOG_LVLS_ON=( "<EMERG>" ); ;;
         "ALERT") LOG_LVLS_ON=( "<ALERT>" "<EMERG>" ); ;;
         "CRIT")  LOG_LVLS_ON=( "<CRIT>" "<ALERT>" "<EMERG>" ); ;;
