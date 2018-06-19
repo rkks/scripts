@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Network utilities
 #  CREATED: 07/17/13 16:00:40 IST
-# MODIFIED: 17/May/2018 11:31:24 IST
+# MODIFIED: 18/Jun/2018 11:56:35 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -33,7 +33,7 @@ function set_ip_addr()
     #export LOG_TTY=1; DRY_RUN=1;
     run sudo ifconfig $1 $ADDRESS netmask $NETMASK up
     run sudo route add default gw $GATEWAY
-    run echo \"nameserver $NAMESVR\" \>\> /etc/resolv.conf
+    run echo \"dns-nameservers $NAMESVR\" \>\> /etc/network/interfaces;     # /etc/resolv.conf get overwritten
     clean_cfg;
 }
 
