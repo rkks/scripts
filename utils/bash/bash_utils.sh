@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 03/Jun/2018 07:15:25 IST
+# MODIFIED: 25/Jun/2018 10:44:57 PDT
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -77,20 +77,20 @@ function dbg() { log DEBUG $@; return 0; }
 function err() { log ERROR $@; return 0; }
 
 # print input string and exit with input error value
-function die() { chk GE 2 $# && { local e=$1; shift; warn $@ >&2; exit $e; } || return $?; }
+function die() { [[ $# -ge 2 ]] && { local e=$1; shift; warn "$@" >&2; exit $e; } || return $EINVAL; }
 
 # ASSERT for a positive value.
 function assert() { [[ $# -ge 2 ]] && { [[ $1 -ne $2 ]] && { warn "ASSERT! $1 != $2. $*"; return $EASSERT; } || return 0; } || return $EINVAL; }
 
 # bail-out if last command returned error. success == 0
-function bail() { [[ $? -ne 0 ]] && { die $? "$! failed w/ err: $?. $*"; } || return 0; }
+function bail() { local e=$?; [[ $e -ne 0 ]] && { die $e "$! failed w/ err: $e. $*"; } || return 0; }
 
-# usage: run <cmd> <args>. can-not check exec-perms in all inputs, some are internal cmds
-# local c="$1"; shift; dbg "$c $a"; eval $c "$a"
+# usage: run <cmd> <args>. can-not check exec-perms in all inputs, some are internal cmds.
+# redirect to tee will always return $? as 0. For correct retval, check PIPESTATUS[0]
 function run()
 {
     test -n "$DRY_RUN" && { echo "$*"; return 0; } || { local p; local a=""; for p in "$@"; do a="${a} \"${p}\""; done; }
-    test -z "$RUN_LOG" && { RUN_LOG=/dev/null; }; dbg "$a"; eval "$a" 2>&1 | tee -a $RUN_LOG 2>&1; return $?;
+    test -z "$RUN_LOG" && { RUN_LOG=/dev/null; }; dbg "$a"; eval "$a" 2>&1 | tee -a $RUN_LOG 2>&1; return ${PIPESTATUS[0]};
 }
 
 # usage: shell <cmd> <args>
