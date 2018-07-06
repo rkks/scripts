@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Installer script for my tools. Downloads and installs locally.
 #  CREATED: 09/23/14 09:31:11 IST
-# MODIFIED: 21/May/2018 07:10:15 PDT
+# MODIFIED: 03/Jul/2018 17:17:35 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2014, Ravikiran K.S.
@@ -98,10 +98,10 @@ function tmux_install()
 #    --disable-shared
 #    sinstall libevent.tar.gz http://sourceforge.net/projects/levent/files/libevent/libevent-2.0/libevent-2.0.21-stable.tar.gz
 #    sinstall ncurses.tar.gz ftp://ftp.gnu.org/gnu/ncurses/ncurses-5.9.tar.gz --without-ada
-    CFLAGS+=" -I$HOME/tools/$UNAMES/include/ncurses -I$HOME/tools/$UNAMES/include";
-    LDFLAGS+=" -L$HOME/tools/$UNAMES/lib/ncurses -L$HOME/tools/$UNAMES/lib"
-    sinstall tmux.tar.gz https://github.com/tmux/tmux/releases/download/1.9a/tmux-1.9a.tar.gz
-    ginstall https://codeload.github.com/twaugh/patchutils/zip/master patchutils;       # for diff between patch files for incremental patch
+    #CFLAGS+=" -I$HOME/tools/$UNAMES/include/ncurses -I$HOME/tools/$UNAMES/include";
+    #LDFLAGS+=" -L$HOME/tools/$UNAMES/lib/ncurses -L$HOME/tools/$UNAMES/lib"
+    sinstall tmux.tar.gz https://github.com/tmux/tmux/releases/download/2.7/tmux-2.7.tar.gz
+    #ginstall https://codeload.github.com/twaugh/patchutils/zip/master patchutils;       # for diff between patch files for incremental patch
 }
 
 function expect_install()

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: External diff tool for git
 #  CREATED: 03/20/13 21:55:08 IST
-# MODIFIED: 21/May/2018 03:04:41 PDT
+# MODIFIED: 03/Jul/2018 19:11:46 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -113,7 +113,7 @@ main()
     ((opt_h)) && { usage; }
     ((opt_a)) && { add_ssh_key $optarg_a; }
     ((opt_b)) && { BRANCH=" -b $optarg_b"; } || { unset BRANCH; }
-    ((opt_l)) && { git_clone $*; }
+    ((opt_l)) && { git_clone $*; exit 0; }
     [[ ! -d .git ]] && { echo "Unknown git repo, .git not found"; return; }
     ((opt_d)) && { git_diff $optarg_d; }
     ((opt_c)) && { config_local_repo $optarg_c; }

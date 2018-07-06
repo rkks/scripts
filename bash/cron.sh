@@ -3,7 +3,7 @@
 #
 #   AUTHOR: Ravikiran K.S. (ravikirandotks@gmail.com)
 #  CREATED: 11/08/11 13:35:02 PST
-# MODIFIED: 07/20/17 21:36:19 PDT
+# MODIFIED: 03/Jul/2018 17:55:13 IST
 
 # Cron has defaults below. Redefining to suite yours(if & only if necessary).
 # HOME=user-home-directory  # LOGNAME=user.s-login-id
@@ -58,9 +58,9 @@ function nightly()
 
     # take backup before SCM changes the contents
     run_on Now backup $CUST_CONFS/backup;
-    run_on Now revision $COMPANY_CONFS/workspaces;
-    run_on Now database $COMPANY_CONFS/workspaces;
-    run_on Now build $COMPANY_CONFS/workspaces;
+    run_on Now revision $CUST_CONFS/workspaces;
+    run_on Now database $CUST_CONFS/workspaces;
+    run_on Now build $CUST_CONFS/workspaces;
     run_on Fri reserve $COMPANY_CONFS/reserve;
     run_on Fri sync;
     run_on Now download;
@@ -72,6 +72,20 @@ function svn_revision_update()
     [[ $# -eq 0 ]] && { echo "Usage: svn_revision <dir-path>"; return $EINVAL; }
     local SVNLOG=svn.log; local STATUS=status.log; local dir=$1;
     shell svn.sh -b $dir; shell svn.sh -s $dir; shell svn.sh -r $STATUS changes.log;
+}
+
+function no_revision_conflicts()
+{
+    [[ -f $SVNLOG ]] && { conflicts=$(cat $SVNLOG | grep "^\? "| cut -d " " -f 2 | wc -l | tr -d ' '); }
+    [[ $conflicts -eq 0 ]] && { log INFO "No conflicts found"; return 0; }
+    log ERROR "Conflicts found in $SVNLOG. Resolve & retry."; return 1;
+}
+
+function git_revision_update()
+{
+    [[ $# -eq 0 ]] && { echo "Usage: git_revision <dir-path>"; return $EINVAL; }
+    local GITLOG=git.log; local STATUS=status.log; local dir=$1;
+    shell git.sh -b $dir; shell git.sh -s $dir; shell git.sh -r $STATUS changes.log;
 }
 
 function no_revision_conflicts()
@@ -202,7 +216,7 @@ function main()
 
     export SHDEBUG=yes;
     ((opt_b)) && backup $optarg_b;
-    ((opt_c)) && link-confs;
+    ((opt_c)) && revision $optarg_c;
     ((opt_d)) && build $optarg_d;
     ((opt_l)) && crontab -l;
     ((opt_n)) && nightly;
