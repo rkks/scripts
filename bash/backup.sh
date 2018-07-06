@@ -3,7 +3,7 @@
 #
 #   AUTHOR: Ravikiran K.S. (ravikirandotks@gmail.com)
 #  CREATED: 11/07/11 13:32:37 PST
-# MODIFIED: 03/28/16 17:44:38 IST
+# MODIFIED: 03/Jul/2018 07:34:58 IST
 
 # Monday to Saturday, an incremental backup is made so that you have daily backups for new files until next week.
 # Every Sunday, do backup of all tars from last week. One such incremental backup tarball for each of 52 weeks in a year.
@@ -86,8 +86,13 @@ function usage()
     echo "  -h                  - print this help"
 }
 
+function sighdlr() {
+    echo "Signal Handler: ctrl-c,...";
+}
+
 function main()
 {
+    trap sighdlr INT
     PARSE_OPTS="hl:"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Network utilities
 #  CREATED: 07/17/13 16:00:40 IST
-# MODIFIED: 18/Jun/2018 11:56:35 IST
+# MODIFIED: 23/Jun/2018 11:20:25 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -18,12 +18,28 @@ function dnscheck() { nslookup ${1:-google.com}; finger $USER; }
 
 function pingwait()
 {
-    pingable=0;
+    local pingable=0;
     # for non-root users -f option is not allowed.
     [[ "Linux" == $(uname -s) ]] && local pingopts="-q -c 1" || local pingopts="-q -c 1"
     while [ $pingable -eq 0 ]; do
         ping $pingopts ${1:-google.com} 2>&1 >/dev/null;
         [[ $? -eq 0 ]] && { pingable=1; echo "!"; } || { echo -n "."; sleep 5; }
+    done
+}
+
+function pingmonitor()
+{
+    local succ=0 fail=0 last="!" tot=0 fper=0 ivl=5;
+    # for non-root users -f option is not allowed.
+    [[ "Linux" == $(uname -s) ]] && local pingopts="-q -c 1" || local pingopts="-q -c 1"
+    echo "ping monitor $1, interval $ivl"
+    while [ true ]; do
+        #ping $pingopts ${1:-google.com}  >/dev/null 2>&1;
+        ping $pingopts ${1:-google.com} >/dev/null 2>&1;
+        [[ $? -eq 0 ]] && { last="!"; } || { fail=$((fail + 1)); last="."; }
+        tot=$((tot + 1)); succ=$(($tot - $fail))
+        echo -ne "\rping($last): fail $fail succ[$succ]/tot[$tot]";
+        sleep $ivl;
     done
 }
 
@@ -45,6 +61,7 @@ usage()
     echo "  -c              - clear arp database on this machine"
     echo "  -d [host-name]  - check dns query for give host (google.com - default)"
     echo "  -p [host-name]  - check ping reachability of given host (google.com - default)"
+    echo "  -m [host-name]  - periodically monitor ping of given host (google.com - default)"
     echo "  -i <interface>  - configure ip address, gateway, dns server on interface"
     echo "  -h              - print this help"
 }
@@ -53,7 +70,7 @@ usage()
 # It can then be included in other files for functions.
 main()
 {
-    PARSE_OPTS="hcdi:p"
+    PARSE_OPTS="hcdi:mp"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -78,6 +95,7 @@ main()
 
     ((opt_c)) && arpclear;
     ((opt_d)) && dnscheck $*;
+    ((opt_m)) && pingmonitor $*;
     ((opt_p)) && pingwait $*;
     ((opt_i)) && set_ip_addr $optarg_i;
     ((opt_h)) && { usage; exit 0; }

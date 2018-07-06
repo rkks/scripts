@@ -25,6 +25,43 @@ proc print_args {args} {
     send_user "\n"
 }
 
+# connect to fortiserver
+# Input: cmd host port user pass
+proc fortivpn {c s r u p} {
+    global spawn_id
+    global timeout
+    global prompt
+
+    set procid [spawn $c --server $s:$r --vpnuser $u --keepalive]
+    if { $procid <= 0 } {
+       send_user "ERROR: Failed to connect to host $h\n"
+       return 1
+    }
+
+    expect {
+        -nocase -re "Password for VPN:" {
+            send "$p\r"
+            exp_continue
+
+        } -nocase -re "\(Y/N\)" {
+            send "Y\r"
+            exp_continue
+
+        } -nocase -re "Clean up..." {
+            return 0
+
+        } timeout {
+            puts "ERROR: Connection timeout\n"
+            return 3
+
+        } eof {
+            # Tunnel closed
+            return 0
+        }
+    }
+    return 0
+}
+
 # scp to host
 # Input: host loc file name user pass
 proc hscp {h l f n u p} {

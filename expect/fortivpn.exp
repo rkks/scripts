@@ -1,0 +1,108 @@
+#!/usr/bin/expect
+# Starts expect script in debugger. Very useful. Another is 'expect -d <script>'
+#set exp_debug 1
+#set exp_internal 1
+#sleep 1         # never introduce sleep in Expect. Patterns should take care
+
+source "$::env(HOME)/scripts/utils/expect/dev_utils.exp"
+
+# Print the usage
+proc usage {} {
+    puts "Usage: vvpn.exp <options>"
+    puts "Options:"
+    puts "   -h <vpn-svr-fqdn/ip>   - hostname/ip of vpn-svr"
+    puts "   -r <port>              - port for connection"
+    puts "   -u <username>          - username to login with"
+    puts "   -p <password>          - password for login"
+    puts "   -t <seconds>           - timeout in seconds"
+}
+
+#-----------------------------------------------
+# main()
+#
+# RETURNS:
+#    0 if successful
+#    1 if invalid arg passed
+#    2 not enough args (required args not met)
+#-----------------------------------------------
+    match_max 1000000
+    set timeout -1
+    set spawn_id -1;
+    set res 0;
+    set rval 0
+    set port "443"
+    set cmd "/opt/forticlient-sslvpn/64bit/forticlientsslvpn_cli"
+    set hostname ""
+    set username [exec id -nu]
+    set password ""
+
+    # Loop through the command line args
+    for {set n 0} {$n < $argc} {incr n} {
+
+       set arg [lindex $argv $n]
+
+       # Check the args
+       if { [string compare $arg "-u"] == 0} {
+          if { $n < $n+1 } {
+             incr n
+             set username [lindex $argv $n]
+          } else {
+             set rval 1
+             puts "ERROR: Missing ARG for $arg\n"
+          }
+
+       } elseif { [string compare $arg "-r"] == 0} {
+          if { $n < $n+1 } {
+             incr n
+             set port [lindex $argv $n]
+          } else {
+             set rval 1
+             puts "ERROR: Missing ARG for $arg\n"
+          }
+
+       } elseif { [string compare $arg "-p"] == 0} {
+          if { $n < $n+1 } {
+             incr n
+             set password [lindex $argv $n]
+          } else {
+             set rval 1
+             puts "ERROR: Missing ARG for $arg\n"
+          }
+
+       } elseif { [string compare $arg "-h"] == 0} {
+          if { $n < $n+1 } {
+             incr n
+             set hostname [lindex $argv $n]
+          } else {
+             set rval 1
+             puts "ERROR: Missing ARG for $arg\n"
+          }
+
+       } elseif { [string compare $arg "-t"] == 0} {
+          if { $n < $n+1 } {
+             incr n
+             set timeout [lindex $argv $n]
+          } else {
+             set rval 1
+             puts "ERROR: Missing ARG for $arg\n"
+          }
+
+       }
+    }
+
+    if { [llength $hostname] > 0 && [llength $port] > 0 &&
+           [llength $username] > 0 && [llength $password] > 0 } {
+       send_user "hostname = $hostname, user = $username, pw = $password, port = $port\n"
+    } else {
+       set rval 2
+       send_user "ERROR: Missing required args, must have -h, -u, -p\n"
+       usage
+    }
+
+    # make sure we have not encountered any errors
+    if { $rval > 0 } {
+       exit $rval
+    }
+
+    fortivpn $cmd $hostname $port $username $password
+    close

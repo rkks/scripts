@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS:
 #  CREATED: 12/06/2017 12:44:14 AM PST
-# MODIFIED: 27/Apr/2018 14:48:12 PDT
+# MODIFIED: 22/Jun/2018 12:09:57 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -104,11 +104,8 @@ function crypt()
     fi
 }
 
-# generate password
-function gen_passwd()
-{
-    openssl rand -base64 64 | sha256sum | base64
-}
+# generate password.
+function gen_passwd() { openssl rand -base64 64 | sha1sum | base64; }
 
 # Each shell script has to be independently testable.
 # It can then be included in other files for functions.
