@@ -8,7 +8,7 @@ source "$::env(HOME)/scripts/utils/expect/dev_utils.exp"
 
 # Print the usage
 proc usage {} {
-    puts "Usage: vvpn.exp <options>"
+    puts "Usage: fortivpn.exp <options>"
     puts "Options:"
     puts "   -h <vpn-svr-fqdn/ip>   - hostname/ip of vpn-svr"
     puts "   -r <port>              - port for connection"

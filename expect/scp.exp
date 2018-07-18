@@ -11,6 +11,7 @@ proc usage {} {
     puts "Usage: scp.exp <options>"
     puts "Options:"
     puts "   -h <svr-fqdn/ip>  - hostname/ip of ssh-svr"
+    puts "   -f <file-path>    - local file path"
     puts "   -u <username>     - username to login with"
     puts "   -p <password>     - password for login"
     puts "   -t <seconds>      - timeout in seconds"
@@ -30,6 +31,7 @@ proc usage {} {
     set res 0;
     set rval 0
     set hostname ""
+    set filepath ""
     set username [exec id -nu]
     set password ""
 
@@ -66,6 +68,15 @@ proc usage {} {
              puts "ERROR: Missing ARG for $arg\n"
           }
 
+       } elseif { [string compare $arg "-f"] == 0} {
+          if { $n < $n+1 } {
+             incr n
+             set filepath [lindex $argv $n]
+          } else {
+             set rval 1
+             puts "ERROR: Missing ARG for $arg\n"
+          }
+
        } elseif { [string compare $arg "-t"] == 0} {
           if { $n < $n+1 } {
              incr n
@@ -78,9 +89,9 @@ proc usage {} {
        }
     }
 
-    if { [llength $hostname] > 0 && [llength $timeout] > 0 &&
+    if { [llength $hostname] > 0 && [llength $filepath] > 0 &&
            [llength $username] > 0 && [llength $password] > 0 } {
-       send_user "host = $hostname, user = $username, pw = $password, timeout = $timeout\n"
+       send_user "host = $hostname, user = $username, pw = $password, file = $filepath\n"
     } else {
        set rval 2
        send_user "ERROR: Missing required args, must have -h, -u, -p\n"
@@ -92,5 +103,5 @@ proc usage {} {
        exit $rval
     }
 
-    connect_ssh $hostname $username $password
-    interact
+    hscp $hostname $filepath $username $password
+    #close

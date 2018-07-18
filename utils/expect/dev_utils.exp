@@ -64,12 +64,12 @@ proc fortivpn {c s r u p} {
 
 # scp to host
 # Input: host loc file name user pass
-proc hscp {h l f n u p} {
+proc hscp {h f u p} {
     global spawn_id
     global timeout
     global prompt
 
-    set procid [spawn scp $l/$f $u@$h:$n]
+    set procid [spawn scp -r $f $u@$h:]
     if { $procid <= 0 } {
        send_user "ERROR: Failed to connect to host $h\n"
        return 1
@@ -257,7 +257,7 @@ proc login {method host user pw} {
         # $prompt is needed for send_cmd to grab it. regex doesn't work: -re ">\|#"
         } -nocase -re "$prompt" {
             # what to do: interact or input cmds -- left to caller. -notransfer -- needed?
-
+            return 0
         } timeout {
             puts "ERROR: Connection timeout\n"
             return 3
@@ -272,19 +272,20 @@ proc login {method host user pw} {
    return 0
 }
 
-# Connect to a host using given method: telnet or ssh.
+# Connect to a host using ssh.
 # Return:
 #    0 = if successful
 #    > 0 = unsuccessful
-proc connect {method host usr pw} {
+proc connect_ssh {host usr pw} {
    set usr_chk 0
    set pw_chk 0
    set max_checks 4
+   set method "ssh"
    global spawn_id
    global timeout
    global prompt
 
-   send_user "Connecting using $method to $host as user $usr max_checks: $max_checks\n"
+   send_user "ssh $usr@$host, max_checks: $max_checks\n"
 
    if { [string compare $method "ssh"] == 0 } {
       set host "$usr@$host"
@@ -300,18 +301,6 @@ proc connect {method host usr pw} {
    # Start the expect/send process to login
    expect {
       #send_user "procid: $id usr_chk: $usr_chk pw_chk: $pw_chk\n"
-
-      # Below handles the username prompt. name:*|
-      -nocase -re "ogin:" {
-         send "$usr\r"
-         incr usr_chk;
-
-         if { $usr_chk < $max_checks } {
-            exp_continue
-         } else {
-            send_user "ERROR: Login retry failed. Invalid login username\n"
-            return 2
-         }
 
        # Below handles the password prompt
        } -nocase -re "word:" {
@@ -349,6 +338,77 @@ proc connect {method host usr pw} {
    return 0
 }
 
+# Connect to a host using telnet
+# Return:
+#    0 = if successful
+#    > 0 = unsuccessful
+proc connect_telnet {host usr pw} {
+   set usr_chk 0
+   set pw_chk 0
+   set max_checks 4
+   global spawn_id
+   global timeout
+   global prompt
+
+   send_user "telnet -l $usr $host, max_checks: $max_checks\n"
+
+   # get connected
+   set id [spawn telnet $host]
+   if { $id <= 0 } {
+      send_user "ERROR: Failed to connect to host\n"
+      return 1
+   }
+
+   expect {
+      send_user "procid: $id usr_chk: $usr_chk pw_chk: $pw_chk\n"
+
+      # Below handles the username prompt. name:*|
+      -nocase -re "ogin:" {
+         send "$usr\r"
+         incr usr_chk;
+
+         if { $usr_chk < $max_checks } {
+            exp_continue
+         } else {
+            send_user "ERROR: Login retry failed. Invalid login username\n"
+            return 2
+         }
+
+       # Below handles the password prompt
+       } -nocase -re "word:" {
+         send "$pw\r"
+         incr pw_chk;
+
+         if { $pw_chk < $max_checks } {
+            exp_continue
+         } else {
+            send_user "ERROR: Login retry failed. Invalid login password\n"
+            return 2
+         }
+
+      # Below handles the yes/no prompt when SSH first connects to a host
+      } -nocase -re "\(yes/no\)" {
+         send "yes\r"
+         exp_continue
+
+      # Below handles the normal prompt to detect when logged in
+      } -nocase -re "$prompt" {
+         #send_user "\nSUCCESS\n"
+         return 0
+      # Below is for expect timeout waiting for a connection
+      } timeout {
+         send_user "ERROR: Connection timeout waiting for login prompt\n"
+         return 3
+
+      # Below is for when the connect is closed before finishing
+      } eof {
+         send_user "ERROR: Connection to host failed: $expect_out(buffer)\n"
+         return 4
+      }
+   }
+
+   return 0
+}
 # Send 'enable' command & pass to router/switch
 # Return
 #   0 if sending enable command was successful
