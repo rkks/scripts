@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 25/Jun/2018 10:44:57 PDT
+# MODIFIED: 24/Jul/2018 00:36:59 PDT
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -52,6 +52,7 @@ function export_bash_funcs()
 }
 
 # Delete these. And bring in syslog filtering to echo as well.
+function brb() { local pid=$!; ( while kill -0 $pid >/dev/null 2>&1; do sleep 1; done) && echo "$pid finished"; echo -e "\a"; }
 
 # prints local date/time. date-format suitable for logs. ".%N"=NSEC, not supported on FreeBSD
 # msec=$(date +"$FMT"".%N" | sed 's/......$//g');    # truncate last 6 digits: sed 's/......$//g' & sed 's/[0-9][0-9][0-9][0-9][0-9][0-9]$//g' same.

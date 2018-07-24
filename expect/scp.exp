@@ -104,4 +104,5 @@ proc usage {} {
     }
 
     hscp $hostname $filepath $username $password
+    exit 0
     #close
