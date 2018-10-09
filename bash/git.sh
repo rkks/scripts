@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: External diff tool for git
 #  CREATED: 03/20/13 21:55:08 IST
-# MODIFIED: 03/Jul/2018 19:11:46 IST
+# MODIFIED: 13/Aug/2018 17:29:06 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -30,6 +30,7 @@ function new_remote()
 function config_local_repo()
 {
     [[ $# -ne 1 ]] && { echo "usage: set_local_repo_user <key-value-conf-file-path>"; return 1; }
+    cp $COMP_CONFS/vimrc.local "$PWD/.vimrc.local"
     while IFS== read -r key value; do
         [[ $key == \#* ]] && { continue; }
         echo "git config $key \"$value\"";

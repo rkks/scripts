@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: ubuntu quirks and it's remedies
 #  CREATED: 04/05/18 10:34:37 PDT
-# MODIFIED: 25/Apr/2018 12:29:06 PDT
+# MODIFIED: 13/Aug/2018 22:01:33 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -39,15 +39,21 @@ usage()
 {
     echo "Usage: ubuntu.sh [-h|]"
     echo "Options:"
-    echo "  -h          - print this help"
-    echo "  -c          - cleanup apt install cache, broken links"
+    echo "  -h              - print this help"
+    echo "  -c              - cleanup apt install cache, broken links"
+    echo "  -r              - reinstall unity"
+    echo "  -i <nfs-ip>     - NFS server IP-addr/FQDN"
+    echo "  -l <lcl-path>   - local path for NFS mount"
+    echo "  -p <nfs-path>   - path on NFS server for NFS mount"
+    echo "  -m              - mount NFS with given inputs (-i,-l,-p)"
+    echo "  -u              - unmount NFS with given inputs (-l)"
 }
 
 # Each shell script has to be independently testable.
 # It can then be included in other files for functions.
 main()
 {
-    PARSE_OPTS="hcu"
+    PARSE_OPTS="hci:l:p:mru"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -70,9 +76,15 @@ main()
         usage && exit $EINVAL;
     fi
 
+    #[[ $EUID -ne 0 ]] && { die "This script must be run as sudo/root"; }
     ((opt_h)) && { usage; }
     ((opt_c)) && { apt_cleanup $*; }
-    ((opt_u)) && { reinstall_unity $*; }
+    ((opt_i)) && { NFS_IP=$optarg_i; }
+    ((opt_l)) && { LCL_PATH=$optarg_l; }
+    ((opt_p)) && { NFS_PATH=$optarg_p; }
+    ((opt_m)) && { mount_nfs $NFS_IP $NFS_PATH $LCL_PATH; }
+    ((opt_r)) && { reinstall_unity $*; }
+    ((opt_u)) && { umount_nfs $LCL_PATH; }
 
     exit 0;
 }

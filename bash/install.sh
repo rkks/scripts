@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Installer script for my tools. Downloads and installs locally.
 #  CREATED: 09/23/14 09:31:11 IST
-# MODIFIED: 03/Jul/2018 17:17:35 IST
+# MODIFIED: 02/Aug/2018 12:40:53 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2014, Ravikiran K.S.
@@ -104,6 +104,11 @@ function tmux_install()
     #ginstall https://codeload.github.com/twaugh/patchutils/zip/master patchutils;       # for diff between patch files for incremental patch
 }
 
+function bugz_install()
+{
+    git clone https://github.com/williamh/pybugz pybugz && cd pybugz && python3 ./setup.py build && sudo python3 ./setup.py install
+}
+
 function expect_install()
 {
     sinstall expect.tar.gz http://sourceforge.net/projects/expect/files/Expect/5.45/expect5.45.tar.gz
@@ -154,6 +159,11 @@ function elk_install()
     untar logstash.tar.gz && mv logstash/ $TOOLS/;
     untar kibana.tar.gz && mv kibana/ $TOOLS/;
     untar elasticsearch.tar.gz && mv elasticsearch/ $TOOLS/;
+}
+
+function ubuntu_basic()
+{
+    sudo apt install nmon cscope exuberant-ctags gcc gdb vim
 }
 
 # Each shell script has to be independently testable.

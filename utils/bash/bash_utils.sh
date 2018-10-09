@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 24/Jul/2018 00:36:59 PDT
+# MODIFIED: 13/Aug/2018 21:44:50 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -165,6 +165,19 @@ function file_rotate()
     [[ $max -ge $FILE_MAX_BKUPS && -f "$f" ]] && { [[ ! -z $FILE_EMAIL ]] && { gzip $f && email $f.gz; rm -f $f $f.gz; } || { rm -f $f; }; }
     for ((i = $max;i >= 0;i -= 1)); do [[ -f "$file.$i" ]] && mv -f $file.$i "$file.$(($i + 1))" > /dev/null 2>&1; done
     return 0;
+}
+
+function dump_args() {
+  echo -e "cmd: \"${0} ${*}\" pid: ${$} as $(whoami)"
+  echo -e "\${#}:\t${#}"
+  echo -e "\${*}:\t${*}"
+  echo -e "\${$}:\t${$}"
+  echo -e "\${?}:\t${?}"
+  echo -e "\${-}:\t${-}"
+  echo -e "\${$}:\t${$}"
+  echo -e "\${!}:\t${!}"
+  echo -e "\${0}:\t${0}"
+  echo -e "\${_}:\t${_}"
 }
 
 # verified copy
@@ -451,6 +464,23 @@ function get_ip_addr()
     [[ $UNAMES == "Linux" ]] && { local addr=$(ifconfig eth0 | grep -w inet | awk -F: '{print $2}' | awk '{print $1}'); echo $addr; }
     [[ $UNAMES == "Darwin" ]] && { local addr=$(ifconfig en0 | grep -w inet | awk '{print $2}'); echo $addr; }
 }
+
+function auto_mount()
+{
+    [[ $# -ne 3 ]] && { die "usage: automount <nfs_ip> <nfs_path> <mnt_path>"; } || { local NFS_SVR="$1:$2"; local MNT_PATH="$3"; }
+    grep -q "$NFS_SVR" /etc/fstab; [[ $? != 0 ]] && { echo "$NFS_SVR   $MNT_PATH   nfs    auto  0  0" >> /etc/fstab; }
+}
+
+function mount_nfs()
+{
+    [[ $# -ne 3 ]] && { die "usage: mount_nfs <nfs_ip> <nfs_path> <mnt_path>"; } || { local NFS_SVR="$1:$2"; local MNT_PATH="$3"; }
+    sudo ping -q -c 1 -W 1 $1 &> /dev/null; [[ $? != 0 ]] && { die "No network connectivity to NFS server from this box. Bye.."; }
+    sudo dpkg -s nfs-common &> /dev/null; [[ $? != 0 ]] && { die "nfs-common pkg not present. do apt install nfs-common. Bye.."; }
+    sudo mkdir -p $MNT_PATH && sudo mount -t nfs $NFS_SVR $MNT_PATH; #automount
+    [[ $? -eq 0 ]] && { echo "NFS mounted at $MNT_PATH"; } || { die "NFS mount failure"; }
+}
+
+function umount_nfs() { [[ $# -ne 1 ]] && { die "usage: umount_nfs <mnt_path>"; } || { umount $1; }; }
 
 usage()
 {
