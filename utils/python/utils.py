@@ -23,6 +23,13 @@ class Logger():
         if logName == None:
             logName = globs.g_script_name
 
+        #conf_path = os.getenv('CUST_CONFS', default=os.getcwd()) + "/log.conf"
+        #print ("conf_path: ", conf_path)
+        #if (not os.path.exists(conf_path)):
+        #    print ("conf file not found. exit")
+        #    sys.exit(0)
+        #config.fileConfig(conf_path)        # read from log-file conf
+
         logFile = self.logPath + '/' + logName + '.log'
         self.logger = logging.getLogger(logName)
         self.logger.setLevel(logLvl)
@@ -47,8 +54,8 @@ class Logger():
         except Exception as e:
             print ("ERR: Exception while adding log handlers" + str(e))
             exit(0)
-        # logging.critical() would not print anything to file as it logs to the
-        # root logger. Whereas the named logger is what is initialised
+        # logging.critical() wouldn't write anything as it logs to root logger.
+        # Whereas the named logger is what is initialised
         #g_logger.critical("===========Init logs. path: %s=============log_file)
 
     def create_loghandler(self, lvl = logging.DEBUG, log = None, fmt = None):
@@ -81,35 +88,39 @@ class Logger():
             self.ttyHdl.setLevel(lvl)
 
     def new_line(self, nlines = 1):
-        #self.logger.removeHandler(self.ttyHdl)
-        #self.logger.addHandler(self.nilHdl)
         self.ttyHdl.setFormatter(self.nilFmt)
         for i in range(nlines):
             self.critical('')
         self.ttyHdl.setFormatter(self.logFmt)
-        #self.logger.removeHandler(self.nilHdl)
-        #self.logger.addHandler(self.ttyHdl)
 
-class SwitchConnect():
-    def __init__(self, host = None, user = 'admin', passwd = None,
-                 timeout = 15, retry = 2, logger = None):
+    def log_conf_init(self):
+
+class SSHConnect():
+    def __init__(self, host, user = 'admin', passwd = None, method = None,
+                 port = None, timeout = 15, retry = 2, logger = None):
         self.host = host
         self.user = user
         self.passwd = passwd
         self.handle = None
         self.timeout = timeout
         self.retry = retry
-        self.method = None
-        self.port = 22
+        self.method = 'ssh' if method is None else method
+        self.port = 22 if port is None else port
         self.vsh_prompt = ".*[>|%]"
         self.prompt = "@.*[\$|\#]"
-        # self.logger = globs.g_logger also works due to aliases in Logger
-        self.logger = logger if logger != None else globs.g_logger.logger
-        self.connect()  # no explicit globs.g_conn_hdl.connect(g_args.method)
+        # self.logger = globs.g_logger works due to aliases in Logger
+        self.logger = logger if logger != None else globs.g_logger
+        self.connect()      # no explicit call to connect()
 
-    def connect(self):
-        self.logger.info("Attempt SSH login to host " + self.host)
-        cmd = 'ssh %s@%s' % (self.user, self.host)  # 'ssh -l %s %s' also works
+    def connect(self, cmd = None):
+        if cmd is None:
+            # 'ssh %s@%s' also works, but below one works for both telnet, ssh
+            cmd = '%s -l %s %s' % (self.method, self.user, self.host)
+            if self.method == 'ssh':
+                cmd += ' -p'
+            cmd += ' %s' % (self.port)
+        self.logger.info("Attempt to run cmd: " + cmd)
+
         try:
             self.last_cmd = cmd
             self.handle = pexpect.spawn(cmd, timeout = self.timeout,
@@ -117,14 +128,12 @@ class SwitchConnect():
                                         logfile = sys.stdout.buffer)
             #self.handle.logfile = open(globs.g_script_name + ".log", "w")
         except Exception as e:
-            #self.setErrorFlag(False)
             self.logger.error("Error " + e + " connecting to host " + self.host)
             return False
 
         ret = self.expect()
         msg = 'successful' if ret is True else 'failed'
-        self.logger.info("SSH login to host %s %s, ttyout: %s" %
-                         (self.host, msg, globs.g_script_name + ".log"))
+        self.logger.info("Running above cmd %s " % (msg))
         return ret
 
     def is_up(self):
@@ -143,25 +152,26 @@ class SwitchConnect():
 #        if isvsh is True:
 #            pats.append()
 
+        self.logger.new_line()
         self.logger.debug("Expect: %s" % (str(pats)[1:-1]))
 
         while True:
             idx = self.handle.expect(pats, timeout = self.timeout)
             if idx == 0:  # timeout
                 self.cli_out = str(self.handle.after)
-                self.logger.info("\n")
+                self.logger.new_line()
                 self.logger.info("expect %s timeout for cmd %s on host %s" %
                                     (self.last_expr, self.last_cmd, self.host))
                 return False
 
             elif idx == 1:  # prompt received
                 self.cli_out = str(self.handle.after)
-                self.logger.debug("\n")
+                self.logger.new_line()
                 self.logger.debug("Bash prompt seen on host " + self.host)
                 return True
 
             elif idx == 2:  # yes/no question
-                self.logger.debug("\n")
+                self.logger.new_line()
                 self.logger.debug("Yes/No prompt seen on host " + self.host)
                 ans = 'no' if no is True else 'yes'
                 if self.send_line(ans) is False:
@@ -169,25 +179,26 @@ class SwitchConnect():
                 continue
 
             elif idx == 3:  # passwd prompt
-                self.logger.debug("\n")
+                self.logger.new_line()
                 self.logger.debug("Pass prompt seen on host " + self.host)
                 if self.send_line(self.passwd) == False:
                     return False
                 continue
 
             elif idx == 4:  # EOF reached, spawned process has died
+                self.logger.new_line()
                 self.logger.debug("EOF reached on ssh to host " + self.host)
                 return True
 
             else:
                 if (idx == 5) and (expr is not None):  # input pattern
                     self.cli_out = str(self.handle.after)
-                    self.logger.debug("\n")
+                    self.logger.new_line()
                     self.logger.debug("Pattern %s seen on host %s" %
                                     (expr, self.host))
                     return True
                 else:
-                    self.logger.debug("\n")
+                    self.logger.new_line()
                     self.logger.info("Unknown error for cmd %s on host %s" %
                                     (cmd, self.host))
                     return False
@@ -196,6 +207,7 @@ class SwitchConnect():
 
     def send_line(self, cmd):
         self.last_cmd = cmd
+        self.logger.new_line()
         self.logger.info("Execute: %s" % (cmd))
         self.handle.before = ''
         self.handle.after = ''
@@ -209,13 +221,38 @@ class SwitchConnect():
 
         return True
 
-    def send_exp(self, cmd, expr = None):
+    def send_exp(self, cmd, expr = None, isvsh = False):
         self.send_line(cmd)
-        self.expect(expr)
+        # expect() does job of self.handle.read() and more
+        self.expect(expr = expr, isvsh = isvsh)
         tstr = '%s %s' % (self.handle.before, self.handle.after)
-        #print(tstr)        # expect() does job of self.handle.read() and more
-        #self.logger.debug("%s" % (tstr))
+        #self.logger.debug("%s" % (tstr))           # print() is primitive
         return True
+
+    def interact(self):
+        signal.signal(signal.SIGWINCH, sigwinch_passthrough)
+        try:
+            self.handle.interact()
+            sys.exit(0)             # pass control to user and exit script now
+        except:
+            sys.exit(1)
+
+class SCPConnect(SSHConnect):
+    def __init__(self, host, lpath, rec = False, rpath = None, user = 'admin',
+                 passwd = None, timeout = 15, retry = 2, logger = None):
+        self.lpath = lpath
+        self.rpath = rpath
+        self.recursive = rec
+        super(SCPConnect, self).__init__(host, user = user, passwd = passwd)
+
+    def connect(self, c = None):
+        cmd = 'scp'
+        if self.recursive is True:
+            cmd += ' -r'
+        cmd += ' %s %s@%s:' % (self.lpath, self.user, self.host)
+        if self.rpath is True:
+            cmd += '%s' % (self.rpath)
+        return super(SCPConnect, self).connect(cmd)
 
 '''
 ~/ws/repos/test-automation/versaQaAutomation/library/vmConnection/connect.py

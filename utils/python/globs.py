@@ -32,6 +32,17 @@ def create_path(path, isdir=None):
         print ("File ", path, " does not exist. Create new.")
         os.mkfile(path)
 
+def sigwinch_passthrough (sig, data):
+    # Check for buggy platforms (see pexpect.setwinsize()).
+    if 'TIOCGWINSZ' in dir(termios):
+        TIOCGWINSZ = termios.TIOCGWINSZ
+    else:
+        TIOCGWINSZ = 1074295912 # assume
+    s = struct.pack ("HHHH", 0, 0, 0, 0)
+    a = struct.unpack ('HHHH', fcntl.ioctl(sys.stdout.fileno(), TIOCGWINSZ , s))
+    global g_conn_hdl
+    g_conn_hdl.handle.setwinsize(a[0],a[1])
+
 # global declarations.
 def init_vars(script_name):
     global g_script_name
