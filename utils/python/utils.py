@@ -3,7 +3,9 @@
 __author__ = 'Ravikiran KS'
 
 import struct, fcntl, glob, time, sys, os, re, signal
-import argparse, pexpect, pdb, logging, globs, paramiko
+import argparse, pexpect, pdb, logging, globs
+#import paramiko
+#from pexpect import pxssh
 import logging.handlers as handlers
 import logging.config as config
 
@@ -15,7 +17,7 @@ self.logger.error(str(line))       # self.logger.log(logging.ERROR, *)
 self.logger.debug(line)            # self.logger.log(logging.DEBUG, *)
 """
 class Logger():
-    def __init__(self, logName = None, logLvl = logging.DEBUG, toFile = False,
+    def __init__(self, logName = None, logLvl = logging.INFO, toFile = False,
                  ttyLvl = logging.DEBUG):
         self.logPath = os.getenv('SCRPT_LOGS',
                                  default=os.path.join(os.getcwd()))
@@ -93,11 +95,9 @@ class Logger():
             self.critical('')
         self.ttyHdl.setFormatter(self.logFmt)
 
-    def log_conf_init(self):
-
 class SSHConnect():
     def __init__(self, host, user = 'admin', passwd = None, method = None,
-                 port = None, timeout = 15, retry = 2, logger = None):
+                 port = None, timeout = 1500, retry = 2, logger = None):
         self.host = host
         self.user = user
         self.passwd = passwd
@@ -147,11 +147,11 @@ class SSHConnect():
                 '[P|p]assword:', pexpect.EOF]
         if expr is not None:
             pats.append(expr)
-            self.last_expr = expr
 
 #        if isvsh is True:
 #            pats.append()
 
+        self.last_expr = pats
         self.logger.new_line()
         self.logger.debug("Expect: %s" % (str(pats)[1:-1]))
 
@@ -160,8 +160,8 @@ class SSHConnect():
             if idx == 0:  # timeout
                 self.cli_out = str(self.handle.after)
                 self.logger.new_line()
-                self.logger.info("expect %s timeout for cmd %s on host %s" %
-                                    (self.last_expr, self.last_cmd, self.host))
+                self.logger.info("expect timeout for cmd %s on host %s" %
+                                    (self.last_cmd, self.host))
                 return False
 
             elif idx == 1:  # prompt received
@@ -230,7 +230,7 @@ class SSHConnect():
         return True
 
     def interact(self):
-        signal.signal(signal.SIGWINCH, sigwinch_passthrough)
+        #signal.signal(signal.SIGWINCH, globs.sigwinch_passthrough)
         try:
             self.handle.interact()
             sys.exit(0)             # pass control to user and exit script now
@@ -239,11 +239,12 @@ class SSHConnect():
 
 class SCPConnect(SSHConnect):
     def __init__(self, host, lpath, rec = False, rpath = None, user = 'admin',
-                 passwd = None, timeout = 15, retry = 2, logger = None):
+                 passwd = None, logger = None):
         self.lpath = lpath
         self.rpath = rpath
         self.recursive = rec
-        super(SCPConnect, self).__init__(host, user = user, passwd = passwd)
+        super(SCPConnect, self).__init__(host, user = user, passwd = passwd,
+                                         timeout = 500)
 
     def connect(self, c = None):
         cmd = 'scp'
