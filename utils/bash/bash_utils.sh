@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 13/Aug/2018 21:44:50 IST
+# MODIFIED: 21/Oct/2018 22:52:02 PDT
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -480,7 +480,7 @@ function mount_nfs()
     [[ $? -eq 0 ]] && { echo "NFS mounted at $MNT_PATH"; } || { die "NFS mount failure"; }
 }
 
-function umount_nfs() { [[ $# -ne 1 ]] && { die "usage: umount_nfs <mnt_path>"; } || { umount $1; }; }
+function umount_nfs() { [[ $# -ne 1 ]] && { die "usage: umount_nfs <mnt_path>"; } || { sudo umount -l $1; sudo umount -f $1; }; }
 
 usage()
 {
