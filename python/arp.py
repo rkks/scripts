@@ -2,7 +2,7 @@
 #!/usr/bin/env python3 -dit
 #  DETAILS: bash configuration to be sourced.
 #  CREATED: 07/01/06 15:24:33 IST
-# MODIFIED: 24/Sep/2018 20:42:28 IST
+# MODIFIED: 22/Oct/2018 02:16:35 PDT
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -16,14 +16,10 @@
 # Import all required modules
 import struct, fcntl, glob, time, os, sys, re, signal
 ppath = os.getenv('UTL_SCRPTS', default = os.getenv('HOME') + "/scripts/utils")
-print(ppath)
+#print(ppath)
 sys.path.insert(0, ppath + "/python")
 import argparse, pexpect, pdb, logging, globs, utils
-import logging.handlers as hdlrs
-import logging.config as config
-from pexpect import pxssh
 from utils import Logger
-from utils import SwitchConnect
 from scapy.all import*
 
 def send_arp1():
@@ -40,12 +36,13 @@ def send_arp1():
 def send_arp():
     # psrc='10.161.0.10', pdst='10.40.122.22',
     results, unanswered = sr(ARP(op=ARP.who_has,
-                                 psrc='192.168.1.101',
-                                 pdst='192.168.1.220',
-                                 hwsrc='00:e1:8c:8f:62:04',
-                                 #hwdst='ff:ff:ff:ff:ff:ff'))
-                                 #hwdst='a0:04:60:12:8b:c3'))
+                                 psrc='10.40.122.51',
+                                 pdst='10.40.122.22',
+                                 hwsrc='52:54:00:36:3c:9c',
                                  hwdst='01:02:03:04:05:06'))
+
+                                 #hwdst='a0:04:60:12:8b:c3'))
+                                 #hwdst='ff:ff:ff:ff:ff:ff'))
     print(results)
 
 def parse_args():
