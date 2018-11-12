@@ -2,7 +2,7 @@
 #!/usr/bin/env python3 -dit
 #  DETAILS: bash configuration to be sourced.
 #  CREATED: 07/01/06 15:24:33 IST
-# MODIFIED: 22/Oct/2018 02:16:35 PDT
+# MODIFIED: 12/Nov/2018 19:48:44 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -43,6 +43,12 @@ def send_arp():
 
                                  #hwdst='a0:04:60:12:8b:c3'))
                                  #hwdst='ff:ff:ff:ff:ff:ff'))
+    print(results)
+
+def send_icmp():
+    # psrc='10.161.0.10', pdst='10.40.122.22',
+    results, unanswered = sr(Ether(dst='ff:ff:ff:ff:ff:ff')/IP(dst='10.40.122.22')/ICMP())
+
     print(results)
 
 def parse_args():
@@ -90,7 +96,8 @@ def main():
         dump_python_details()
 
     print ("send arp")
-    send_arp()
+    #send_arp()
+    send_icmp()
     sys.exit(0)
 
 # Standard boilerplate code to call main()
