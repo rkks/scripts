@@ -2,7 +2,7 @@
 #  DETAILS: Makes log file by redirecting both stdout and stderr.
 #           The main difference is, this uses 'tee' than >.
 #  CREATED: 11/13/12 19:09:06 IST
-# MODIFIED: 14/Dec/2018 06:26:51 PST
+# MODIFIED: 14/Dec/2018 07:00:05 PST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2012, Ravikiran K.S.
@@ -10,7 +10,7 @@
 #set -uvx               # Treat unset variables as an error, verbose, debug mode
 
 # Source .bashrc.dev only if invoked as a sub-shell.
-[[ "run.sh" == "$(basename -- $0)" && -f $HOME/.bashrc ]] && { source $HOME/.bashrc; }
+[[ "run.sh" == "$(basename -- $0)" && -f $HOME/.bashrc.dev ]] && { source $HOME/.bashrc.dev; }
 
 # Untested. This may not work for command with command line inputs
 teelog-alternate()
