@@ -2,12 +2,13 @@
 #!/usr/bin/env python3 -dit
 #  DETAILS: bash configuration to be sourced.
 #  CREATED: 07/01/06 15:24:33 IST
-# MODIFIED: 12/Nov/2018 19:48:44 IST
+# MODIFIED: 13/Nov/2018 21:12:27 PST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
 
 # Always leave the code you're editing a little better than you found it
+#https://stackoverflow.com/questions/26274524/sending-icmp-packets-in-scapy-and-choosing-the-correct-interface
 
 # Debugging import issues
 # $ python3 -m site         // place where packages are installed
@@ -45,9 +46,26 @@ def send_arp():
                                  #hwdst='ff:ff:ff:ff:ff:ff'))
     print(results)
 
+def send_icmp_hello():
+    results, unanswered = sr(IP(dst="10.40.122.22-23")/ICMP()/"Hello World")
+
+    print(results)
+
 def send_icmp():
-    # psrc='10.161.0.10', pdst='10.40.122.22',
-    results, unanswered = sr(Ether(dst='ff:ff:ff:ff:ff:ff')/IP(dst='10.40.122.22')/ICMP())
+    #results, unanswered = sr(Ether(dst='ff:ff:ff:ff:ff:ff')/IP(dst='10.40.122.22')/ICMP()) # malformed packet
+    eth = Ether(src="52:54:00:36:3c:9c", dst="01:18:02:0a:0b:0c")
+    ip = IP(dst="10.40.122.22")                # optional: src="10.40.122.51"
+    pkt = eth/ip/ICMP()
+    #results = sr1(pkt)          # does not work, malformed pkts. same for sr()
+    #results = sendp(pkt)        # works (send only, no wait for rx), but storm of replies
+
+    # The reason why packets crafted with sr()/sr1() result in malformed frames
+    # is that sr() sends and receives packets at Layer 3 using conf.L3socket.
+    # Whereas, srp() works at Layer 2 using conf.L2socket. Even though this does
+    # work, it can't be used as it creates ICMP request/reply storm in network.
+    # Because dest has no way of figuring out if ICMP req is a dup and eth-bcast
+    # dmac leads to replication of requests within bcast domain
+    results, unanswered = srp(pkt)  # works both send+recv, but storm of replies
 
     print(results)
 
@@ -97,7 +115,7 @@ def main():
 
     print ("send arp")
     #send_arp()
-    send_icmp()
+    send_icmp_hello()
     sys.exit(0)
 
 # Standard boilerplate code to call main()

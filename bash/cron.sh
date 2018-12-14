@@ -3,7 +3,7 @@
 #
 #   AUTHOR: Ravikiran K.S. (ravikirandotks@gmail.com)
 #  CREATED: 11/08/11 13:35:02 PST
-# MODIFIED: 03/Jul/2018 17:55:13 IST
+# MODIFIED: 14/Dec/2018 05:51:53 PST
 
 # Cron has defaults below. Redefining to suite yours(if & only if necessary).
 # HOME=user-home-directory  # LOGNAME=user.s-login-id
@@ -12,20 +12,7 @@
 #set -uvx       # Treat unset variables as an error, verbose, debug mode
 
 # Source .bashrc.dev only if invoked as a sub-shell. Not if sourced.
-[[ "$(basename cron.sh)" == "$(basename -- $0)" && -f $HOME/.bashrc.dev ]] && { source $HOME/.bashrc.dev; }
-
-# Provide callback function to be called for each item in list
-function run_forall_in_file()
-{
-    [[ $# -eq 0 ]] && { echo "Usage: $FUNCNAME <list-file>"; return $EINVAL; }
-    local fname=$1; shift; local dir_list=$2; shift; local rval=0;
-    while read dir; do
-        [[ "$dir" == \#* || ! -d $dir ]] && { continue; } || { local conflicts=0; cdie $dir; }
-        log INFO "$fname $dir"
-        run "$fname $dir"; [[ $? -ne 0 ]] && { rval=1; }      # reflects if any of runs failed
-    done < $dir_list
-    return rval;
-}
+[[ "cron.sh" == "$(basename -- $0)" && -f $HOME/.bashrc ]] && { source $HOME/.bashrc; }
 
 function local_backup()
 {
@@ -39,7 +26,7 @@ function backup()
     [[ ! -z "$(grep -w $FUNCNAME $CUST_CONFS/cronskip)" ]] && { echo "$0: Skip $FUNCNAME"; return; }
     log INFO "Backing up directories list in file $1"
     # Git Backup: Preferred way to sync text stuff
-    run_forall_in_file local_backup $1
+    batch_func local_backup $1
 }
 
 function sync()
@@ -99,7 +86,7 @@ function revision()
 {
     [[ ! -z "$(grep -w $FUNCNAME $CUST_CONFS/cronskip)" ]] && { echo "$0: Skip $FUNCNAME"; return; }
     log INFO "$FUNCNAME: Update revision of workspaces list in file $1"
-    run_forall_in_file svn_revision_update $1
+    batch_func svn_revision_update $1
 }
 
 function database_update()
@@ -111,7 +98,7 @@ function database()
 {
     [[ ! -z "$(grep -w $FUNCNAME $CUST_CONFS/cronskip)" ]] && { echo "$0: Skip $FUNCNAME"; return; }
     log INFO "Build cscope/ctags db for workspaces list in file $1"
-    run_forall_in_file database_update $1
+    batch_func database_update $1
 }
 
 function build_target()
@@ -123,7 +110,7 @@ function build()
 {
     [[ ! -z "$(grep -w $FUNCNAME $CUST_CONFS/cronskip)" ]] && { echo "$0: Skip $FUNCNAME"; return; }
     log INFO "Build code for workspaces list in file $1"
-    run_forall_in_file build_target $1
+    batch_func build_target $1
 }
 
 function download()
@@ -191,7 +178,7 @@ function usage()
 
 function main()
 {
-    local PARSE_OPTS="hb:c:d:lnr:s:tz"
+    local PARSE_OPTS="ha:b:c:d:e:lnr:s:tz"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -215,6 +202,8 @@ function main()
     fi
 
     export SHDEBUG=yes;
+    ((opt_e)) && { NOTIFY_EMAIL="$optarg_e"; } || { NOTIFY_EMAIL=$COMP_EMAIL_ID; }
+    ((opt_a)) && { RUN_LOG="run.log"; truncate --size 0 $RUN_LOG; batch_run $optarg_a; }
     ((opt_b)) && backup $optarg_b;
     ((opt_c)) && revision $optarg_c;
     ((opt_d)) && build $optarg_d;
@@ -231,7 +220,7 @@ function main()
 
 # $0 is to account for the "-bash" type of strings in login_shell.
 # login shell if [[ "$(shopt login_shell | cut -f 2)" == "off" ]]
-if [ "$(basename -- $0)" == "$(basename cron.sh)" ]; then
+if [ "$(basename -- $0)" == "cron.sh" ]; then
     main $*
 fi
 # VIM: ts=4:sw=4

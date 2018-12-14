@@ -144,7 +144,7 @@ class SSHConnect():
     def expect(self, expr = None, isvsh = False, no = False):
         cprompt = self.prompt if isvsh is False else self.vsh_prompt
         pats = [pexpect.TIMEOUT, cprompt, '[\(|\[]*[Y|y]es[/|,][N|n]o[\)|\]]*',
-                '[P|p]assword:', pexpect.EOF]
+                '[P|p]assword:', pexpect.EOF, 'admin:']
         if expr is not None:
             pats.append(expr)
 
@@ -158,7 +158,7 @@ class SSHConnect():
         while True:
             idx = self.handle.expect(pats, timeout = self.timeout)
             if idx == 0:  # timeout
-                self.cli_out = str(self.handle.after)
+                self.exp_out = str(self.handle.after)
                 self.logger.new_line()
                 self.logger.info("expect timeout for cmd %s on host %s" %
                                     (self.last_cmd, self.host))
@@ -168,7 +168,9 @@ class SSHConnect():
                 self.cli_out = str(self.handle.after)
                 self.logger.new_line()
                 self.logger.debug("Bash prompt seen on host " + self.host)
-                return True
+                if expr is None:
+                    return True
+                continue
 
             elif idx == 2:  # yes/no question
                 self.logger.new_line()
@@ -178,7 +180,7 @@ class SSHConnect():
                     return False
                 continue
 
-            elif idx == 3:  # passwd prompt
+            elif idx == 3 or idx == 5:  # passwd prompt
                 self.logger.new_line()
                 self.logger.debug("Pass prompt seen on host " + self.host)
                 if self.send_line(self.passwd) == False:
@@ -191,13 +193,15 @@ class SSHConnect():
                 return True
 
             else:
-                if (idx == 5) and (expr is not None):  # input pattern
+                if (idx == 6) and (expr is not None):  # input pattern
                     self.cli_out = str(self.handle.after)
                     self.logger.new_line()
                     self.logger.debug("Pattern %s seen on host %s" %
                                     (expr, self.host))
                     return True
                 else:
+                    self.cli_out = str(self.handle.before)
+                    self.exp_out = str(self.handle.after)
                     self.logger.new_line()
                     self.logger.info("Unknown error for cmd %s on host %s" %
                                     (cmd, self.host))

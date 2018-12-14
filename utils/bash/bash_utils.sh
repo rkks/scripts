@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 21/Oct/2018 22:52:02 PDT
+# MODIFIED: 14/Dec/2018 05:51:18 PST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -27,9 +27,10 @@ export EOVERFLOW=79  # variable overflow
 export ETIMEDOUT=145 # Operation timedout
 export EASSERT=199   # Assertion failed
 
+export NOTIFY_EMAIL=friends4web@gmail.com    # used by file_rotate()/batch_run()
+
 export FILE_MAX_SZ=10240                   # In KB
 export FILE_MAX_BKUPS=1                    # max num of backup files
-export FILE_EMAIL=friends4web@gmail.com    # if file_rotate() were to email
 export LOG_LVLS=( "<DEBUG>" "<INFO>" "<NOTE>" "<WARN>" "<ERROR>" "<CRIT>" "<ALERT>" "<EMERG>" ); # RFC 5424 defines 8 levels of severity
 export LOG_FILE="$SCRPT_LOGS/$(basename -- $0).log";
 
@@ -48,6 +49,7 @@ function export_bash_funcs()
     FUNCS="chownall cpx dos2unixall reset_tty screentab starthttp log_lvl $FUNCS"
     FUNCS="truncate_file vncs bug rli make_workspace_alias bash_colors $FUNCS"
     FUNCS="diffscp compare show_progress get_ip_addr ssh_key ssh_pass $FUNCS"
+    FUNCS="batch_run batch_func $FUNCS"
     export_func $FUNCS;
 }
 
@@ -60,6 +62,8 @@ function now() { date "+%Y-%m-%d %H:%M:%S"; }
 
 # prints script-name
 function myname() { echo "$(basename -- $0)"; }
+
+function dash_line() { local i; for i in {1..79}; do echo -n "-"; done; echo "-"; }
 
 # $(date +%b%d%T) has display spacing issues. For line number tracing, use: $ echo "+$(echo $LINENO)" "message"
 function prnt() { local m="$(now) $(hostnm) $(myname)[$$] $*"; [[ -z $STDERR ]] && echo "$m" || >&2 echo "$m"; unset STDERR; return 0; }
@@ -92,6 +96,26 @@ function run()
 {
     test -n "$DRY_RUN" && { echo "$*"; return 0; } || { local p; local a=""; for p in "$@"; do a="${a} \"${p}\""; done; }
     test -z "$RUN_LOG" && { RUN_LOG=/dev/null; }; dbg "$a"; eval "$a" 2>&1 | tee -a $RUN_LOG 2>&1; return ${PIPESTATUS[0]};
+}
+
+function batch_run()
+{
+    [[ $# -eq 0 ]] && { echo "Usage: $FUNCNAME <cmds-file> [continue-on-err]"; return $EINVAL; } || { local cmds=""; local rval=0; }
+    while read cmds; do [[ "$cmds" == \#* ]] && { continue; } || { run $cmds; rval=$?; }; [[ $rval -ne 0 && $# -lt 2 ]] && { break; }; done < $1
+    [[ ! -z $NOTIFY_EMAIL ]] && { [[ -f $RUN_LOG ]] && mail.sh -e $NOTIFY_EMAIL -b $RUN_LOG || echo "RUN_LOG not defined"; }; return $rval;
+}
+
+# Provide callback function to be called for each item in list
+function batch_func()
+{
+    [[ $# -eq 0 ]] && { echo "Usage: $FUNCNAME <cb-func-name> <list-file>"; return $EINVAL; }
+    local fname=$1; shift; local dir_list=$2; shift; local rval=0;
+    while read dir; do
+        [[ "$dir" == \#* || ! -d $dir ]] && { continue; } || { cdie $dir; }
+        log INFO "$fname $dir"
+        run "$fname $dir"; [[ $? -ne 0 ]] && { rval=1; }    # reflects if any of runs failed
+    done < $dir_list
+    return rval;
 }
 
 # usage: shell <cmd> <args>
@@ -162,7 +186,7 @@ function file_rotate()
     # Find out upto which sequence file.0..9 the archive has grown. ${f:$len} extracts .suffix-num. Ex. 3 for log.3
     for f in ${file}.[0-$FILE_MAX_BKUPS]*; do [ -f "$f" ] && num=${f:$len} && [ $num -gt $max ] && max=$num; done
     f="$file.$(($max + 1))";
-    [[ $max -ge $FILE_MAX_BKUPS && -f "$f" ]] && { [[ ! -z $FILE_EMAIL ]] && { gzip $f && email $f.gz; rm -f $f $f.gz; } || { rm -f $f; }; }
+    [[ $max -ge $FILE_MAX_BKUPS && -f "$f" ]] && { [[ ! -z $NOTIFY_EMAIL ]] && { gzip $f && email $f.gz; rm -f $f $f.gz; } || { rm -f $f; }; }
     for ((i = $max;i >= 0;i -= 1)); do [[ -f "$file.$i" ]] && mv -f $file.$i "$file.$(($i + 1))" > /dev/null 2>&1; done
     return 0;
 }

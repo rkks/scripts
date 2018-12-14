@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Send mail to pre-defined email addresses
 #  CREATED: 11/19/12 14:14:03 IST
-# MODIFIED: 09/14/17 02:13:14 PDT
+# MODIFIED: 14/Dec/2018 03:13:55 PST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2012, Ravikiran K.S.
@@ -23,7 +23,8 @@ mail-send()
     [[ -z $MAILADDRS ]] && { echo "No email addresses found"; exit 1; }
     box="$(hostname)"
     content="$2"
-    for email in $MAILADDRS; do
+    email_ids="$(echo $MAILADDRS | sed 's/,/ /g')"
+    for email in $email_ids; do
         echo "Sending email from $box to $email. content: $content";
         # no 'run' for mailx. Gets confused.
         mailx -s "[$1] From $box" $email < $content
@@ -36,7 +37,7 @@ usage()
     echo "Options:"
     echo "  -b <build-log>  - mail the build log provided"
     echo "  -c              - mail the log from cron job"
-    echo "  -e <email-id>   - mail address to post email"
+    echo "  -e <email-ids>  - list of comma-separated email addresses"
     echo "  -f <file>       - mail the file provided"
     echo "  -h              - print this help message"
 }
