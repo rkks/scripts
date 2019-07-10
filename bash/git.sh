@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: External diff tool for git
 #  CREATED: 03/20/13 21:55:08 IST
-# MODIFIED: 13/Aug/2018 17:29:06 IST
+# MODIFIED: 08/Jan/2019 19:23:49 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -64,6 +64,17 @@ function git_diff()
 }
 
 function git_clone() { [[ -z $GIT_REPO ]] && { return $EINVAL; } || { git clone $GIT_REPO $BRANCH $*; }; }
+
+function cherry_pick()
+{
+    [[ $# -ne 3 ]] && { echo "usage: cherry_pick <sha> <from-br> <to-br1,to-br2,..,to-brN>"; return; }
+    local sha=$1; shift; local from_br=$1; shift; local to_brs=$(echo "$*" | sed 's/,/ /g'); local br;
+    local curr=$(git symbolic-ref HEAD | awk -F/ '{print $3}')  # $(git st | head -n1 | awk '{print $3}')
+    [[ $from_br != $curr ]] && { echo "current workspace branch $curr does not match from-branch $from_br"; return; }
+    for br in "$to_brs"; do
+        git stash && git co $br && git cp $sha && git co $curr && git stash pop; [[ $? -ne 0 ]] && return $?;
+    done
+}
 
 function usage()
 {
