@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 14/Dec/2018 05:51:18 PST
+# MODIFIED: 30/Mar/2019 19:24:42 PDT
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -224,6 +224,7 @@ function bash_colors()
 {
     [[ -z $PS1_COLOR ]] && { warn "ps1_prompt: PS1_COLOR not set"; return $EINVAL; } || { local d; }
     d="$CUST_CONFS/dir_colors_$PS1_COLOR"; [[ -f $d ]] && { (own dircolors) && { eval $(dircolors -b $d); }; }
+    [[ "$TERM" == "screen-256color" ]] && return 0;
     [[ -e $CONFS/Xdefaults ]] && { (own xrdb) && xrdb $CONFS/Xdefaults; } || return 0;
     d="$CUST_CONFS/Xresources_$PS1_COLOR"; [[ -f $d ]] && { (own xrdb) && xrdb -merge $d; }
 }
