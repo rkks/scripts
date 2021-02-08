@@ -178,6 +178,13 @@ pull_extra()
     pull_github refer;
 }
 
+install_tools()
+{
+    sudo apt-get install -y git exuberant-ctags cscope fluxbox gnome-terminal;
+    sudo apt-get install -y dsniff tcpkill;
+    sudo apt-get install -y fortune-mod cowsay vnc4server;
+}
+
 function usage()
 {
     echo "Usage: conf.sh <-a|-c|-h|-l|-n|-s|-t>"
@@ -185,6 +192,7 @@ function usage()
     echo "  -a - link all files and start cron (-clnst)"
     echo "  -c - start cron job of user"
     echo "  -d - delete cron job of user"
+    echo "  -i - install all development tools on ubuntu"
     echo "  -l - create symlink of user log files"
     echo "  -n - create symlink of user conf files"
     echo "  -p - pull github dev setup files"
@@ -197,7 +205,7 @@ function usage()
 
 main()
 {
-    PARSE_OPTS="hacdlnstu:v:"
+    PARSE_OPTS="hacdilnstu:v:"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -220,8 +228,9 @@ main()
         usage && exit $EINVAL;
     fi
 
-    ((opt_a)) && (link_confs; link_logs; link_scripts; link_tools; stop_cron; start_cron; exit 0)
+    ((opt_a)) && (link_confs; link_logs; link_scripts; link_tools; install_tools; stop_cron; start_cron; exit 0)
     ((opt_n)) && link_confs
+    ((opt_i)) && install_tools
     ((opt_l)) && link_logs
     ((opt_p)) && pull_conf
     ((opt_s)) && link_scripts

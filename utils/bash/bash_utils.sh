@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 30/Mar/2019 19:24:42 PDT
+# MODIFIED: 07/May/2020 15:39:51 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -174,7 +174,7 @@ function chk()
 function file_sz() { [[ $# -eq 1 ]] && { echo "$(wc -l "$1" | awk '{print $1}')"; return 0; } || return $EINVAL; }
 
 # usage: page_brkr <num-chars>. useful to add page-breaker for new content to start. default 80 char wide.
-function page_brkr() { local c=8; [[ $# -eq 1 ]] && c=$1; local p; local i; for i in $(seq $c); do p+="=========="; done; echo "$p" && return $?; }
+function page_brkr() { local c=${1:-80}; local s=${2:-=}; local p; local i; for i in $(seq 1 $c); do p+="$s"; done; echo "$p" && return $?; }
 
 # usage: file_rotate <file-path> [max-backups]. Useless: 'LOGGER=/usr/bin/logger -t logrotate'
 function file_rotate()
@@ -520,7 +520,7 @@ usage()
 # It can then be included in other files for functions.
 main()
 {
-    local PARSE_OPTS="hi:l:r:"
+    local PARSE_OPTS="hi:l:r:p"
     local opts_found=0; local opt;
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -547,6 +547,7 @@ main()
     ((opt_i)) && { LOG_FILE="$*"; log_init $optarg_i $LOG_FILE; }
     ((opt_l)) && { log $optarg_l $*; }
     ((opt_r)) && { file_rotate $optarg_r; }
+    ((opt_p)) && { page_brkr 10 -; }
     ((opt_h)) && (usage; exit 0)
 
     exit 0

@@ -3,7 +3,7 @@
 #
 #   AUTHOR: Ravikiran K.S. (ravikirandotks@gmail.com)
 #  CREATED: 11/08/11 13:35:02 PST
-# MODIFIED: 14/Dec/2018 06:57:53 PST
+# MODIFIED: 07/May/2020 20:50:17 IST
 
 # Cron has defaults below. Redefining to suite yours(if & only if necessary).
 # HOME=user-home-directory  # LOGNAME=user.s-login-id
@@ -160,6 +160,18 @@ function reserve()
     done < $reserve_file
 }
 
+function vpn()
+{
+    local v=$(which openfortivpn);
+    [[ -z $v ]] && { log ERROR "VPN is not installed"; return 0; }
+    local p=$(pidof openfortivpn);
+    [[ ! -z $p ]] && { log INFO "VPN is working, pid $p"; return 0; }
+    sudo openfortivpn -c ~/vers/conf/ofv_us.conf >> $LOG_FILE 2>&1 &
+    local r=$?
+    log CRIT "Started VPN, pid $(pidof openfortivpn), ret $r"
+    return $r
+}
+
 function usage()
 {
     echo "Usage: cron.sh <-b <backup-path>|-c <scm-workspace>|-d <build-path>|-l|-n|-r <reserve-file>|-s <crontab-file>|-t>"
@@ -172,13 +184,14 @@ function usage()
     echo "  -r <reserve-file>   - reserve routers listed in given file"
     echo "  -s <crontab-file>   - start user cronjob with given crontab file"
     echo "  -t                  - stop the cronjob for user"
+    echo "  -v                  - check vpn running status on laptop"
     echo "  -z                  - test the environment variables"
     echo "  -h                  - print this help message"
 }
 
 function main()
 {
-    local PARSE_OPTS="ha:b:c:d:e:lnr:s:tz"
+    local PARSE_OPTS="ha:b:c:d:e:lnr:s:tvz"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -201,18 +214,19 @@ function main()
         usage && exit $EINVAL;
     fi
 
-    export SHDEBUG=yes;
+    #export SHDEBUG=yes;
     ((opt_e)) && { NOTIFY_EMAIL="$optarg_e"; } || { NOTIFY_EMAIL=$COMP_EMAIL_ID; }
     ((opt_a)) && { RUN_LOG="run.log"; truncate --size 0 $RUN_LOG; batch_run $optarg_a; }
-    ((opt_b)) && backup $optarg_b;
-    ((opt_c)) && revision $optarg_c;
-    ((opt_d)) && build $optarg_d;
-    ((opt_l)) && crontab -l;
-    ((opt_n)) && nightly;
-    ((opt_r)) && reserve $optarg_r;
-    ((opt_s)) && crontab $optarg_s;
-    ((opt_t)) && crontab -r;
-    ((opt_z)) && { for i in {1..79}; do echo -n "-"; done; echo "-"; set; alias; }
+    ((opt_b)) && { backup $optarg_b; }
+    ((opt_c)) && { revision $optarg_c; }
+    ((opt_d)) && { build $optarg_d; }
+    ((opt_l)) && { crontab -l; }
+    ((opt_n)) && { nightly; }
+    ((opt_r)) && { reserve $optarg_r; }
+    ((opt_s)) && { crontab $optarg_s; }
+    ((opt_t)) && { crontab -r; }
+    ((opt_v)) && { vpn; }
+    ((opt_z)) && { page_brkr 40 -; set; alias; page_brkr 40 -; }
     ((opt_h)) && { usage; exit 0; }
 
     exit 0

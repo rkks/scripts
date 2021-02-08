@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: ubuntu quirks and it's remedies
 #  CREATED: 04/05/18 10:34:37 PDT
-# MODIFIED: 13/Aug/2018 22:01:33 IST
+# MODIFIED: 08/May/2020 16:49:04 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -25,6 +25,20 @@ function apt_cleanup()
     [[ $# -ne 0 ]] && { sudo dpkg --remove --force-remove-reinstreq $*; sudo apt-get install --force-reinstall true $*; }
 }
 
+function list_serial_dev()
+{
+    for sysdevpath in $(find /sys/bus/usb/devices/usb*/ -name dev); do
+        (
+            syspath="${sysdevpath%/dev}"
+            devname="$(udevadm info -q name -p $syspath)"
+            [[ "$devname" == "bus/"* ]] && continue
+            eval "$(udevadm info -q property --export -p $syspath)"
+            [[ -z "$ID_SERIAL" ]] && continue
+            echo "/dev/$devname - $ID_SERIAL"
+        )
+    done
+}
+
 function reinstall_unity()
 {
     sudo apt-get autoremove
@@ -33,6 +47,65 @@ function reinstall_unity()
     sudo apt-get update
     rm -rf .compiz/
     rm -rf .config/
+}
+
+function kernel_build()
+{
+    # https://wiki.ubuntu.com/Kernel/SourceCode
+    # https://wiki.ubuntu.com/Kernel/BuildYourOwnKernel
+    # https://www.howtoforge.com/roll_a_kernel_debian_ubuntu_way
+    # https://wiki.ubuntu.com/Debug%20Symbol%20Packages
+
+    # Open sources.list and uncomment all relevant deb-src lines
+    #sudo vim /etc/apt/sources.list
+    sudo apt-get update
+    sudo apt update
+
+    # Download source code of kernel running currently on Ubuntu system
+    apt-get source linux-image-$(uname -r)                  # signing code only
+    apt-get source linux-image-unsigned-$(uname -r)         # actual source code
+
+    # OR directly clone using git, but you still need release SHA from linux-image-$(uname -r)
+    # git clone git://kernel.ubuntu.com/ubuntu/ubuntu-xenial.git
+    # cd ubuntu-xenial && git checkout 6cac304f7f239ac
+
+    # To build, the build dependencies need to be installed as well
+    sudo apt-get build-dep linux linux-image-$(uname -r)    # this does not install all
+    sudo apt-get install libncurses-dev flex bison openssl libssl-dev dkms libelf-dev libudev-dev libpci-dev libiberty-dev autoconf git
+
+    # Install debug-sym (ddeb) packages
+    echo "deb http://ddebs.ubuntu.com $(lsb_release -cs) main restricted universe multiverse
+    deb http://ddebs.ubuntu.com $(lsb_release -cs)-updates main restricted universe multiverse
+    deb http://ddebs.ubuntu.com $(lsb_release -cs)-proposed main restricted universe multiverse" | \
+    sudo tee -a /etc/apt/sources.list.d/ddebs.list
+    sudo apt install ubuntu-dbgsym-keyring
+    sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys F2EDC64DC5AEE1F6B9C621F0C8CAB6595FDFF622
+    sudo apt-get update
+
+    # Logs:
+    # deb http://ddebs.ubuntu.com bionic main restricted universe multiverse
+    # deb http://ddebs.ubuntu.com bionic-updates main restricted universe multiverse
+    # deb http://ddebs.ubuntu.com bionic-proposed main restricted universe multiverse
+    # $ sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys
+    # F2EDC64DC5AEE1F6B9C621F0C8CAB6595FDFF622
+    # Executing: /tmp/apt-key-gpghome.EfSBZUuvGE/gpg.1.sh --keyserver
+    # keyserver.ubuntu.com --recv-keys F2EDC64DC5AEE1F6B9C621F0C8CAB6595FDFF622
+    #
+    # gpg: key C8CAB6595FDFF622: 5 signatures not checked due to missing keys
+    # gpg: key C8CAB6595FDFF622: "Ubuntu Debug Symbol Archive Automatic Signing Key (2016) <ubuntu-archive@lists.ubuntu.com>" 3 new signatures
+    # gpg: Total number processed: 1
+    # gpg:         new signatures: 3#
+    #
+}
+
+# use ssh -Y -v user@host for X11 forwarding. Do not use -X flag?? (does not matter)
+function x11_fwd_on()
+{
+    sudo systemctl status sshd
+    sudo echo "X11Forwarding yes" >> /etc/ssh/sshd_config
+    sudo echo "X11UseLocalhost no" >> /etc/ssh/sshd_config
+    sudo systemctl restart sshd
+    sudo systemctl status sshd
 }
 
 usage()
@@ -46,6 +119,7 @@ usage()
     echo "  -l <lcl-path>   - local path for NFS mount"
     echo "  -p <nfs-path>   - path on NFS server for NFS mount"
     echo "  -m              - mount NFS with given inputs (-i,-l,-p)"
+    echo "  -s              - list all serial devices on laptop"
     echo "  -u              - unmount NFS with given inputs (-l)"
 }
 
@@ -53,7 +127,7 @@ usage()
 # It can then be included in other files for functions.
 main()
 {
-    PARSE_OPTS="hci:l:p:mru"
+    PARSE_OPTS="hci:l:p:mrsu"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -84,6 +158,7 @@ main()
     ((opt_p)) && { NFS_PATH=$optarg_p; }
     ((opt_m)) && { mount_nfs $NFS_IP $NFS_PATH $LCL_PATH; }
     ((opt_r)) && { reinstall_unity $*; }
+    ((opt_s)) && { list_serial_dev $*; }
     ((opt_u)) && { umount_nfs $LCL_PATH; }
 
     exit 0;

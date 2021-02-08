@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Script to build the gh-pages
 #  CREATED: 06/09/17 19:27:48 IST
-# MODIFIED: 12/05/17 21:12:08 IST
+# MODIFIED: 24/Oct/2019 11:40:24 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -77,7 +77,7 @@ build_post()
     local post="$(basename ${file%.*})";
 
     # process only newer files. -nt: newer than, -ot: older than
-    [[ $file -ot $PUBLISH/$post.html ]] && { continue; }
+    [[ $file -ot $PUBLISH/$post.html ]] && { return; }
 
     local title="$(sed -n '1 s/% //p' "$file")";
     local pdate="$(sed -n '3 s/% //p' "$file")";
@@ -184,8 +184,9 @@ build_proj_website()
         echo "topic: $topic";
         for file in $(ls $topic/*.$MD 2>/dev/null); do
             # process only files with proper pandoc title block
-            if [ $(head -n 1 "$file" | awk '{print $1}') != "%" ]; then
-                #echo "$file: pandoc title block not found. skip";
+            local title="$(head -n 1 "$file" | awk '{print $1}')"
+            if [ "$title" != "%" ]; then
+                echo "$file: pandoc title block not found. skip";
                 continue;
             fi
             build_post "$topic" "$file";

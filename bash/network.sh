@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Network utilities
 #  CREATED: 07/17/13 16:00:40 IST
-# MODIFIED: 23/Jun/2018 11:20:25 IST
+# MODIFIED: 10/Aug/2020 09:41:54 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -32,13 +32,13 @@ function pingmonitor()
     local succ=0 fail=0 last="!" tot=0 fper=0 ivl=5;
     # for non-root users -f option is not allowed.
     [[ "Linux" == $(uname -s) ]] && local pingopts="-q -c 1" || local pingopts="-q -c 1"
-    echo "ping monitor $1, interval $ivl"
+    echo "ping monitor ${1:-google.com}, interval $ivl"
     while [ true ]; do
         #ping $pingopts ${1:-google.com}  >/dev/null 2>&1;
         ping $pingopts ${1:-google.com} >/dev/null 2>&1;
         [[ $? -eq 0 ]] && { last="!"; } || { fail=$((fail + 1)); last="."; }
         tot=$((tot + 1)); succ=$(($tot - $fail))
-        echo -ne "\rping($last): fail $fail succ[$succ]/tot[$tot]";
+        echo -ne "\rping($last): fail [$fail] succ[$succ] tot[$tot]";
         sleep $ivl;
     done
 }
