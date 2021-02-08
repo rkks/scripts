@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: ubuntu quirks and it's remedies
 #  CREATED: 04/05/18 10:34:37 PDT
-# MODIFIED: 08/May/2020 16:49:04 IST
+# MODIFIED: 07/Feb/2021 20:26:39 PST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -12,6 +12,21 @@
 PATH=/usr/bin:/usr/sbin:.:/auto/opt/bin:/bin
 
 [[ "$(basename ubuntu.sh)" == "$(basename -- $0)" && -f $HOME/.bashrc.dev ]] && { source $HOME/.bashrc.dev; }
+
+function disable_netplan()
+{
+    sudo apt install ifupdown
+    #sudo vim /etc/network/interfaces
+    sudo ifdown --force ens3 lo && sudo ifup -a
+    sudo systemctl unmask networking
+    sudo systemctl enable networking
+    sudo systemctl restart networking
+    sudo systemctl stop systemd-networkd.socket systemd-networkd networkd-dispatcher systemd-networkd-wait-online
+    sudo systemctl disable systemd-networkd.socket systemd-networkd networkd-dispatcher systemd-networkd-wait-online
+    sudo systemctl mask systemd-networkd.socket systemd-networkd networkd-dispatcher systemd-networkd-wait-online
+    #sudo vim /etc/systemd/resolved.conf
+    sudo systemctl restart systemd-resolved
+}
 
 function apt_cleanup()
 {

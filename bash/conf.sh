@@ -181,8 +181,13 @@ pull_extra()
 install_tools()
 {
     sudo apt-get install -y git exuberant-ctags cscope fluxbox gnome-terminal;
-    sudo apt-get install -y dsniff tcpkill;
-    sudo apt-get install -y fortune-mod cowsay vnc4server;
+    sudo apt-get install -y dsniff tcpkill fortune-mod cowsay vnc4server;
+}
+
+ubuntu_install()
+{
+    sudo add-apt-repository "deb http://archive.ubuntu.com/ubuntu $(lsb_release -sc) main universe"
+    sudo apt-get update && sudo apt-get install exuberant-ctags cscope git build-essential
 }
 
 function usage()
@@ -205,7 +210,7 @@ function usage()
 
 main()
 {
-    PARSE_OPTS="hacdilnstu:v:"
+    PARSE_OPTS="hacdilnpstu:v:"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in

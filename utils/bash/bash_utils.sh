@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 07/May/2020 15:39:51 IST
+# MODIFIED: 08/Feb/2021 05:23:53 PST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -247,6 +247,7 @@ function ps1_prompt()
     # default/long PS1. To know hex-code for UFT-8 char, do: echo <char> | hexdump -C; First byte is always e2.
     # `echo -e '\xe2\x86\x92'` causes more problems on terminal. Not every terminal/bash is UTF-8 capable.
     [[ $# -eq 0 ]] && { export PS1="$Y[$U\D{%d/%b/%Y} \t$Y|$P\u$C@$P\h$Y:$G\w$Y!$C$?$Y]\r\n$R\$$N "; return 0; }
+    #[[ $# -eq 0 ]] && { export PS1="$Y[$U\D{%d/%b/%Y} \t$Y|$P\u$C@$P\h$Y:$G\w$Y$(__git_ps1)!$C$?$Y]\r\n$R\$$N "; return 0; }   # __git_ps1 shows even on non-git repos
 
     export PS1="$Y[$U\D{%b/%d} \t$Y|$G\w$Y]\$$N "; return 0;    # short PS1
 }
