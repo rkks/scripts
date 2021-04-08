@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Script to build the gh-pages
 #  CREATED: 06/09/17 19:27:48 IST
-# MODIFIED: 24/Oct/2019 11:40:24 IST
+# MODIFIED: 09/Feb/2021 12:49:48 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -49,7 +49,7 @@ set_paths()
     NAVBAR=$STATIC/html/navbar.html
 
     # order if css import matters, first bootstrap.css, then color theme
-    PD_CMN_OPTS="--smart --standalone -f markdown ";
+    PD_CMN_OPTS="--standalone -f markdown "; # --smart enabled by default now
 #    PD_CV_OPTS+="-c $CSS/font.css -c https://fonts.googleapis.com/css?family=Open+Sans:regular,italic,bold";
     PD_CV_OPTS="$PD_CMD_OPTS -c $CSS/resume.css ";
     PD_WIKI_OPTS="--template=website.html -B $NAVBAR -A $FOOTER \
