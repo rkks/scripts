@@ -181,7 +181,15 @@ pull_extra()
 install_tools()
 {
     sudo apt-get install -y git exuberant-ctags cscope fluxbox gnome-terminal;
-    sudo apt-get install -y dsniff tcpkill fortune-mod cowsay vnc4server;
+    sudo apt-get install -y dsniff tcpkill fortune-mod cowsay vnc4server toilet;
+}
+
+install_virt()
+{
+    # qemu - hw emulator, libvirt - VM manager, brctl - bridge mgmt
+    # virtinst - cmdline tools for VM mgmt, virt-manager - GUI tool for VM mgmt
+    sudo apt install qemu-kvm libvirt-bin bridge-utils virtinst virt-manager &&
+    sudo usermod -aG libvirt $USER && sudo usermod -aG kvm $USER
 }
 
 ubuntu_install()

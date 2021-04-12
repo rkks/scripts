@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Network utilities
 #  CREATED: 07/17/13 16:00:40 IST
-# MODIFIED: 10/Aug/2020 09:41:54 IST
+# MODIFIED: 08/Apr/2021 02:49:12 PDT
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -16,29 +16,25 @@ function arpclear() { for i in $(awk -F ' ' '{ if ( $1 ~ /[0-9{1,3}].[0-9{1,3}].
 
 function dnscheck() { nslookup ${1:-google.com}; finger $USER; }
 
-function pingwait()
-{
-    local pingable=0;
-    # for non-root users -f option is not allowed.
-    [[ "Linux" == $(uname -s) ]] && local pingopts="-q -c 1" || local pingopts="-q -c 1"
-    while [ $pingable -eq 0 ]; do
-        ping $pingopts ${1:-google.com} 2>&1 >/dev/null;
-        [[ $? -eq 0 ]] && { pingable=1; echo "!"; } || { echo -n "."; sleep 5; }
-    done
-}
-
 function pingmonitor()
 {
-    local succ=0 fail=0 last="!" tot=0 fper=0 ivl=5;
+    local succ=0 fail=0 last="!" tot=0 fper=0 ivl=${INTERVAL:-1} prnt=0;
+    local out=${OUT_FILE:-/dev/null} dst=${1:-google.com} log_ivl=$(($ivl * 10));
     # for non-root users -f option is not allowed.
-    [[ "Linux" == $(uname -s) ]] && local pingopts="-q -c 1" || local pingopts="-q -c 1"
-    echo "ping monitor ${1:-google.com}, interval $ivl"
+    [[ "Linux" == $(uname -s) ]] && local pingopts="-c 10" || local pingopts="-q -c 1"
+    echo "ping monitor $dst, interval $ivl, dump to $out"
     while [ true ]; do
-        #ping $pingopts ${1:-google.com}  >/dev/null 2>&1;
-        ping $pingopts ${1:-google.com} >/dev/null 2>&1;
+        echo "-------------------------------------------------------" >>$out 2>&1;
+        date >>$out 2>&1;
+        run ping $pingopts $dst >>$out 2>&1;
         [[ $? -eq 0 ]] && { last="!"; } || { fail=$((fail + 1)); last="."; }
-        tot=$((tot + 1)); succ=$(($tot - $fail))
-        echo -ne "\rping($last): fail [$fail] succ[$succ] tot[$tot]";
+        date >>$out 2>&1;
+        [[ $last == "." ]] && { run traceroute $dst >>$out 2>&1; echo "" >>$out 2>&1; }
+        #date >>$out 2>&1;
+        #echo "" >>$out 2>&1;
+        [[ ! -z $PING_WAIT ]] && { echo $last; [[ $last == "!" ]] && return || continue; }
+        tot=$((tot + 1)); succ=$(($tot - $fail)); prnt=$(($tot % $log_ivl));
+        [[ $prnt -eq 0 ]] && echo -ne "\rping($last): fail [$fail] succ[$succ] tot[$tot]";
         sleep $ivl;
     done
 }
@@ -58,11 +54,13 @@ usage()
     echo "usage: network.sh []"
     echo "usage: find.sh <-a|-d [host-name]|-p <host-name>|-h>"
     echo "Options:"
+    echo "  -a <interface>  - configure ip address, gateway, dns server on interface"
     echo "  -c              - clear arp database on this machine"
     echo "  -d [host-name]  - check dns query for give host (google.com - default)"
-    echo "  -p [host-name]  - check ping reachability of given host (google.com - default)"
-    echo "  -m [host-name]  - periodically monitor ping of given host (google.com - default)"
-    echo "  -i <interface>  - configure ip address, gateway, dns server on interface"
+    echo "  -f <file-path>  - output terminal logs to this file (/dev/null - default)"
+    echo "  -i <interval>   - use input interval instead of default (1s - default)"
+    echo "  -m <host-name>  - periodically monitor ping of given host (google.com - default)"
+    echo "  -w              - check ping reachability, use with -m option"
     echo "  -h              - print this help"
 }
 
@@ -70,7 +68,7 @@ usage()
 # It can then be included in other files for functions.
 main()
 {
-    PARSE_OPTS="hcdi:mp"
+    PARSE_OPTS="ha:cdi:m:o:w"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -93,11 +91,13 @@ main()
         usage && exit $EINVAL;
     fi
 
+    ((opt_o)) && OUT_FILE=$optarg_o || echo $optarg_o;
+    ((opt_i)) && INTERVAL=$optarg_i;
+    ((opt_w)) && PING_WAIT=1;
+    ((opt_a)) && set_ip_addr $optarg_a;
     ((opt_c)) && arpclear;
     ((opt_d)) && dnscheck $*;
-    ((opt_m)) && pingmonitor $*;
-    ((opt_p)) && pingwait $*;
-    ((opt_i)) && set_ip_addr $optarg_i;
+    ((opt_m || opt_w)) && pingmonitor $optarg_m;
     ((opt_h)) && { usage; exit 0; }
 
     exit 0
@@ -107,4 +107,3 @@ if [ "$(basename -- $0)" == "$(basename network.sh)" ]; then
     main $*
 fi
 # VIM: ts=4:sw=4:sts=4:expandtab
-
