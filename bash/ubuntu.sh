@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: ubuntu quirks and it's remedies
 #  CREATED: 04/05/18 10:34:37 PDT
-# MODIFIED: 07/Feb/2021 20:26:39 PST
+# MODIFIED: 06/Aug/2021 11:22:58 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -12,6 +12,15 @@
 PATH=/usr/bin:/usr/sbin:.:/auto/opt/bin:/bin
 
 [[ "$(basename ubuntu.sh)" == "$(basename -- $0)" && -f $HOME/.bashrc.dev ]] && { source $HOME/.bashrc.dev; }
+
+function dmi_decode_str()
+{
+    local DMI_DECODE_FIELDS="bios-vendor bios-version bios-release-date system-manufacturer system-product-name system-version system-serial-number system-uuid baseboard-manufacturer baseboard-product-name baseboard-version baseboard-serial-number baseboard-asset-tag chassis-manufacturer chassis-type chassis-version chassis-serial-number chassis-asset-tag processor-family processor-manufacturer processor-version processor-frequency";
+    local s;
+    for s in $DMI_DECODE_FIELDS;
+        do echo "$s: $(sudo dmidecode -s $s)";
+    done;
+}
 
 function disable_netplan()
 {
@@ -25,7 +34,13 @@ function disable_netplan()
     sudo systemctl disable systemd-networkd.socket systemd-networkd networkd-dispatcher systemd-networkd-wait-online
     sudo systemctl mask systemd-networkd.socket systemd-networkd networkd-dispatcher systemd-networkd-wait-online
     #sudo vim /etc/systemd/resolved.conf
-    sudo systemctl restart systemd-resolved
+    #sudo systemctl restart systemd-resolved
+    sudo systemctl disable systemd-resolved.service
+    sudo systemctl stop systemd-resolved
+    #sudo apt install resolvconf
+    sudo systemctl disable --now resolvconf.service rdnssd.service
+    sudo systemctl stop resolvconf.service rdnssd.service
+    sudo systemctl mask resolvconf.service rdnssd.service
 }
 
 function apt_cleanup()
@@ -129,11 +144,13 @@ usage()
     echo "Options:"
     echo "  -h              - print this help"
     echo "  -c              - cleanup apt install cache, broken links"
+    echo "  -d              - laptop serial number (DMI) details"
     echo "  -r              - reinstall unity"
     echo "  -i <nfs-ip>     - NFS server IP-addr/FQDN"
     echo "  -l <lcl-path>   - local path for NFS mount"
     echo "  -p <nfs-path>   - path on NFS server for NFS mount"
     echo "  -m              - mount NFS with given inputs (-i,-l,-p)"
+    echo "  -n              - disable netplan, re-enable ifupdown, dns"
     echo "  -s              - list all serial devices on laptop"
     echo "  -u              - unmount NFS with given inputs (-l)"
 }
@@ -142,7 +159,7 @@ usage()
 # It can then be included in other files for functions.
 main()
 {
-    PARSE_OPTS="hci:l:p:mrsu"
+    PARSE_OPTS="hcdi:l:p:mnrsu"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -168,10 +185,12 @@ main()
     #[[ $EUID -ne 0 ]] && { die "This script must be run as sudo/root"; }
     ((opt_h)) && { usage; }
     ((opt_c)) && { apt_cleanup $*; }
+    ((opt_c)) && { dmi_decode_str; }
     ((opt_i)) && { NFS_IP=$optarg_i; }
     ((opt_l)) && { LCL_PATH=$optarg_l; }
     ((opt_p)) && { NFS_PATH=$optarg_p; }
     ((opt_m)) && { mount_nfs $NFS_IP $NFS_PATH $LCL_PATH; }
+    ((opt_n)) && { disable_netplan; }
     ((opt_r)) && { reinstall_unity $*; }
     ((opt_s)) && { list_serial_dev $*; }
     ((opt_u)) && { umount_nfs $LCL_PATH; }

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Tar wrappers
 #  CREATED: 07/17/13 15:53:58 IST
-# MODIFIED: 21/May/2018 07:10:28 PDT
+# MODIFIED: 19/Apr/2021 12:09:59 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -12,41 +12,53 @@
 # Source .bashrc.dev only if invoked as a sub-shell.
 [[ "$(basename tar.sh)" == "$(basename -- $0)" && -f $HOME/.bashrc.dev ]] && { source $HOME/.bashrc.dev; }
 
+#COMPRESS_OPTS="-X $CUST_CONFS/tarexclude"
+
 function archive()
 {
-    test -e $2 && echo "archiving $2 into $2.$1" || { echo "'$2' is not a valid path"; return $EINVAL; }
-    case $1 in
-        7z)   7za a -t7z -mx9 $2.$1 $2   ;;
-        bz2)  tar cvjf -X $CUST_CONFS/tarexclude $2.$1 $2    ;;
-        gz)   tar cvzf -X $CUST_CONFS/tarexclude $2.$1 $2    ;;
-        tar)  tar cvf -X $CUST_CONFS/tarexclude $2.$1 $2     ;;
-        tbz2) tar cvjf -X $CUST_CONFS/tarexclude $2.$1 $2    ;;
-        tgz)  tar cvzf -X $CUST_CONFS/tarexclude $2.$1 $2    ;;
-        rar)  rar x $2    ;;
-        zip)  zip $2      ;;
-        Z)    compress $2 ;;
-        *)    echo "'$1' cannot be compressed via archive()"        ;;
-    esac
+    local ext=$1 fnm; shift;
+    [[ $# -eq 1 ]] && test ! -e $2 && { echo "'$2' is not a valid path"; return $EINVAL; }
+    fnms="$*";
+    for fnm in $fnms; do
+        echo "archive $fnm into $fnm.$ext";     # continue;
+        case $ext in
+            7z)   7za a -t7z -mx9 $fnm.$ext $fnm   ;;
+            bz2)  tar cvjf $COMPRESS_OPTS $fnm.tar.$ext $fnm && rm -rf $fnm ;;
+            gz)   tar cvzf $COMPRESS_OPTS $fnm.tar.$ext $fnm && rm -rf $fnm ;;
+            tar)  tar cvf $COMPRESS_OPTS $fnm.$ext $fnm  && rm -rf $fnm ;;
+            tbz2) tar cvjf $COMPRESS_OPTS $fnm.$ext $fnm && rm -rf $fnm ;;
+            tgz)  tar cvzf $COMPRESS_OPTS $fnm.$ext $fnm && rm -rf $fnm ;;
+            rar)  rar x $fnm    ;;
+            zip)  zip $fnm      ;;
+            Z)    compress $fnm ;;
+            *)    echo "'$ext' cannot be compressed via archive()"        ;;
+        esac
+    done
+    bail;
 }
 
 function extract()
 {
-    local file=$(basename $1); local fpath=$1; local dname=$(untar_dname $fpath)
-    [[ -e $fpath ]] && echo "extract $fpath into $dname/" || { echo "File $fpath not found"; return $EINVAL; }
-    case $fpath in
-        *.7z)       7za x $fpath      ;;
-        *.tar.bz2)  tar xvjf $fpath   ;;
-        *.tar.gz)   tar xvzf $fpath   ;;
-        *.bz2)      bunzip2 $fpath    ;;
-        *.rar)      unrar x $fpath    ;;
-        *.gz)       gunzip $fpath     ;;
-        *.tar)      tar xvfp $fpath   ;;
-        *.tbz2)     tar xvjf $fpath   ;;
-        *.tgz)      tar xvzf $fpath   ;;
-        *.zip)      unzip $fpath      ;;
-        *.Z)        uncompress $fpath ;;
-        *)          echo "$fpath can not be extracted via extract()" ;;
-    esac
+    [[ $# -eq 1 ]] && test ! -e $1 && { echo "'$1' is not a valid path"; return $EINVAL; }
+    local fnms="$*" fnm dname;
+    for fnm in $fnms; do
+        dname=$(untar_dname $fnm);
+        echo "extract $fnm into $dname/"
+        case $fnm in
+            *.7z)       7za x $fnm      ;;
+            *.tar.bz2)  tar xvjf $fnm   ;;
+            *.tar.gz)   tar xvzf $fnm   ;;
+            *.bz2)      bunzip2 $fnm    ;;
+            *.rar)      unrar x $fnm    ;;
+            *.gz)       gunzip $fnm     ;;
+            *.tar)      tar xvfp $fnm   ;;
+            *.tbz2)     tar xvjf $fnm   ;;
+            *.tgz)      tar xvzf $fnm   ;;
+            *.zip)      unzip $fnm      ;;
+            *.Z)        uncompress $fnm ;;
+            *)          echo "$fnm can not be extracted via extract()" ;;
+        esac
+    done
     bail;
 }
 
@@ -118,7 +130,7 @@ main()
         usage && exit $EINVAL;
     fi
 
-    ((opt_c)) && archive $optarg_c $1;
+    ((opt_c)) && archive $optarg_c "$*";
     ((opt_d)) && untar_dname $1;
     ((opt_l)) && list $1;
     ((opt_x)) && extract $1;
@@ -131,4 +143,3 @@ if [ "$(basename -- $0)" == "$(basename tar.sh)" ]; then
     main $*
 fi
 # VIM: ts=4:sw=4:sts=4:expandtab
-
