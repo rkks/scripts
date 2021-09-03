@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: ubuntu quirks and it's remedies
 #  CREATED: 04/05/18 10:34:37 PDT
-# MODIFIED: 03/Sep/2021 11:55:42 IST
+# MODIFIED: 03/Sep/2021 12:05:10 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -24,8 +24,8 @@ function dmi_decode_str()
 
 function disable_netplan()
 {
-    #sudo apt install resolvconf    #sudo vim /etc/systemd/resolved.conf -- NOT NEEDED
-    sudo apt install ifupdown       #sudo vim /etc/network/interfaces
+    #sudo apt install resolvconf        #sudo vim /etc/systemd/resolved.conf -- NOT NEEDED
+    sudo apt install ifupdown dnsmasq   #sudo vim /etc/network/interfaces
     sudo systemctl unmask networking
     sudo systemctl enable networking
     sudo systemctl restart networking

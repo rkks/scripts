@@ -180,8 +180,17 @@ pull_extra()
 
 install_tools()
 {
-    sudo apt-get install -y git exuberant-ctags cscope fluxbox gnome-terminal;
-    sudo apt-get install -y dsniff tcpkill fortune-mod cowsay vnc4server toilet;
+    sudo add-apt-repository "deb http://archive.ubuntu.com/ubuntu $(lsb_release -sc) main universe";
+    sudo apt-get update &&  \
+    sudo apt-get install -y git exuberant-ctags vim toilet autocutsel cscope\
+        fortune-mod cowsay toilet tmux net-tools ifupdown dnsmasq expect;
+    #sudo apt install -y build-essential dnsniff tcpkill vnc4server;
+    #sudo apt install -y auditd  # To monitor which process is modifying given file
+    #sudo apt install -y python-is-python3 python3-pip build-essential minicom
+    #sudo apt install -y ttf-mscorefonts-installer audacious openfortivpn p7zip-full
+    #sudo apt install -y ubuntu-restricted-extras libavcodec-extra gpaint wireshark
+    #sudo apt install -y strongswan libcharon-extra-plugins pptp-linux vlc kmplayer
+    #openvpn resolvconf wpasupplicant libxmlsec1-dev jq
 }
 
 install_virt()
@@ -190,12 +199,6 @@ install_virt()
     # virtinst - cmdline tools for VM mgmt, virt-manager - GUI tool for VM mgmt
     sudo apt install qemu-kvm libvirt-bin bridge-utils virtinst virt-manager &&
     sudo usermod -aG libvirt $USER && sudo usermod -aG kvm $USER
-}
-
-ubuntu_install()
-{
-    sudo add-apt-repository "deb http://archive.ubuntu.com/ubuntu $(lsb_release -sc) main universe"
-    sudo apt-get update && sudo apt-get install exuberant-ctags cscope git build-essential
 }
 
 function usage()
