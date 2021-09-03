@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: ubuntu quirks and it's remedies
 #  CREATED: 04/05/18 10:34:37 PDT
-# MODIFIED: 06/Aug/2021 11:22:58 IST
+# MODIFIED: 03/Sep/2021 11:55:42 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -24,23 +24,15 @@ function dmi_decode_str()
 
 function disable_netplan()
 {
-    sudo apt install ifupdown
-    #sudo vim /etc/network/interfaces
-    sudo ifdown --force ens3 lo && sudo ifup -a
+    #sudo apt install resolvconf    #sudo vim /etc/systemd/resolved.conf -- NOT NEEDED
+    sudo apt install ifupdown       #sudo vim /etc/network/interfaces
     sudo systemctl unmask networking
     sudo systemctl enable networking
     sudo systemctl restart networking
-    sudo systemctl stop systemd-networkd.socket systemd-networkd networkd-dispatcher systemd-networkd-wait-online
-    sudo systemctl disable systemd-networkd.socket systemd-networkd networkd-dispatcher systemd-networkd-wait-online
-    sudo systemctl mask systemd-networkd.socket systemd-networkd networkd-dispatcher systemd-networkd-wait-online
-    #sudo vim /etc/systemd/resolved.conf
-    #sudo systemctl restart systemd-resolved
-    sudo systemctl disable systemd-resolved.service
-    sudo systemctl stop systemd-resolved
-    #sudo apt install resolvconf
-    sudo systemctl disable --now resolvconf.service rdnssd.service
-    sudo systemctl stop resolvconf.service rdnssd.service
-    sudo systemctl mask resolvconf.service rdnssd.service
+    sudo systemctl stop systemd-networkd.socket systemd-networkd networkd-dispatcher systemd-networkd-wait-online systemd-resolved resolvconf.service rdnssd.service
+    sudo systemctl disable --now systemd-networkd.socket systemd-networkd networkd-dispatcher systemd-networkd-wait-online systemd-resolved.service resolvconf.service rdnssd.service
+    sudo systemctl mask systemd-networkd.socket systemd-networkd networkd-dispatcher systemd-networkd-wait-online systemd-resolved.service resolvconf.service rdnssd.service
+    sudo ifdown --force -a && sudo ifup -a
 }
 
 function apt_cleanup()

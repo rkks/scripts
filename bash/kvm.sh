@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: KVM create/modify/update VMs -- Vagrant UP alternative
 #  CREATED: 03/28/16 15:13:58 IST
-# MODIFIED: 01/Sep/2021 14:37:08 IST
+# MODIFIED: 01/Sep/2021 16:12:41 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -96,6 +96,12 @@ function list_vms()
 {
     local name=vms;
     virsh list $RUN$name
+}
+
+function install_kvm()
+{
+    sudo apt install -y qemu qemu-kvm libvirt-daemon libvirt-clients\
+        bridge-utils virt-manager qemu-utils;
 }
 
 usage()

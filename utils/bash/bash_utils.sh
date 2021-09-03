@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 08/Feb/2021 05:23:53 PST
+# MODIFIED: 02/Sep/2021 12:04:21 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -507,6 +507,12 @@ function mount_nfs()
 }
 
 function umount_nfs() { [[ $# -ne 1 ]] && { die "usage: umount_nfs <mnt_path>"; } || { sudo umount -l $1; sudo umount -f $1; }; }
+
+function sys_status() {
+    for svc in "networking dnsmasq dbus ssh cron"; do
+        sudo systemctl status $svc
+    done
+}
 
 usage()
 {
