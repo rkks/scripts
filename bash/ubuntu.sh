@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: ubuntu quirks and it's remedies
 #  CREATED: 04/05/18 10:34:37 PDT
-# MODIFIED: 03/Sep/2021 12:05:10 IST
+# MODIFIED: 11/Sep/2021 18:02:16 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -22,6 +22,17 @@ function dmi_decode_str()
     done;
 }
 
+function systemd_vnc_svc()
+{
+    # Add service template Ex. /etc/systemd/system/vncserver@.service, then
+    sudo cp ~/conf/ubuntu/etc/systemd/system/vncserver@.service /etc/systemd/system/
+    sudo systemctl daemon-reload
+    sudo systemctl enable vncserver@1.service
+    sudo systemctl start vncserver@1.service
+    sudo systemctl status vncserver@1.service
+    journalctl -xe
+}
+
 function disable_netplan()
 {
     #sudo apt install resolvconf        #sudo vim /etc/systemd/resolved.conf -- NOT NEEDED
@@ -32,7 +43,8 @@ function disable_netplan()
     sudo systemctl stop systemd-networkd.socket systemd-networkd networkd-dispatcher systemd-networkd-wait-online systemd-resolved resolvconf.service rdnssd.service
     sudo systemctl disable --now systemd-networkd.socket systemd-networkd networkd-dispatcher systemd-networkd-wait-online systemd-resolved.service resolvconf.service rdnssd.service
     sudo systemctl mask systemd-networkd.socket systemd-networkd networkd-dispatcher systemd-networkd-wait-online systemd-resolved.service resolvconf.service rdnssd.service
-    sudo ifdown --force -a && sudo ifup -a
+    #sudo ifdown --force -a && sudo ifup -a
+    #sudo invoke-rc.d dnsmasq restart
 }
 
 function apt_cleanup()
