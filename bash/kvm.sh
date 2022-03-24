@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: KVM create/modify/update VMs -- Vagrant UP alternative
 #  CREATED: 03/28/16 15:13:58 IST
-# MODIFIED: 01/Sep/2021 16:12:41 IST
+# MODIFIED: 23/Mar/2022 21:20:02 PDT
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -10,6 +10,18 @@
 #set -uvx   # Warn unset vars, Verbose (echo each command), Enable debug mode
 
 [[ "$(basename vbox.sh)" == "$(basename -- $0)" && -f $HOME/.bashrc.dev ]] && { source $HOME/.bashrc.dev; }
+
+function check_virt_on()
+{
+    local vtx=$(lscpu | grep Virt | awk '{print $2}')
+    [[ $vtx == "VT-x" ]]&& echo "Intel VT-x in BIOS - ON"
+    local vmx=$(cat /proc/cpuinfo | grep vmx | wc -l)
+    [[ $vmx -gt 0 ]]    && echo "CPU VMX on Boot    - ON"
+    local sriov=$(cat /proc/cmdline | grep intel_iommu | wc -l)
+    [[ $sriov -gt 0 ]]  && echo "Intel SR-IOV IOMMU - ON"
+    local sriovpt=$(cat /proc/cmdline | grep -w iommu | wc -l)
+    [[ $sriovpt -gt 0 ]]&& echo "Intel SR-IOV PT    - ON"
+}
 
 function create_vm()
 {

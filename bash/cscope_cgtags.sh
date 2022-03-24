@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Cscope Utils
 #  CREATED: 06/25/13 11:05:14 IST
-# MODIFIED: 13/Nov/2019 23:26:37 PST
+# MODIFIED: 14/Dec/2021 20:28:58 PST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -77,7 +77,7 @@ function global_db_create()
     [[ ! -z $(ls G*TAGS 2> /dev/null) ]] && { echo "GNU global db exist. Clean using global_db_clean"; return; }
 
     log DEBUG "Create global db in $PWD"
-    global_db_update;
+    run global -u   #> /dev/null 2>&1
 }
 
 function global_db_update()

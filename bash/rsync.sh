@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Invokes rsyncs with well known better options.
 #  CREATED: 06/29/13 16:14:34 IST
-# MODIFIED: 10/24/17 14:36:30 IST
+# MODIFIED: 23/Mar/2022 21:14:43 PDT
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -25,6 +25,8 @@
 
 # contains a wildcard pattern per line of files to exclude. has no entries -- sync everything
 RSYNC_EXCLUDE=$CUST_CONFS/rsyncexclude
+# Maximum bandwidth to consume. suffix g/m/k identify units giga/mega/kilo-bps
+RSYNC_MAX_BW=10m
 
 # common rsync options
 # -a - sync all file perms/attributes
@@ -46,6 +48,7 @@ RSYNC_EXCLUDE=$CUST_CONFS/rsyncexclude
 # --safe-links - ignore symlinks that point outside the tree
 RSYNC_OPTS="-ahiuWxz -e ssh --stats --force --delete --safe-links --out-format=%i|%n"
 RSYNC_OPTS+=" --log-file=$SCRPT_LOGS/rsync.log --exclude-from=$RSYNC_EXCLUDE"
+RSYNC_OPTS+=" --bwlimit=$RSYNC_MAX_BW"
 #RSYNC_OPTS+=" --rsync-path=/homes/raviks/tools/bin/freebsd/rsync"
 
 function rsync_dir()
