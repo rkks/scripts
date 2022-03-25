@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: tmux handler script
 #  CREATED: 01/28/14 10:51:03 IST
-# MODIFIED: 10/07/14 16:20:06 IST
+# MODIFIED: 25/Mar/2022 00:48:43 PDT
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2014, Ravikiran K.S.
@@ -12,6 +12,7 @@
 # No utilities from ~/.bashrc.dev are used here, except PATH. So, only doing that.
 UNAMES=$(uname -s)
 export PATH=".:$HOME/scripts/bin:$HOME/tools/$UNAMES/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+WIN_NAMES='bld tb1 tb2 tb3 th1 th2 th3 any all dev'
 
 function check_os_load()
 {
@@ -22,27 +23,63 @@ function check_os_load()
     echo "$UPTIME" #(tmux_load.sh)
 }
 
+function create_session()
+{
+    [[ $# -ne 1 ]] && { echo "Usage: $FUNCNAME <sess-name>"; return $EINVAL; }
+    # has-session is better, $(tmux list-sessions -F '#S' | grep -w $1)
+    tmux has-session -t $1 > /dev/null 2>&1; local rval=$?;
+    [[ $rval -eq 0 ]] && { echo "session $1 already exists"; return $EINVAL; }
+    tmux start-server
+    for name in $WIN_NAMES; do
+        if [ -z $SESS_UP ]; then
+            local SESS_UP=$1;
+            tmux new-session -d -s $1 -n $name\; split-window -h;
+        else
+            tmux new-window -a -t $1 -n $name\; split-window -h;
+        fi
+    done
+}
+
+function execute_cmds()
+{
+    [[ $# -ne 1 ]] && { echo "Usage: $FUNCNAME <cmd-file>"; return $EINVAL; }
+    tmux list-sessions > /dev/null 2>&1; local rval=$?;
+    [[ $rval -ne 0 ]] && { echo "no sessions exist"; return $EINVAL; }
+    [[ ! -e $1 ]] && { echo "cmds file $1 does not exist"; return $EINVAL; }
+    local rval=0; local line=""; local sess=""; local cmds="";
+    while read -r line; do
+        [[ "$line" == \#* ]] && { continue; }
+        IFS=, read -r sess cmds <<<"$line";
+        #echo "tmux send-keys -t $sess $cmds C-m";
+        tmux send-keys -t $sess "$cmds" C-m;
+        rval=$?; [[ $rval -ne 0 ]] && { break; }
+    done < $1
+}
+
 usage()
 {
     echo "Usage: tmux.sh <-h|-a|-c|-e|-k|-l|-n <new-session-name>|-o|-r>"
     echo "Options:"
-    echo "  -a  - attach to available session on this machine"
-    echo "  -c  - check machine load on this machine"
-    echo "  -e  - exclusive attach (detaches other clients)"
-    echo "  -i  - print tmux information on this machine"
-    echo "  -k  - list tmux key bindings of current ~/.tmux.conf"
-    echo "  -l  - list tmux sessions on this machine"
-    echo "  -o  - list all commands supported by current tmux"
-    echo "  -r  - reload ~/.tmux.conf for current session"
-    echo "  -n <session-name> - start new session with given name"
-    echo "  -h  - print this help message"
+    echo "  -a <sess-name>  - attach to given session (pass -x for exclusive)"
+    echo "  -c              - check machine load on this machine"
+    echo "  -e <cmd-file>   - execute tmux commands in the given file"
+    echo "  -i              - print tmux information on this machine"
+    echo "  -k              - list tmux key bindings of current ~/.tmux.conf"
+    echo "  -l              - list tmux sessions on this machine"
+    echo "  -m              - list all commands supported by current tmux"
+    echo "  -n <sess-name>  - start new session with given name"
+    echo "  -r              - reload ~/.tmux.conf for current session"
+    echo "  -s <sess-name>  - stop session with given name"
+    echo "  -t              - list all clients connected to local tmux server"
+    echo "  -x              - exclusive attach (detaches other clients)"
+    echo "  -h              - print this help message"
 }
 
 # Each shell script has to be independently testable.
 # It can then be included in other files for functions.
 main()
 {
-    local PARSE_OPTS="haceikln:or"
+    local PARSE_OPTS="ha:ce:iklmn:rs:tx"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -65,15 +102,18 @@ main()
         usage && exit $EINVAL;
     fi
 
-    ((opt_a)) && tmux attach;           # non-exclusive attach to existing session
-    ((opt_c)) && check_os_load;         # check machine load
-    ((opt_e)) && tmux attach -d;        # exclusive (detach all other clients)
-    ((opt_i)) && tmux info;             # check machine load
-    ((opt_k)) && tmux list-keys;        # list key binding
-    ((opt_l)) && tmux list-sessions;    # list existing sessions
-    ((opt_n)) && tmux new -s $optarg_n; # new session
-    ((opt_o)) && tmux list-commands;    # list commands
+    ((opt_c)) && check_os_load;                 # check machine load
+    ((opt_i)) && tmux info;                     # check machine load
+    ((opt_k)) && tmux list-keys;                # list key binding
+    ((opt_l)) && tmux list-sessions;            # list existing sessions
+    ((opt_m)) && tmux list-commands;            # list commands
+    ((opt_t)) && tmux list-clients;             # list clients
+    ((opt_s)) && tmux kill-session -t $optarg_s;# stop session
     ((opt_r)) && tmux source-file ~/.tmux.conf; # reload conf file
+    ((opt_n)) && create_session $optarg_n;      # new session
+    ((opt_e)) && execute_cmds $optarg_e;        # execute tmux cmds from file
+    ((opt_x)) && { XCL="-d"; }  # exclusive (detach all other clients)
+    ((opt_a)) && tmux attach -t $optarg_a $XCL; # attach to existing sess
     ((opt_h)) && { usage; exit 0; }
 
     exit 0
