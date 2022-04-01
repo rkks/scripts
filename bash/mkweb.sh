@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Script to build the gh-pages
 #  CREATED: 06/09/17 19:27:48 IST
-# MODIFIED: 09/Feb/2021 12:49:48 IST
+# MODIFIED: 06/Feb/2022 02:22:25 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -51,7 +51,7 @@ set_paths()
     # order if css import matters, first bootstrap.css, then color theme
     PD_CMN_OPTS="--standalone -f markdown "; # --smart enabled by default now
 #    PD_CV_OPTS+="-c $CSS/font.css -c https://fonts.googleapis.com/css?family=Open+Sans:regular,italic,bold";
-    PD_CV_OPTS="$PD_CMD_OPTS -c $CSS/resume.css ";
+    PD_CV_OPTS="$PD_CMN_OPTS -c $CSS/resume.css ";
     PD_WIKI_OPTS="--template=website.html -B $NAVBAR -A $FOOTER \
         -c $CSS/bootstrap.css -c $CSS/theme.css -c $CSS/web.css";
     PD_OPTS="$PD_CMN_OPTS $PD_WIKI_OPTS"
@@ -129,10 +129,12 @@ build_resume()
     [[ ! -f $1 ]] && { echo "$1 file not found"; return; }
     local fpath="$1"; local file=$(basename $fpath); local name=${file%.*};
     echo "[PD] $(date '+%a, %d %b %Y 00:00:00 +0530') | $name.html";
-    pandoc $PD_CV_OPTS -o $PUBLISH/$name.html $fpath
+    echo "pandoc $PD_CV_OPTS -o $PUBLISH/$name.html $fpath; pwd $(pwd)"
+    pandoc $PD_CV_OPTS --metadata pagetitle="Resume" -o $PUBLISH/$name.html $fpath
     #pandoc $PD_CV_OPTS --to docx -o $PUBLISH/$name.docx $fpath
     echo "[PD] $(date '+%a, %d %b %Y 00:00:00 +0530') | $name.pdf";
-    wkhtmltopdf -q --disable-smart-shrinking -s A3 $PUBLISH/$name.html $PUBLISH/$name.pdf
+    # --disable-smart-shrinking 
+    wkhtmltopdf -q -s A3 $PUBLISH/$name.html $PUBLISH/$name.pdf
 }
 
 build_index()

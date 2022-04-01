@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: ubuntu quirks and it's remedies
 #  CREATED: 04/05/18 10:34:37 PDT
-# MODIFIED: 11/Sep/2021 18:02:16 IST
+# MODIFIED: 20/Sep/2021 10:11:33 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -22,15 +22,23 @@ function dmi_decode_str()
     done;
 }
 
+function systemd_strongswan()
+{
+    sudo systemctl enable ipsec
+    sudo systemctl status ipsec
+}
+
 function systemd_vnc_svc()
 {
     # Add service template Ex. /etc/systemd/system/vncserver@.service, then
-    sudo cp ~/conf/ubuntu/etc/systemd/system/vncserver@.service /etc/systemd/system/
-    sudo systemctl daemon-reload
-    sudo systemctl enable vncserver@1.service
-    sudo systemctl start vncserver@1.service
-    sudo systemctl status vncserver@1.service
-    journalctl -xe
+    #sudo cp ~/conf/ubuntu/etc/systemd/system/vncserver@.service /etc/systemd/system/
+    #sudo systemctl daemon-reload
+    #sudo systemctl enable vncserver@1.service
+    #sudo systemctl start vncserver@1.service
+    #sudo systemctl status vncserver@1.service
+    #journalctl -xe
+    #sudo echo VNCSERVERS=1:$USER > /etc/default/vncserver
+    #sudo update-rc.d vncserver defaults
 }
 
 function disable_netplan()

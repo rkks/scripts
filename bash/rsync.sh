@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Invokes rsyncs with well known better options.
 #  CREATED: 06/29/13 16:14:34 IST
-# MODIFIED: 23/Mar/2022 21:14:43 PDT
+# MODIFIED: 01/Apr/2022 13:59:34 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -48,7 +48,7 @@ RSYNC_MAX_BW=10m
 # --safe-links - ignore symlinks that point outside the tree
 RSYNC_OPTS="-ahiuWxz -e ssh --stats --force --delete --safe-links --out-format=%i|%n"
 RSYNC_OPTS+=" --log-file=$SCRPT_LOGS/rsync.log --exclude-from=$RSYNC_EXCLUDE"
-RSYNC_OPTS+=" --bwlimit=$RSYNC_MAX_BW"
+RSYNC_OPTS+=" --progress --bwlimit=$RSYNC_MAX_BW"
 #RSYNC_OPTS+=" --rsync-path=/homes/raviks/tools/bin/freebsd/rsync"
 
 function rsync_dir()
@@ -84,8 +84,9 @@ function rsync_list()
 
 usage()
 {
-    echo "usage: rsync.sh [-d|-l <list-file>|-n] <src-dir> <dst-dir>"
+    echo "usage: rsync.sh [-b <bw>|-l <list-file>|-n|-r] <src-dir> <dst-dir>"
     echo "Options:"
+    echo "  -b <bw-limit>   - throttle rsync bandwidth to input range (suffix k/m/g)"
     echo "  -r              - start recursive rsync between given directory pair"
     echo "  -l <list-file>  - do recursive rsync on all files/directores listed in given file"
     echo "  -n              - enable DRY_RUN during rsync. Gives list of changes to be done"
@@ -96,7 +97,7 @@ usage()
 # It can then be included in other files for functions.
 main()
 {
-    PARSE_OPTS="hl:rn"
+    PARSE_OPTS="hb:l:nr"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -120,6 +121,7 @@ main()
     fi
 
     ((opt_n)) && { export RSYNC_DRY_RUN=TRUE; }
+    ((opt_b)) && { RSYNC_MAX_BW=$optarg_b; }
     ((opt_r)) && { rsync_dir $*; }
     ((opt_l)) && { rsync_list "$optarg_l $*"; }
     ((opt_h)) && { usage; exit 0; }

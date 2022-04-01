@@ -1,3 +1,18 @@
+#Simple Command
+#define <command-name>
+#   [gdb commands here]
+#end
+#document <command-name>
+#   <help text>
+#end
+
+#Auto Commands
+#break <some-point>
+#commands
+#silent
+#   [gdb commands here]
+#end
+
 #-----------Init Control----------
 define binit
     tbreak _init
@@ -317,7 +332,7 @@ end
 
 document dump_to_file
     Write a range of memory to a file in Intel ihex (hexdump) format.
-    Usage:	dump_to_file filename start_addr end_addr
+    Usage: dump_to_file filename start_addr end_addr
 end
 
 #------Read/Writes-------
@@ -348,3 +363,39 @@ Write double word at address arg0 to a given value/instruction
 Usage: wdword addr value/instr
 end
 
+define eflags
+    printf "     OF <%d>  DF <%d>  IF <%d>  TF <%d>",\
+           (($eflags >> 0xB) & 1), (($eflags >> 0xA) & 1), \
+           (($eflags >> 9) & 1), (($eflags >> 8) & 1)
+    printf "  SF <%d>  ZF <%d>  AF <%d>  PF <%d>  CF <%d>",\
+           (($eflags >> 7) & 1), (($eflags >> 6) & 1),\
+           (($eflags >> 4) & 1), (($eflags >> 2) & 1), ($eflags & 1)
+    printf "     ID <%d>  VIP <%d> VIF <%d> AC <%d>",\
+           (($eflags >> 0x15) & 1), (($eflags >> 0x14) & 1), \
+           (($eflags >> 0x13) & 1), (($eflags >> 0x12) & 1)
+    printf "  VM <%d>  RF <%d>  NT <%d>  IOPL <%d>",\
+           (($eflags >> 0x11) & 1), (($eflags >> 0x10) & 1),\
+           (($eflags >> 0xE) & 1), (($eflags >> 0xC) & 3)
+end
+
+document eflags
+Print eflags register.
+end
+
+# Shell execution example
+define gprbuild
+  if $argc == 0
+      shell gprbuild
+  end
+  if $argc == 1
+      shell gprbuild $arg0
+  end
+  if $argc > 1
+      help gprbuild
+  end
+end
+
+document gprbuild
+Run the gprbuild program, optionally specifying the project name as parameter.
+Usage: gprbuild [project_name]
+end
