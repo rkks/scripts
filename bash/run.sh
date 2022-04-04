@@ -2,7 +2,7 @@
 #  DETAILS: Makes log file by redirecting both stdout and stderr.
 #           The main difference is, this uses 'tee' than >.
 #  CREATED: 11/13/12 19:09:06 IST
-# MODIFIED: 14/Dec/2018 07:00:05 PST
+# MODIFIED: 04/Apr/2022 17:12:54 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2012, Ravikiran K.S.
@@ -73,7 +73,7 @@ main()
 
     ((opt_h)) && { usage; exit 0; }
     #export SHDEBUG=yes;
-    ((opt_e)) && { NOTIFY_EMAIL="$optarg_e"; } || { NOTIFY_EMAIL=$COMP_EMAIL_ID; }
+    ((opt_e)) && { NOTIFY_EMAIL="$optarg_e"; }
     ((opt_c)) && { RUN_LOG="run.log"; truncate --size 0 $RUN_LOG; batch_run $optarg_c; }
 
     exit 0

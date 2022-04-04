@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 29/Mar/2022 03:42:25 PDT
+# MODIFIED: 04/Apr/2022 18:24:13 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -26,8 +26,6 @@ export ENOTSUP=48    # Operation not supported
 export EOVERFLOW=79  # variable overflow
 export ETIMEDOUT=145 # Operation timedout
 export EASSERT=199   # Assertion failed
-
-export NOTIFY_EMAIL=friends4web@gmail.com    # used by file_rotate()/batch_run()
 
 export FILE_MAX_SZ=10240                   # In KB
 export FILE_MAX_BKUPS=1                    # max num of backup files
@@ -100,22 +98,28 @@ function run()
 
 function batch_run()
 {
-    [[ $# -eq 0 ]] && { echo "Usage: $FUNCNAME <cmds-file> [continue-on-err]"; return $EINVAL; } || { local cmds=""; local rval=0; }
-    while read cmds; do [[ "$cmds" == \#* ]] && { continue; } || { run $cmds; rval=$?; }; [[ $rval -ne 0 && $# -lt 2 ]] && { break; }; done < $1
-    [[ ! -z $NOTIFY_EMAIL ]] && { [[ -f $RUN_LOG ]] && mail.sh -e $NOTIFY_EMAIL -b $RUN_LOG || echo "RUN_LOG not defined"; }; return $rval;
+    [[ $# -eq 0 ]] && { echo "Usage: $FUNCNAME <cmds-file> [continue-on-err]"; return $EINVAL; }
+    local line=""; local rval=0;
+    while read line; do
+        [[ "$line" == \#* ]] && { continue; }
+        run $line; rval=$?; [[ $rval -ne 0 && $# -lt 2 ]] && { break; };
+    done < $1
+    [[ ! -z $NOTIFY_EMAIL ]] && { [[ -f $RUN_LOG ]] && mail.sh -e $NOTIFY_EMAIL -b $RUN_LOG || echo "RUN_LOG not defined"; }
+    return $rval;
 }
 
 # Provide callback function to be called for each item in list
 function batch_func()
 {
-    [[ $# -eq 0 ]] && { echo "Usage: $FUNCNAME <cb-func-name> <list-file>"; return $EINVAL; }
-    local fname=$1; shift; local dir_list=$2; shift; local rval=0;
-    while read dir; do
-        [[ "$dir" == \#* || ! -d $dir ]] && { continue; } || { cdie $dir; }
-        log INFO "$fname $dir"
-        run "$fname $dir"; [[ $? -ne 0 ]] && { rval=1; }    # reflects if any of runs failed
-    done < $dir_list
-    return rval;
+    [[ $# -ne 2 ]] && { echo "Usage: $FUNCNAME <cb-func-name> <list-file>"; return $EINVAL; }
+    local fname=$1; shift; local list=$1; shift; local rval=0;
+    while read line; do
+        #[[ "$line" == \#* || ! -d $line ]] && { continue; } || { cdie $line; }
+        [[ "$line" == \#* ]] && { continue; }
+        note "$fname $line"
+        $fname "$line"; [[ $? -ne 0 ]] && { rval=1; }  # reflects if any of runs failed
+    done < $list
+    return $rval;
 }
 
 # usage: shell <cmd> <args>
@@ -342,6 +346,24 @@ function run_on()
         local day=$1; shift; [[ "$(date +'%d%b')" == "$day" ]] && { run "$*"; }; ;;    # Day-of-Month: 02May
     Day)
         local day=$1; shift; [[ "$(date +'%d')" == "$day" ]] && { run "$*"; }; ;;    # Day of current Month: 03
+    esac
+}
+
+# usage: func_on Mon abc.sh
+function func_on()
+{
+    local when=$1; shift; local fname=$1; shift;
+    case $when in
+    Now)
+        $fname "$*"; ;;
+    Mon|Tue|Wed|Thu|Fri|Sat|Sun)
+        [[ "$(date +'%a')" == "$when" ]] && { $fname "$*"; }; ;;
+    Date)
+        local day=$1; shift; [[ "$(date +'%d%b%Y')" == "$day" ]] && { $fname "$*"; }; ;;    # Day-of-Year: 01Apr2016
+    DoM)
+        local day=$1; shift; [[ "$(date +'%d%b')" == "$day" ]] && { $fname "$*"; }; ;;    # Day-of-Month: 02May
+    Day)
+        local day=$1; shift; [[ "$(date +'%d')" == "$day" ]] && { $fname "$*"; }; ;;    # Day of current Month: 03
     esac
 }
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: SVN related actions
 #  CREATED: 11/07/12 12:54:25 IST
-# MODIFIED: 24/Apr/2018 09:49:56 PDT
+# MODIFIED: 04/Apr/2022 08:53:26 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2012, Ravikiran K.S.
@@ -15,6 +15,20 @@ if [[ "$(basename svn.sh)" == "$(basename -- $0)" ]] && [ -f $HOME/.bashrc.dev ]
 fi
 
 LOGFILE=svn.log
+
+function svn_revision_update()
+{
+    [[ $# -eq 0 ]] && { echo "Usage: svn_revision <dir-path>"; return $EINVAL; }
+    local SVNLOG=svn.log; local STATUS=status.log; local dir=$1;
+    shell svn.sh -b $dir; shell svn.sh -s $dir; shell svn.sh -r $STATUS changes.log;
+}
+
+function no_revision_conflicts()
+{
+    [[ -f $SVNLOG ]] && { conflicts=$(cat $SVNLOG | grep "^\? "| cut -d " " -f 2 | wc -l | tr -d ' '); }
+    [[ $conflicts -eq 0 ]] && { log INFO "No conflicts found"; return 0; }
+    log ERROR "Conflicts found in $SVNLOG. Resolve & retry."; return 1;
+}
 
 function nvsvndiff()
 {

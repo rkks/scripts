@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: ubuntu quirks and it's remedies
 #  CREATED: 04/05/18 10:34:37 PDT
-# MODIFIED: 20/Sep/2021 10:11:33 IST
+# MODIFIED: 02/Apr/2022 18:10:18 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -12,6 +12,16 @@
 PATH=/usr/bin:/usr/sbin:.:/auto/opt/bin:/bin
 
 [[ "$(basename ubuntu.sh)" == "$(basename -- $0)" && -f $HOME/.bashrc.dev ]] && { source $HOME/.bashrc.dev; }
+
+function create_user()
+{
+    sudo adduser $1;
+    sudo usermod -aG sudo $1;
+}
+
+function delete_user()
+{
+}
 
 function dmi_decode_str()
 {
@@ -28,29 +38,51 @@ function systemd_strongswan()
     sudo systemctl status ipsec
 }
 
-function systemd_vnc_svc()
+function add_systemd_svc()
 {
-    # Add service template Ex. /etc/systemd/system/vncserver@.service, then
-    #sudo cp ~/conf/ubuntu/etc/systemd/system/vncserver@.service /etc/systemd/system/
-    #sudo systemctl daemon-reload
-    #sudo systemctl enable vncserver@1.service
-    #sudo systemctl start vncserver@1.service
-    #sudo systemctl status vncserver@1.service
-    #journalctl -xe
-    #sudo echo VNCSERVERS=1:$USER > /etc/default/vncserver
-    #sudo update-rc.d vncserver defaults
+    [[ $# -ne 2 ]] && { echo "Usage: $FUNCNAME <svc-name> <svc-file-dir>"; return $EINVAL; }
+    [[ ! -f "$2/$1@service" ]] && { echo "Unable to find $2/$1@service"; return $EINVAL; }
+
+    # Sample template: ~/conf/ubuntu/etc/systemd/system/vncserver@.service
+    sudo cp "$2/$1@.service" /etc/systemd/system/ &&
+    sudo systemctl daemon-reload && sudo systemctl enable "$1@1.service" &&
+    sudo systemctl start "$1@1.service" && sudo systemctl status "$1@1.service"
+    #journalctl -xe     # to debug issues
+    #sudo echo VNCSERVERS=1:$USER > /etc/default/vncserver  # does not work
+    #sudo update-rc.d vncserver defaults        # if needed
+}
+
+function disable_systemd_svc()
+{
+    [[ $# -ne 1 ]] && { echo "Usage: $FUNCNAME <svc-name>"; return $EINVAL; }
+    sudo systemctl stop $1 && sudo systemctl disable --now $1 && sudo systemctl mask $1;
+}
+
+function enable_systemd_svc()
+{
+    [[ $# -ne 1 ]] && { echo "Usage: $FUNCNAME <svc-name>"; return $EINVAL; }
+    sudo systemctl unmask $1 && sudo systemctl enable $1 && sudo systemctl restart $1;
 }
 
 function disable_netplan()
 {
-    #sudo apt install resolvconf        #sudo vim /etc/systemd/resolved.conf -- NOT NEEDED
-    sudo apt install ifupdown dnsmasq   #sudo vim /etc/network/interfaces
-    sudo systemctl unmask networking
-    sudo systemctl enable networking
-    sudo systemctl restart networking
-    sudo systemctl stop systemd-networkd.socket systemd-networkd networkd-dispatcher systemd-networkd-wait-online systemd-resolved resolvconf.service rdnssd.service
-    sudo systemctl disable --now systemd-networkd.socket systemd-networkd networkd-dispatcher systemd-networkd-wait-online systemd-resolved.service resolvconf.service rdnssd.service
-    sudo systemctl mask systemd-networkd.socket systemd-networkd networkd-dispatcher systemd-networkd-wait-online systemd-resolved.service resolvconf.service rdnssd.service
+    # resolvconf is not used, as dns server is not static, it changes based on
+    # whether laptop is connected to vpn or not. /etc/systemd/resolved.conf
+
+    # check if pkg installed. user must update cfg like /etc/network/interfaces
+    local pkgs="ifupdown dnsmasq";
+    for pkg in "$pkgs"; do
+        sudo dpkg -V $pkg;
+        [[ $? -ne 0 ]] { echo "pkg $pkg not installed"; return $EINVAL; }
+    done
+    enable_systemd_svc networking;
+    local svcs="systemd-networkd.socket systemd-networkd networkd-dispatcher"
+    svcs+=" systemd-networkd-wait-online systemd-resolved resolvconf.service"
+    svcs+=" rdnssd.service"
+    local svc;
+    for svc in $svcs; do
+        disable_systemd_svc $svc;
+    done
     #sudo ifdown --force -a && sudo ifup -a
     #sudo invoke-rc.d dnsmasq restart
 }
@@ -79,16 +111,6 @@ function list_serial_dev()
             echo "/dev/$devname - $ID_SERIAL"
         )
     done
-}
-
-function reinstall_unity()
-{
-    sudo apt-get autoremove
-    sudo apt-get install unity
-    sudo apt-get install --reinstall ubuntu-desktop
-    sudo apt-get update
-    rm -rf .compiz/
-    rm -rf .config/
 }
 
 function kernel_build()
@@ -155,9 +177,10 @@ usage()
     echo "Usage: ubuntu.sh [-h|]"
     echo "Options:"
     echo "  -h              - print this help"
+    echo "  -a <user-name>  - add sudo user with given name"
     echo "  -c              - cleanup apt install cache, broken links"
-    echo "  -d              - laptop serial number (DMI) details"
-    echo "  -r              - reinstall unity"
+    echo "  -d <user-name>  - delete user with given name"
+    echo "  -e              - laptop serial number (DMI) details"
     echo "  -i <nfs-ip>     - NFS server IP-addr/FQDN"
     echo "  -l <lcl-path>   - local path for NFS mount"
     echo "  -p <nfs-path>   - path on NFS server for NFS mount"
@@ -171,7 +194,7 @@ usage()
 # It can then be included in other files for functions.
 main()
 {
-    PARSE_OPTS="hcdi:l:p:mnrsu"
+    PARSE_OPTS="ha:cd:ei:l:p:mnrsu"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -196,14 +219,15 @@ main()
 
     #[[ $EUID -ne 0 ]] && { die "This script must be run as sudo/root"; }
     ((opt_h)) && { usage; }
+    ((opt_a)) && { create_user $optarg_a; }
+    ((opt_d)) && { sudo deluser $optarg_d; }
     ((opt_c)) && { apt_cleanup $*; }
-    ((opt_c)) && { dmi_decode_str; }
+    ((opt_e)) && { dmi_decode_str; }
     ((opt_i)) && { NFS_IP=$optarg_i; }
     ((opt_l)) && { LCL_PATH=$optarg_l; }
     ((opt_p)) && { NFS_PATH=$optarg_p; }
     ((opt_m)) && { mount_nfs $NFS_IP $NFS_PATH $LCL_PATH; }
     ((opt_n)) && { disable_netplan; }
-    ((opt_r)) && { reinstall_unity $*; }
     ((opt_s)) && { list_serial_dev $*; }
     ((opt_u)) && { umount_nfs $LCL_PATH; }
 

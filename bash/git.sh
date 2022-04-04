@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: External diff tool for git
 #  CREATED: 03/20/13 21:55:08 IST
-# MODIFIED: 08/Jan/2019 19:23:49 IST
+# MODIFIED: 04/Apr/2022 18:03:37 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -56,11 +56,19 @@ function track_branch_all()
     done
 }
 
+function git_pull_update()
+{
+    [[ $# -eq 0 ]] && { echo "Usage: $FUNCNAME <repo-path>"; return $EINVAL; }
+    [[ ! -d $1 ]] && { echo "$FUNCNAME: no repo $1 exists"; return $ENOENT; }
+    local UPDLOG=update.log;
+    cdie $1 && echo "update repo: $PWD" && git pa >> $UPDLOG;
+}
+
 function git_diff()
 {
-    local output="$(date +%d%m%Y-%H%M%S)-$@-$(id -nu)-u.diff";
-    echo "diff output: $PWD/$output";
-    git dir > $output;
+    [[ -z $DIFF_NM ]] && { DIFF_NM="$(date +%d%m%Y-%H%M%S)-$@-$(id -nu)-u.diff"; }
+    echo "diff output: $PWD/$DIFF_NM";
+    git dir > $DIFF_NM;
 }
 
 function git_clone() { [[ -z $GIT_REPO ]] && { return $EINVAL; } || { git clone $GIT_REPO $BRANCH $*; }; }
@@ -85,7 +93,8 @@ function usage()
     echo "  -a <ssh-priv-key>       - add ssh private key to agent. ex: ~/.ssh/id_rsa"
     echo "  -b <branch>             - pull branch of given name"
     echo "  -c <kv-conf-path>       - use given key-val file to config local repo"
-    echo "  -d <diff-name>          - use given diff-name generate diff-file"
+    echo "  -d <diff-name>          - use given diff-name generate diff file-name"
+    echo "  -f <diff-file-path>     - do not generate file-name, use provided name"
     echo "  -l [ws-name]            - clone repo from GIT_REPO url with opts"
     echo "  -r <remote-name> <url>  - move git repo to different hosting"
     echo "  -t                      - track all branches in remote repo"
@@ -99,7 +108,7 @@ main()
     local DIFF=$(which diff 2>/dev/null);
     [[ $# -eq 7 ]] && { [[ ! -z $DIFF ]] && $DIFF "$2" "$5"; exit 0; }  # echo $*
 
-    PARSE_OPTS="ha:b:c:d:lr:t"
+    PARSE_OPTS="ha:b:c:d:f:lr:tu:"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -125,12 +134,14 @@ main()
     ((opt_h)) && { usage; }
     ((opt_a)) && { add_ssh_key $optarg_a; }
     ((opt_b)) && { BRANCH=" -b $optarg_b"; } || { unset BRANCH; }
+    ((opt_f)) && { DIFF_NM=$optarg_f; } || { unset DIFF_NM; }
     ((opt_l)) && { git_clone $*; exit 0; }
     [[ ! -d .git ]] && { echo "Unknown git repo, .git not found"; return; }
     ((opt_d)) && { git_diff $optarg_d; }
     ((opt_c)) && { config_local_repo $optarg_c; }
     ((opt_r)) && { new_remote $optarg_r $*; }
     ((opt_t)) && { track_branch_all $*; }
+    ((opt_u)) && { git_pull_update $optarg_u; }
 
     exit 0;
 }

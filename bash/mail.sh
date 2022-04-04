@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Send mail to pre-defined email addresses
 #  CREATED: 11/19/12 14:14:03 IST
-# MODIFIED: 14/Dec/2018 03:13:55 PST
+# MODIFIED: 04/Apr/2022 16:54:50 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2012, Ravikiran K.S.
@@ -46,7 +46,7 @@ usage()
 # It can then be included in other files for functions.
 main()
 {
-    PARSE_OPTS="hb:ce:f:"
+    PARSE_OPTS="hb:c:e:f:"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -69,9 +69,9 @@ main()
         usage && exit $EINVAL;
     fi
 
-    ((opt_e)) && { MAILADDRS="$optarg_e"; } || { MAILADDRS="friends4web@gmail.com"; }
+    ((opt_e)) && { local MAILADDRS="$optarg_e"; } || { local MAILADDRS=$NOTIFY_EMAIL; }
     ((opt_b)) && mail-send "BUILD" $optarg_b
-    ((opt_c)) && mail-send "CRON" $SCRPT_LOGS/cron.log
+    ((opt_c)) && mail-send "CRON" $optarg_c
     ((opt_f)) && mail-send "AUTO" $optarg_f
     ((opt_h)) && (usage; exit 0)
 

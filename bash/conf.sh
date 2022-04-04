@@ -19,17 +19,8 @@
 #set -uvx               # Treat unset variables as an error, verbose, debug mode
 
 # .bashrc.dev not sourced as it creates cyclic dependencies during first time setting up of environment.
-
-function create_user()
-{
-    sudo adduser $1;
-    sudo usermod -aG sudo $1;
-}
-
-function delete_user()
-{
-    sudo deluser $1;
-}
+UNAMES=$(uname -s)      # machine type: Linux, FreeBSD, Darwin, SunOS
+UBUNTU_OS=$(uname -v | grep -i ubuntu | wc -l)  # distro: ubuntu, fedora
 
 function link_files()
 {
@@ -55,37 +46,25 @@ function link_files()
     done
 }
 
-# Don't link: diffexclude rsyncexclude tarexclude dir_colors_dark/light downlinks doxygen.cfg gdb_history logrotate.conf
-# Not applicable for all machines. Solaris hangs with this file. Xdefaults
+# Don't link: diffexclude rsyncexclude tarexclude dir_colors_dark/light
+# downlinks doxygen.cfg gdb_history logrotate.conf
+# Latest Ubuntu does not need ~/.xprofile, Solaris hangs with ~/Xdefaults file.
 link_confs()
 {
     echo "Linking Configuration Files/Directories - Start"
 
-    CONFS="elinks links vim"
-    CONFS+=" alias bashrc bash_profile bash_logout cshrc login login_conf profile shrc"
-    CONFS+=" cvsignore gitignore svnignore"
-    CONFS+=" mailrc pinerc screenrc toprc gvimrc vimrc tmux.conf"
-    CONFS+=" gdbinit gitattributes gitconfig indent.pro"
-    CONFS+=" cookies cvspass mail_aliases rhosts"
-    CONFS+=" hushlogin xprofile"
+    local CONFS="elinks links vim"
+    CONFS+=" alias bashrc bash_profile bash_logout profile shrc"
+    CONFS+=" login login_conf cshrc Xdefaults"
+    CONFS+=" cvsignore cvspass svnignore gitignore gitattributes gitconfig"
+    CONFS+=" mailrc pinerc screenrc toprc tmux.conf gvimrc vimrc indent.pro"
+    CONFS+=" cookies mail_aliases rhosts gdbinit hushlogin"
 
     link_files DOT $HOME/conf $HOME $CONFS
     link_files DOT $HOME/conf/custom $HOME bashrc.dev
     link_files REG $HOME/conf/vnc $HOME/.vnc xstartup xstartup_safe
 
     echo "Linking Configuration Files/Directories - Done"
-}
-
-# Do not link: bash_history gdb_history history lesshst
-link_logs()
-{
-    echo "Linking Log Files/Directories - Start"
-
-    LOGS=" "
-
-    link_files DOT $HOME/.logs $HOME $LOGS
-
-    echo "Linking Log Files/Directories - Done"
 }
 
 link_scripts()
@@ -96,8 +75,8 @@ link_scripts()
 
     [[ ! -d ~/scripts/bin ]] && { mkdir -p ~/scripts/bin; }
 
-    SCRIPTS="awk bash expect perl ruby"
-    SCRIPTS+=" 3rd-party/bash 3rd-party/perl 3rd-party/python 3rd-party/ruby"
+    local SCRIPTS="awk bash expect perl";
+    SCRIPTS+=" down/bash down/perl down/python down/ruby"
 
     for dir in $SCRIPTS; do
         [ -d "$HOME/scripts/$dir" ] && link_files REG $HOME/scripts/$dir $HOME/scripts/bin $(cd $HOME/scripts/$dir/ && ls *)
@@ -112,47 +91,90 @@ link_tools()
 
     echo "Linking Tool binary Files - Start"
 
-    [[ ! -d ~/tools/bin/linux ]] && mkdir -p ~/tools/bin/linux;
-    [[ ! -d ~/tools/bin/freebsd ]] && mkdir -p ~/tools/bin/freebsd;
+    [[ ! -d ~/tools/$UNAMES/bin ]] && mkdir -p ~/tools/$UNAMES/bin;
 
-    COMMON_TOOLS="p7zip/bin/7za"
-    COMMON_TOOLS+=" autoconf/bin/autoconf automake/bin/automake autoconf/bin/autoreconf"
-    COMMON_TOOLS+=" cscope/bin/cscope ctags/bin/ctags"
-    COMMON_TOOLS+=" git/bin/git sloccount/bin/sloccount splint/bin/splint"
-    COMMON_TOOLS+=" global/bin/global global/bin/gtags global/bin/htags"
-    COMMON_TOOLS+=" gmake/bin/make"
-    COMMON_TOOLS+=" lighttpd/sbin/lighttpd"
-    COMMON_TOOLS+=" ncdu/bin/ncdu rsync/bin/rsync tmux/bin/tmux"
-    COMMON_TOOLS+=" vim/bin/vim vim/bin/vimdiff"
+    # autoconf, automake, sloccount, splint, global, gmake, lighttpd, ncdu,
+    # 7za, rsync, tmux, vim, doxygen, strace, resin (web-svr), javac, rsnapshot
+    local tool;
+    local COMMON_TOOLS=" "
     for tool in $COMMON_TOOLS; do
-        ln -s $HOME/tools/linux/$tool $HOME/tools/bin/linux/;
-        ln -s $HOME/tools/freebsd/$tool $HOME/tools/bin/freebsd/;
+        ln -s $HOME/tools/$UNAMES/$tool $HOME/tools/$UNAMES/bin/;
     done
 
-    LINUX_TOOLS=" doxygen/bin/doxygen strace/bin/strace resin/bin/resin.sh"
-    LINUX_TOOLS+=" jdk/bin/java jdk/bin/javac resin/bin/resin.sh resin/bin/resinctl"
-    for tool in $LINUX_TOOLS; do
-        ln -s $HOME/tools/linux/$tool $HOME/tools/bin/linux/;
-    done
-
-    ln -s $HOME/tools/rsnapshot/bin/rsnapshot $HOME/tools/bin/
-    ln -s $HOME/tools/rsnapshot/bin/rsnapshot-diff $HOME/tools/bin/
+    if [ "$UNAMES" == "Linux" ]; then
+        local LINUX_TOOLS=" "
+        for tool in $LINUX_TOOLS; do
+            ln -s $HOME/tools/$UNAMES/$tool $HOME/tools/$UNAMES/bin/;
+        done
+    fi
 
     echo "Linking Tool binary Files - Done"
+}
+
+install_virt()
+{
+    # qemu - hw emulator, libvirt - VM manager, brctl - bridge mgmt
+    # virtinst - cmdline tools for VM mgmt, virt-manager - GUI tool for VM mgmt
+    VIRT_SW="qemu-kvm libvirt-bin bridge-utils virtinst virt-manager"
+    sudo apt install -y $VIRT_SW &&
+    sudo usermod -aG libvirt $USER && sudo usermod -aG kvm $USER && return $?;
+}
+
+install_tools()
+{
+    [[ $# -eq 0 ]] && { echo "Usage: $FUNCNAME <dev|lap|svr>"; return $EINVAL; }
+    [[ "$UNAMES" != "Linux" ]] && { echo "$FUNCNAME: Only linux supported"; return $EINVAL; }
+    [[ $UBUNTU_OS -eq 0 ]] && { echo "$FUNCNAME: Only ubuntu supported"; return $EINVAL; }
+
+    # Tried & junked: libcharon-standard-plugins libstrongswan-extra-plugins
+    # resolvconf wpasupplicant
+    # extra: openvpn kmplayer audacious vnc4server
+    # python-is-python3 python3-pip libxmlsec1-dev jq dnsniff tcpkill
+    # sudo apt install auditd   # To monitor which proc is modifying given file
+
+    # common development tools
+    local UBUNTU_DEV_SW="git exuberant-ctags cscope vim autocutsel tmux expect"
+    UBUNTU_DEV_SW+=" fortune-mod cowsay toilet p7zip-full ifupdown net-tools"
+
+    # common laptop software
+    local UBUNTU_LAP_SW="strongswan libcharon-extra-plugins strongswan-swanctl"
+    UBUNTU_LAP_SW+=" minicom dnsmasq pptp-linux wireshark openfortivpn gpaint"
+    UBUNTU_LAP_SW+=" ttf-mscorefonts-installer ubuntu-restricted-extras"
+    UBUNTU_LAP_SW+=" libavcodec-extra vlc"
+
+    # common server software
+    UBUNTU_SVR_SW="vagrant ansible"
+
+    sudo apt-get update; local ret=$?; [[ $ret -eq 0 ]] && return $EPERM;
+    #sudo add-apt-repository "deb http://archive.ubuntu.com/ubuntu $(lsb_release -sc) main universe";
+    case
+    'dev')
+        sudo apt-get install -y $UBUNTU_DEV_SW;
+        ;;
+    'lap')
+        sudo apt-get install -y $UBUNTU_LAP_SW;
+        ;;
+    'svr')
+        install_virt && sudo apt-get install -y $UBUNTU_SVR_SW;
+        ;;
+    *)
+        echo "Invalid input $*";
+        ;;
+    esac
+    return $?;
 }
 
 stop_cron()
 {
     echo "Configuring Cron - Stop"
-    $HOME/scripts/bin/cron.sh -l
-    $HOME/scripts/bin/cron.sh -t
+    $HOME/scripts/bin/cron.sh -l -t
     echo "Configuring Cron - Done"
 }
 
 start_cron()
 {
     echo "Configuring Cron - Start"
-    $HOME/scripts/bin/cron.sh -s $HOME/conf/custom/crontab
+    $HOME/scripts/bin/cron.sh -l -s $HOME/conf/custom/crontab
     $HOME/scripts/bin/cron.sh -l
     echo "Configuring Cron - Done"
 }
@@ -178,50 +200,24 @@ pull_extra()
     pull_github refer;
 }
 
-install_tools()
-{
-    sudo add-apt-repository "deb http://archive.ubuntu.com/ubuntu $(lsb_release -sc) main universe";
-    sudo apt-get update &&  \
-    sudo apt-get install -y git exuberant-ctags vim toilet autocutsel cscope\
-        fortune-mod cowsay toilet tmux net-tools ifupdown dnsmasq expect;
-    #sudo apt install -y build-essential dnsniff tcpkill vnc4server;
-    #sudo apt install -y auditd  # To monitor which process is modifying given file
-    #sudo apt install -y python-is-python3 python3-pip build-essential minicom
-    #sudo apt install -y ttf-mscorefonts-installer audacious openfortivpn p7zip-full
-    #sudo apt install -y ubuntu-restricted-extras libavcodec-extra gpaint wireshark
-    #sudo apt install -y strongswan libcharon-extra-plugins pptp-linux vlc kmplayer
-    #openvpn resolvconf wpasupplicant libxmlsec1-dev jq
-}
-
-install_virt()
-{
-    # qemu - hw emulator, libvirt - VM manager, brctl - bridge mgmt
-    # virtinst - cmdline tools for VM mgmt, virt-manager - GUI tool for VM mgmt
-    sudo apt install qemu-kvm libvirt-bin bridge-utils virtinst virt-manager &&
-    sudo usermod -aG libvirt $USER && sudo usermod -aG kvm $USER
-}
-
 function usage()
 {
     echo "Usage: conf.sh <-a|-c|-h|-l|-n|-s|-t>"
     echo "Options:"
-    echo "  -a - link all files and start cron (-clnst)"
-    echo "  -c - start cron job of user"
-    echo "  -d - delete cron job of user"
-    echo "  -i - install all development tools on ubuntu"
-    echo "  -l - create symlink of user log files"
-    echo "  -n - create symlink of user conf files"
-    echo "  -p - pull github dev setup files"
-    echo "  -s - create symlink of user script files"
-    echo "  -t - create symlink of user tool binaries"
-    echo "  -u <username> - create user of given name"
-    echo "  -v <username> - delete user of given name"
-    echo "  -h - print this help message"
+    echo "  -c              - start cron job of user"
+    echo "  -i [dev|lap|svr]- install tools on ubuntu"
+    echo "  -l              - create scripts log directory"
+    echo "  -n              - create symlink of conf files"
+    echo "  -p              - pull conf, scripts from github"
+    echo "  -s              - create symlink of scripts"
+    echo "  -t              - stop cron job of user"
+    echo "  -h              - print this help message"
+    echo "NOTE: to do everything and start cron (-cilnst)"
 }
 
 main()
 {
-    PARSE_OPTS="hacdilnpstu:v:"
+    PARSE_OPTS="hcilnpst"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -244,18 +240,15 @@ main()
         usage && exit $EINVAL;
     fi
 
-    ((opt_a)) && (link_confs; link_logs; link_scripts; link_tools; install_tools; stop_cron; start_cron; exit 0)
-    ((opt_n)) && link_confs
-    ((opt_i)) && install_tools
-    ((opt_l)) && link_logs
-    ((opt_p)) && pull_conf
-    ((opt_s)) && link_scripts
-    ((opt_t)) && link_tools
-    ((opt_c)) && start_cron
-    ((opt_d)) && stop_cron
-    ((opt_u)) && create_user $optarg_u
-    ((opt_v)) && delete_user $optarg_v
-    ((opt_h)) && (usage; exit 0)
+    ((opt_p)) && pull_conf;
+    ((opt_n)) && link_confs;
+    # Do not link any files: bash_history gdb_history history lesshst
+    ((opt_l)) && mkdir -pv $HOME/.logs;
+    ((opt_s)) && link_scripts;
+    ((opt_i)) && install_tools $*;
+    ((opt_t)) && stop_cron;
+    ((opt_c)) && start_cron;
+    ((opt_h)) && { usage; }
 
     exit 0
 }
