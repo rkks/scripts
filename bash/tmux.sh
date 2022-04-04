@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: tmux handler script
 #  CREATED: 01/28/14 10:51:03 IST
-# MODIFIED: 25/Mar/2022 00:48:43 PDT
+# MODIFIED: 25/Mar/2022 04:25:35 PDT
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2014, Ravikiran K.S.
@@ -50,10 +50,18 @@ function execute_cmds()
     while read -r line; do
         [[ "$line" == \#* ]] && { continue; }
         IFS=, read -r sess cmds <<<"$line";
-        #echo "tmux send-keys -t $sess $cmds C-m";
+        # tmux send-keys -t {session}:{window}.{pane} "cmd <args>"
         tmux send-keys -t $sess "$cmds" C-m;
         rval=$?; [[ $rval -ne 0 ]] && { break; }
     done < $1
+}
+
+function show_info()
+{
+    tmux server-info | grep -vw "string\|missing\|number\|flag";
+    echo "";
+    echo "Environment:";
+    tmux show-environment;
 }
 
 usage()
@@ -61,17 +69,18 @@ usage()
     echo "Usage: tmux.sh <-h|-a|-c|-e|-k|-l|-n <new-session-name>|-o|-r>"
     echo "Options:"
     echo "  -a <sess-name>  - attach to given session (pass -x for exclusive)"
-    echo "  -c              - check machine load on this machine"
+    echo "  -c              - check OS, user load on this machine"
     echo "  -e <cmd-file>   - execute tmux commands in the given file"
     echo "  -i              - print tmux information on this machine"
-    echo "  -k              - list tmux key bindings of current ~/.tmux.conf"
+    echo "  -k              - kill tmux server and all sessions within"
     echo "  -l              - list tmux sessions on this machine"
     echo "  -m              - list all commands supported by current tmux"
     echo "  -n <sess-name>  - start new session with given name"
     echo "  -r              - reload ~/.tmux.conf for current session"
-    echo "  -s <sess-name>  - stop session with given name"
-    echo "  -t              - list all clients connected to local tmux server"
+    echo "  -s <sess-name>  - stop session with given name, all windows in it"
+    echo "  -t              - start tmux server alone, no sessions "
     echo "  -x              - exclusive attach (detaches other clients)"
+    echo "  -y              - list tmux key bindings of current ~/.tmux.conf"
     echo "  -h              - print this help message"
 }
 
@@ -79,7 +88,7 @@ usage()
 # It can then be included in other files for functions.
 main()
 {
-    local PARSE_OPTS="ha:ce:iklmn:rs:tx"
+    local PARSE_OPTS="ha:ce:iklmn:rs:txy"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -103,12 +112,13 @@ main()
     fi
 
     ((opt_c)) && check_os_load;                 # check machine load
-    ((opt_i)) && tmux info;                     # check machine load
-    ((opt_k)) && tmux list-keys;                # list key binding
+    ((opt_i)) && show_info;                     # dumps detailed tmux info
+    ((opt_y)) && tmux list-keys;                # 'C-a ?' within tmux window
     ((opt_l)) && tmux list-sessions;            # list existing sessions
     ((opt_m)) && tmux list-commands;            # list commands
-    ((opt_t)) && tmux list-clients;             # list clients
     ((opt_s)) && tmux kill-session -t $optarg_s;# stop session
+    ((opt_k)) && tmux kill-server;              # kill tmux server
+    ((opt_t)) && tmux start-server;             # start tmux server
     ((opt_r)) && tmux source-file ~/.tmux.conf; # reload conf file
     ((opt_n)) && create_session $optarg_n;      # new session
     ((opt_e)) && execute_cmds $optarg_e;        # execute tmux cmds from file

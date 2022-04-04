@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 02/Sep/2021 12:04:21 IST
+# MODIFIED: 29/Mar/2022 03:42:25 PDT
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -42,7 +42,7 @@ function export_func() { local func; export -f $FUNCNAME; for func in $*; do exp
 
 function export_bash_funcs()
 {
-    local FUNCS="run shell own have cdie mkdie hostnm bail up die via mkfile"
+    local FUNCS="run shell own have cdie mkdie hostnm bail up die vid mkfile"
     FUNCS="bash_trace bash_untrace warn prnt term assert pause read_tty log $FUNCS"
     FUNCS="chk run_on file_sz page_brkr file_rotate bkup now myname log_init $FUNCS"
     FUNCS="puniq ppop pvalid prm pappend pprepend pshift pls source_script $FUNCS"
@@ -327,8 +327,6 @@ function term()
     esac
 }
 
-function via() { local file; for file in $*;do vim "$file"; done; }
-
 # usage: run_on Mon abc.sh
 function run_on()
 {
@@ -451,6 +449,13 @@ function make_workspace_alias()
         [[ "" != "$(alias $SB 2>/dev/null)" ]] && continue;     # already exists
         [[ -d "$PARENT/$SB" && -d "$PARENT/$SB/src" ]] && alias "$SB"="cd $PARENT/$SB/src";
     done
+}
+
+function vid()
+{
+    [[ $# -eq 0 ]] && { echo "Usage: $FUNCNAME <file-list>"; return $EINVAL; } || { local files=""; local rval=0; }
+    while read files; do [[ "$files" == \#* ]] && { continue; } || { vim -d $files; rval=$?; }; [[ $rval -ne 0 && $# -lt 2 ]] && { break; }; done < $1
+    [[ ! -z $NOTIFY_EMAIL ]] && { [[ -f $RUN_LOG ]] && mail.sh -e $NOTIFY_EMAIL -b $RUN_LOG || echo "RUN_LOG not defined"; }; return $rval;
 }
 
 # usage: diffscp <relative-dir-path> <dst-server>. GUI. if relative paths are not given, we need to do circus like: echo ${file#$1}
