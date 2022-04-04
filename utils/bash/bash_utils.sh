@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 04/Apr/2022 18:24:13 IST
+# MODIFIED: 04/Apr/2022 21:18:14 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -104,7 +104,7 @@ function batch_run()
         [[ "$line" == \#* ]] && { continue; }
         run $line; rval=$?; [[ $rval -ne 0 && $# -lt 2 ]] && { break; };
     done < $1
-    [[ ! -z $NOTIFY_EMAIL ]] && { [[ -f $RUN_LOG ]] && mail.sh -e $NOTIFY_EMAIL -b $RUN_LOG || echo "RUN_LOG not defined"; }
+    [[ ! -z $MAILTO ]] && { [[ -f $RUN_LOG ]] && mail.sh -e $MAILTO -b $RUN_LOG || echo "RUN_LOG not defined"; }
     return $rval;
 }
 
@@ -190,7 +190,7 @@ function file_rotate()
     # Find out upto which sequence file.0..9 the archive has grown. ${f:$len} extracts .suffix-num. Ex. 3 for log.3
     for f in ${file}.[0-$FILE_MAX_BKUPS]*; do [ -f "$f" ] && num=${f:$len} && [ $num -gt $max ] && max=$num; done
     f="$file.$(($max + 1))";
-    [[ $max -ge $FILE_MAX_BKUPS && -f "$f" ]] && { [[ ! -z $NOTIFY_EMAIL ]] && { gzip $f && email $f.gz; rm -f $f $f.gz; } || { rm -f $f; }; }
+    [[ $max -ge $FILE_MAX_BKUPS && -f "$f" ]] && { [[ ! -z $MAILTO ]] && { gzip $f && email $f.gz; rm -f $f $f.gz; } || { rm -f $f; }; }
     for ((i = $max;i >= 0;i -= 1)); do [[ -f "$file.$i" ]] && mv -f $file.$i "$file.$(($i + 1))" > /dev/null 2>&1; done
     return 0;
 }
@@ -477,7 +477,7 @@ function vid()
 {
     [[ $# -eq 0 ]] && { echo "Usage: $FUNCNAME <file-list>"; return $EINVAL; } || { local files=""; local rval=0; }
     while read files; do [[ "$files" == \#* ]] && { continue; } || { vim -d $files; rval=$?; }; [[ $rval -ne 0 && $# -lt 2 ]] && { break; }; done < $1
-    [[ ! -z $NOTIFY_EMAIL ]] && { [[ -f $RUN_LOG ]] && mail.sh -e $NOTIFY_EMAIL -b $RUN_LOG || echo "RUN_LOG not defined"; }; return $rval;
+    [[ ! -z $MAILTO ]] && { [[ -f $RUN_LOG ]] && mail.sh -e $MAILTO -b $RUN_LOG || echo "RUN_LOG not defined"; }; return $rval;
 }
 
 # usage: diffscp <relative-dir-path> <dst-server>. GUI. if relative paths are not given, we need to do circus like: echo ${file#$1}

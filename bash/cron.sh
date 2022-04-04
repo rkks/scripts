@@ -3,7 +3,7 @@
 #
 #   AUTHOR: Ravikiran K.S. (ravikirandotks@gmail.com)
 #  CREATED: 11/08/11 13:35:02 PST
-# MODIFIED: 04/Apr/2022 18:00:47 IST
+# MODIFIED: 04/Apr/2022 21:26:12 IST
 
 # Cron has defaults below. Redefining to suite yours(if & only if necessary).
 # HOME=user-home-directory  # LOGNAME=user.s-login-id
@@ -26,7 +26,7 @@ function local_backup()
 function backup()
 {
     local fname=$FUNCNAME;
-    [[ ! -z "$(grep -w $fname $CUST_CONFS/cronskip)" ]] && { echo "$0: Skip $FUNCNAME"; return; }
+    [[ ! -z "$(grep -w $fname $CUST_CONFS/cronskip)" ]] && { warn "Skip $FUNCNAME"; return; }
     [[ $# -ne 1 ]] && { echo "Usage: $FUNCNAME <dir-list>"; return $EINVAL; }
     log INFO "Backing up directories list in file $1"
     # Git Backup: Preferred way to sync text stuff
@@ -36,7 +36,7 @@ function backup()
 function sync()
 {
     local fname=$FUNCNAME;
-    [[ ! -z "$(grep -w $fname $CUST_CONFS/cronskip)" ]] && { echo "$0: Skip $FUNCNAME"; return; }
+    [[ ! -z "$(grep -w $fname $CUST_CONFS/cronskip)" ]] && { warn "Skip $FUNCNAME"; return; }
     [[ $# -ne 0 ]] && { local RSYNC_LST=$1; } || { local RSYNC_LST=$CUST_CONFS/rsync.lst; }
     log INFO "Syncing directory list from $1";
     # Manual Sync: What can not be synced using revision-control.
@@ -76,7 +76,7 @@ function git_revision_update()
 function revision()
 {
     local fname=$FUNCNAME;
-    [[ ! -z "$(grep -w $fname $CUST_CONFS/cronskip)" ]] && { echo "$0: Skip $FUNCNAME"; return; }
+    [[ ! -z "$(grep -w $fname $CUST_CONFS/cronskip)" ]] && { warn "Skip $FUNCNAME"; return; }
     [[ $# -ne 1 ]] && { echo "Usage: $FUNCNAME <list-file>"; return $EINVAL; }
     log INFO "$FUNCNAME: Update revision of workspaces list in file $1"
     batch_func git_revision_update $1
@@ -91,7 +91,7 @@ function database_update()
 function database()
 {
     local fname=$FUNCNAME;
-    [[ ! -z "$(grep -w $fname $CUST_CONFS/cronskip)" ]] && { echo "$0: Skip $FUNCNAME"; return; }
+    [[ ! -z "$(grep -w $fname $CUST_CONFS/cronskip)" ]] && { warn "Skip $FUNCNAME"; return; }
     [[ $# -ne 1 ]] && { echo "Usage: $FUNCNAME <list-file>"; return $EINVAL; }
     log INFO "Build cscope/ctags db for workspaces list in file $1"
     batch_func database_update $1
@@ -110,7 +110,7 @@ function build_target()
 function build()
 {
     local fname=$FUNCNAME;
-    [[ ! -z "$(grep -w $fname $CUST_CONFS/cronskip)" ]] && { echo "$0: Skip $FUNCNAME"; return; }
+    [[ ! -z "$(grep -w $fname $CUST_CONFS/cronskip)" ]] && { warn "Skip $FUNCNAME"; return; }
     [[ $# -ne 1 ]] && { echo "Usage: $FUNCNAME <list-file>"; return $EINVAL; }
     log INFO "Build code for workspaces list in file $1"
     batch_func build_target $1
@@ -119,9 +119,9 @@ function build()
 function download()
 {
     local fname=$FUNCNAME;
-    [[ ! -z "$(grep -w $fname $CUST_CONFS/cronskip)" ]] && { echo "$0: Skip $FUNCNAME"; return; }
+    [[ ! -z "$(grep -w $fname $CUST_CONFS/cronskip)" ]] && { warn "Skip $FUNCNAME"; return; }
     local linkfile=$CUST_CONFS/downlinks;
-    [[ ! -f $linkfile ]] && { echo "$linkfile not found. No pending downloads"; return; }
+    [[ ! -f $linkfile ]] && { dbg "$linkfile not found. No pending downloads"; return; }
     [[ ! -d $DOWNLOADS ]] && { run mkdir -p $DOWNLOADS; }
     log INFO "Start pending downloads"
     run cdie $DOWNLOADS
@@ -210,7 +210,7 @@ function main()
     fi
 
     #export SHDEBUG=yes;
-    ((opt_m)) && { NOTIFY_EMAIL="$optarg_m"; }
+    ((opt_m)) && { MAILTO="$optarg_m"; }
     ((opt_a)) && { RUN_LOG="run.log"; truncate --size 0 $RUN_LOG; batch_run $optarg_a; }
     ((opt_b)) && { backup $optarg_b; }
     ((opt_c)) && { revision $optarg_c; }

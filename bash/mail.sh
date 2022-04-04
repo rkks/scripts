@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Send mail to pre-defined email addresses
 #  CREATED: 11/19/12 14:14:03 IST
-# MODIFIED: 04/Apr/2022 16:54:50 IST
+# MODIFIED: 04/Apr/2022 21:19:33 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2012, Ravikiran K.S.
@@ -69,7 +69,7 @@ main()
         usage && exit $EINVAL;
     fi
 
-    ((opt_e)) && { local MAILADDRS="$optarg_e"; } || { local MAILADDRS=$NOTIFY_EMAIL; }
+    ((opt_e)) && { local MAILADDRS="$optarg_e"; } || { local MAILADDRS=$MAILTO; }
     ((opt_b)) && mail-send "BUILD" $optarg_b
     ((opt_c)) && mail-send "CRON" $optarg_c
     ((opt_f)) && mail-send "AUTO" $optarg_f
