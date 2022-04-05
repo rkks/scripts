@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: External diff tool for git
 #  CREATED: 03/20/13 21:55:08 IST
-# MODIFIED: 04/Apr/2022 18:03:37 IST
+# MODIFIED: 05/Apr/2022 00:56:58 PDT
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -66,7 +66,9 @@ function git_pull_update()
 
 function git_diff()
 {
-    [[ -z $DIFF_NM ]] && { DIFF_NM="$(date +%d%m%Y-%H%M%S)-$@-$(id -nu)-u.diff"; }
+    if [ -z $DIFF_NM ]; then
+        [[ "$@" == "nightly" ]] && { DIFF_NM="$(date +%d%m%Y)-$@-$(id -nu)-u.diff"; } || { DIFF_NM="$(date +%d%m%Y-%H%M%S)-$@-$(id -nu)-u.diff"; }
+    fi
     echo "diff output: $PWD/$DIFF_NM";
     git dir > $DIFF_NM;
 }

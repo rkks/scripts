@@ -3,7 +3,7 @@
 #
 #   AUTHOR: Ravikiran K.S. (ravikirandotks@gmail.com)
 #  CREATED: 11/08/11 13:35:02 PST
-# MODIFIED: 04/Apr/2022 21:40:51 PDT
+# MODIFIED: 05/Apr/2022 00:49:32 PDT
 
 # Cron has defaults below. Redefining to suite yours(if & only if necessary).
 # HOME=user-home-directory  # LOGNAME=user.s-login-id
@@ -14,31 +14,29 @@
 # Source .bashrc.dev only if invoked as a sub-shell. Not if sourced.
 [[ "cron.sh" == "$(basename -- $0)" && -f $HOME/.bashrc.dev ]] && { source $HOME/.bashrc.dev; }
 
-DIFF_LOG=diff.log;
+DIFF_LOG="$(date +%d%m%Y)-nightly-$(id -nu)-u.diff";
 
 function backup_update()
 {
     [[ $# -ne 1 ]] && { echo "Usage: $FUNCNAME <dir-name>"; return $EINVAL; }
-    local fname="$FUNCNAME"; fname+="4$1";
-    [[ ! -z "$(grep -w $fname $HOME/.cronskip)" ]] && { log_note "Skip $FUNCNAME for $1"; return; }
+    cdie $1 && chk_revision_chgs
+    [[ $? -eq 0 ]] && { log_note "No changes found, skip backup"; return 0; }
     log_note "Backing up: $1";
-    shell backup.sh "$1";
+    shell backup.sh -v "$1/$DIFF_LOG" "$1";  # without -v is waste of space for repos
 }
 
 function backup()
 {
     local fname="$FUNCNAME";    # skip backup altogether
-    [[ ! -z "$(grep -w $fname $HOME/.cronskip)" ]] && { log_note "Skip $FUNCNAME"; return; }
     [[ $# -ne 1 ]] && { echo "Usage: $FUNCNAME <dir-list>"; return $EINVAL; }
     log_note "Backing up directories list in file $1"
     # Git Backup: Preferred way to sync text stuff
-    batch_func backup_update $1
+    cron_batch_func backup_update $1
 }
 
 function sync()
 {
     local fname="$FUNCNAME";    # skip sync altogether
-    [[ ! -z "$(grep -w $fname $HOME/.cronskip)" ]] && { log_note "Skip $FUNCNAME"; return; }
     [[ $# -ne 0 ]] && { local RSYNC_LST=$1; } || { local RSYNC_LST=$CUST_CONFS/rsync.lst; }
     log_note "Syncing directory list from $1";
     # Manual Sync: What can not be synced using revision-control.
@@ -53,34 +51,29 @@ function nightly()
     [[ ! -z "$(grep -w cron $HOME/.cronskip)" ]] && return;  # skip cron altogether
 
     # SCM should not update repo if there is a working change in repo
-    func_on Now backup $HOME/.repos;
-    func_on Now revision $HOME/.repos;
-    func_on Now database $HOME/.repos;
-    func_on Now build $HOME/.repos;
-    func_on Fri reserve $COMPANY_CONFS/reserve;
-    func_on Fri sync;
-    func_on Now download;
-    func_on Now report;
+    cron_func_on Now revision $HOME/.repos;
+    cron_func_on Now database $HOME/.repos;
+    cron_func_on Now build $HOME/.repos;
+    cron_func_on Now backup $HOME/.repos;
+    cron_func_on Fri reserve $COMPANY_CONFS/reserve;
+    cron_func_on Fri sync;
+    cron_func_on Now download;
+    cron_func_on Now report;
 }
 
 function chk_revision_chgs()
 {
-    #Usage: $FUNCNAME [force]
-    [[ ! -f $DIFF_LOG || $# -ne 0 ]] && { shell git.sh -d nightly -f $DIFF_LOG; }
-    [[ ! -f $DIFF_LOG ]] && { echo "$FUNCNAME: no diff found"; return $ENOENT; }
-    local chgs=$(cat $DIFF_LOG | wc -l);
-    [[ $chgs -eq 0 ]] && return 0 || return $EEXIST;
+    #Usage: $FUNCNAME [generate]
+    [[ "$@" == "generate" ]] && { shell git.sh -d nightly -f $DIFF_LOG; }
+    [[ ! -f $DIFF_LOG ]] && { return 0; } || { local chgs=$(cat $DIFF_LOG | wc -l); }
+    [[ $chgs -eq 0 ]] && { rm -f $DIFF_LOG && return 0; } || return $EEXIST;
 }
 
 function revision_update()
 {
     [[ $# -eq 0 ]] && { echo "Usage: $FUNCNAME <dir-path>"; return $EINVAL; }
-    [[ ! -d $1 ]] && { echo "$FUNCNAME: no repo $1 exists"; return $ENOENT; }
-    local fname="$FUNCNAME"; fname+="4$1";
-    [[ ! -z "$(grep -w $fname $HOME/.cronskip)" ]] && { log_note "Skip $FUNCNAME for $1"; return; }
-    cdie $1 && chk_revision_chgs force;
-    local chgs=$?;
-    [[ $chgs -ne 0 ]] && { log_note "Changes found, skip update"; return 0; }
+    cdie $1 && chk_revision_chgs generate;
+    [[ $? -ne 0 ]] && { log_note "Changes found, skip update"; return 0; }
     log DEBUG "No changes found in $DIFF_LOG. Update repo.";
     shell git.sh -u $1;
 }
@@ -88,38 +81,30 @@ function revision_update()
 function revision()
 {
     local fname="$FUNCNAME";    # skip revision altogether
-    [[ ! -z "$(grep -w $fname $HOME/.cronskip)" ]] && { log_note "Skip $FUNCNAME"; return; }
     [[ $# -ne 1 ]] && { echo "Usage: $FUNCNAME <list-file>"; return $EINVAL; }
     log_note "$FUNCNAME: Update revision of repos list in file $1"
-    batch_func revision_update $1
+    cron_batch_func revision_update $1
 }
 
 function database_update()
 {
     [[ $# -ne 1 ]] && { echo "Usage: $FUNCNAME <dir-path>"; return $EINVAL; }
-    local fname="$FUNCNAME"; fname+="4$1";
-    [[ ! -z "$(grep -w $fname $HOME/.cronskip)" ]] && { log_note "Skip $FUNCNAME for $1"; return; }
     shell cscope_cgtags.sh -d $1;   # -e -u
 }
 
 function database()
 {
     local fname="$FUNCNAME";    # skip database altogether
-    [[ ! -z "$(grep -w $fname $HOME/.cronskip)" ]] && { log_note "Skip $FUNCNAME"; return; }
     [[ $# -ne 1 ]] && { echo "Usage: $FUNCNAME <list-file>"; return $EINVAL; }
     log_note "Build cscope/ctags db for repos list in file $1"
-    batch_func database_update $1
+    cron_batch_func database_update $1
 }
 
 function build_update()
 {
     [[ $# -eq 0 ]] && { echo "Usage: $FUNCNAME <dir-path>"; return $EINVAL; }
-    [[ ! -d $1 ]] && { echo "$FUNCNAME: no repo $1 exists"; return $ENOENT; }
-    local fname="$FUNCNAME"; fname+="4$1";
-    [[ ! -z "$(grep -w $fname $HOME/.cronskip)" ]] && { log_note "Skip $FUNCNAME for $1"; return; }
     cdie $1 && chk_revision_chgs;
-    local chgs=$?;
-    [[ $chgs -ne 0 ]] && { log_note "Changes found, skip build"; return 0; }
+    [[ $? -ne 0 ]] && { log_note "Changes found, skip build"; return 0; }
     log DEBUG "No changes found in $DIFF_LOG. Build repo.";
     shell vbuild.sh -d waf -f;
 }
@@ -127,16 +112,14 @@ function build_update()
 function build()
 {
     local fname="$FUNCNAME";    # skip build altogether
-    [[ ! -z "$(grep -w $fname $HOME/.cronskip)" ]] && { log_note "Skip $FUNCNAME"; return; }
     [[ $# -ne 1 ]] && { echo "Usage: $FUNCNAME <list-file>"; return $EINVAL; }
     log_note "Build code for repos list in file $1"
-    batch_func build_update $1
+    cron_batch_func build_update $1
 }
 
 function download()
 {
     local fname="$FUNCNAME";    # skip download altogether
-    [[ ! -z "$(grep -w $fname $HOME/.cronskip)" ]] && { log_note "Skip $FUNCNAME"; return; }
     local linkfile=$CUST_CONFS/downlinks;
     [[ ! -f $linkfile ]] && { log_dbg "$linkfile not found. No pending downloads"; return; }
     [[ ! -d $DOWNLOADS ]] && { run mkdir -p $DOWNLOADS; }
@@ -168,8 +151,6 @@ function reserve()
 {
     [[ $# -eq 0 ]] && { echo "Usage: reserve <path-to-reserve-file>"; return $EINVAL; }
     [[ ! -f $1 ]] && { log_note "File $1 not found. Skipping router reservation"; return $ENOENT; }
-
-    [[ ! -z "$(grep -w reserve $HOME/.cronskip)" ]] && return;  # skip reserve altogether
 
     local reserve_file=$1
     # Format in $reserve_file is: router duration start-time repeat

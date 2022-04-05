@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 04/Apr/2022 21:44:47 PDT
+# MODIFIED: 04/Apr/2022 23:42:01 PDT
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -47,8 +47,8 @@ function export_bash_funcs()
     FUNCS="chownall cpx dos2unixall reset_tty screentab starthttp log_lvl $FUNCS"
     FUNCS="truncate_file vncs bug rli make_workspace_alias bash_colors $FUNCS"
     FUNCS="diffscp compare show_progress get_ip_addr ssh_key ssh_pass $FUNCS"
-    FUNCS="batch_run batch_func batch_mkdie log_note log_crit log_err $FUNCS"
-    FUNCS="log_dbg $FUNCS"
+    FUNCS="batch_run batch_mkdie log_note log_crit log_err log_dbg $FUNCS"
+    FUNCS="cron_batch_func cron_func_on $FUNCS"
     export_func $FUNCS;
 }
 
@@ -112,13 +112,15 @@ function batch_run()
 }
 
 # Provide callback function to be called for each item in list
-function batch_func()
+function cron_batch_func()
 {
     [[ $# -ne 2 ]] && { echo "Usage: $FUNCNAME <cb-func-name> <list-file>"; return $EINVAL; }
     local fname=$1; shift; local list=$1; shift; local rval=0;
     while read line; do
-        #[[ "$line" == \#* || ! -d $line ]] && { continue; } || { cdie $line; }
         [[ "$line" == \#* ]] && { continue; }
+        local skipname="$fname"; skipname+="4$line";
+        [[ ! -z "$(grep -w $skipname $HOME/.cronskip)" ]] && { log_note "Skip $fname for $line"; continue; }
+        [[ ! -d $line ]] && { echo "$fname: dir $line does not exists"; continue; } || { cdie $line; }
         log_note "$fname $line"
         $fname "$line"; [[ $? -ne 0 ]] && { rval=1; }  # reflects if any of runs failed
     done < $list
@@ -355,10 +357,11 @@ function run_on()
     esac
 }
 
-# usage: func_on Mon abc.sh
-function func_on()
+# usage: cron_func_on Mon backup_update /home/ravikiranks/conf
+function cron_func_on()
 {
     local when=$1; shift; local fname=$1; shift;
+    [[ ! -z "$(grep -w $fname $HOME/.cronskip)" ]] && { log_note "Skip $fname"; return; }   # skip option altogether
     case $when in
     Now)
         $fname "$*"; ;;

@@ -3,7 +3,7 @@
 #
 #   AUTHOR: Ravikiran K.S. (ravikirandotks@gmail.com)
 #  CREATED: 11/07/11 13:32:37 PST
-# MODIFIED: 04/Apr/2022 21:00:21 PDT
+# MODIFIED: 05/Apr/2022 00:36:31 PDT
 
 # Monday to Saturday, an incremental backup is made so that you have daily backups for new files until next week.
 # Every Sunday, do backup of all tars from last week. One such incremental backup tarball for each of 52 weeks in a year.
@@ -54,27 +54,32 @@ function update_date()
 
 function monthly_backup()
 {
-  log INFO "Running monthly backup for $(pwd)/$1 on $(/bin/date +'%a %b/%d/%Y %T%p %Z')"
-  # Make a full monthly backup based on given directories
-  find $1 -depth -type f -print > $MONTHLY_DIR/$FILE_LIST;
-  make_archive "$MONTHLY_DIR/$MAD-$2" "$MONTHLY_DIR/$FILE_LIST";
+    log INFO "Running monthly backup for $PWD/$1 on $(/bin/date +'%a %b/%d/%Y %T%p %Z')"
+    # Make a full monthly backup based on given directories
+    #find $1 -depth -type f -print > $MONTHLY_DIR/$FILE_LIST;
+    find $WEEKLY_DIR -depth -type f -name "*-$2.tar.bz2" -print > $MONTHLY_DIR/$FILE_LIST;
+    make_archive "$MONTHLY_DIR/$MAD-$2" "$MONTHLY_DIR/$FILE_LIST";
 }
 
 function weekly_backup()
 {
-  log INFO "Running weekly backup for $(pwd)/$1 on $(/bin/date +'%a %b/%d/%Y %T%p %Z')"
-  # Then create a new weekly backup for this day-of-week
-  find $DAILY_DIR -depth -type f -name "*-$2.tar.bz2" -print > $WEEKLY_DIR/$FILE_LIST;
-  make_archive "$WEEKLY_DIR/$WOY-$2" "$WEEKLY_DIR/$FILE_LIST";
+    log INFO "Running weekly backup for $PWD/$1 on $(/bin/date +'%a %b/%d/%Y %T%p %Z')"
+    # Then create a new weekly backup for this day-of-week
+    find $DAILY_DIR -depth -type f -name "*-$2.tar.bz2" -print > $WEEKLY_DIR/$FILE_LIST;
+    make_archive "$WEEKLY_DIR/$WOY-$2" "$WEEKLY_DIR/$FILE_LIST";
 }
 
 function daily_backup()
 {
-  log INFO "Running daily backup for $(pwd)/$1 on $(/bin/date +'%a %b/%d/%Y %T%p %Z')"
-  # Make incremental backup using date in NEWER file. --newer option in tar fetches empty directories unnecessarily.
-  # tar --newer="$NEWER" -cpPzf "$DAILY_DIR/$DOW-$file.tar.bz2" "$1";  # So using find to do the right job.
-  find $1 -depth -type f \( -ctime -1 -o -mtime -1 \) -print > $DAILY_DIR/$FILE_LIST;
-  make_archive "$DAILY_DIR/$DOW-$2" "$DAILY_DIR/$FILE_LIST";
+    log INFO "Running daily backup for $PWD/$1 on $(/bin/date +'%a %b/%d/%Y %T%p %Z')"
+    # Make incremental backup using date in NEWER file. --newer option in tar fetches empty directories unnecessarily.
+    # tar --newer="$NEWER" -cpPzf "$DAILY_DIR/$DOW-$file.tar.bz2" "$1";  # So using find to do the right job.
+    if [ -z $BACKUP_FILE ]; then
+        find $1 -depth -type f \( -ctime -1 -o -mtime -1 \) -print > $DAILY_DIR/$FILE_LIST;
+    else
+        echo $BACKUP_FILE > $DAILY_DIR/$FILE_LIST;
+    fi
+    make_archive "$DAILY_DIR/$DOW-$2" "$DAILY_DIR/$FILE_LIST";
 }
 
 function usage()
@@ -82,6 +87,7 @@ function usage()
     echo "Usage: backup.sh [-h|-l <alternate-backup-location>] <[path1|path2|...]>"
     echo "Options:"
     echo "  -l <backup-location>- alternate destination where to place backups <path>"
+    echo "  -v <backup-patch>   - revision-control diff file to backup"
     echo "  <path>              - source location that needs to be backed up"
     echo "  -h                  - print this help"
 }
@@ -93,7 +99,7 @@ function sighdlr() {
 function main()
 {
     trap sighdlr INT
-    PARSE_OPTS="hl:"
+    PARSE_OPTS="hl:v:"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -114,6 +120,7 @@ function main()
 
     if ((opts_found)); then
         ((opt_l)) && BACKUP_DIR=$optarg_l;
+        ((opt_v)) && BACKUP_FILE=$optarg_v; # revision-control diff file
         ((opt_h)) && (usage; exit 0)
     fi
 
@@ -127,16 +134,15 @@ function main()
     for dir in $*; do
         [[ ! -d "$dir" ]] && { log WARN "Backup dir $dir doesn't exist. Skip!"; continue; }
         local targetdir=$(basename -- $dir); local bkup_nm=${dir//'/'/'_'}; cdie $(dirname $dir);
-        if [ "$DOM" = "01" ]; then
-            # Create Monthly Backups on 1st day of each month
-            monthly_backup "$targetdir" $bkup_nm;
-        elif [ "$DOW" = "Sun" ]; then
-            # Create Full Weekly Backups on Sundays
-            weekly_backup "$targetdir" $bkup_nm;
-        else
-            # Make incremental backups - overwrite last weeks
-            daily_backup "$targetdir" $bkup_nm;
-        fi
+
+        # Make incremental backups - overwrite last weeks
+        daily_backup "$targetdir" $bkup_nm;
+
+        # Create Full Weekly Backups on Sundays
+        [[ "$DOW" = "Sun" ]] && { weekly_backup "$targetdir" $bkup_nm; }
+
+        # Create Monthly Backups on 1st day of each month
+        [[ "$DOM" = "01" ]] && { monthly_backup "$targetdir" $bkup_nm; }
     done
     update_date;
 
