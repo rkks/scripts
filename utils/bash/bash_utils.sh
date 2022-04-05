@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 04/Apr/2022 21:18:14 IST
+# MODIFIED: 04/Apr/2022 21:44:47 PDT
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -41,13 +41,14 @@ function export_func() { local func; export -f $FUNCNAME; for func in $*; do exp
 function export_bash_funcs()
 {
     local FUNCS="run shell own have cdie mkdie hostnm bail up die vid mkfile"
-    FUNCS="bash_trace bash_untrace warn prnt term assert pause read_tty log $FUNCS"
+    FUNCS="bash_trace bash_untrace log_warn prnt term assert pause read_tty log $FUNCS"
     FUNCS="chk run_on file_sz page_brkr file_rotate bkup now myname log_init $FUNCS"
     FUNCS="puniq ppop pvalid prm pappend pprepend pshift pls source_script $FUNCS"
     FUNCS="chownall cpx dos2unixall reset_tty screentab starthttp log_lvl $FUNCS"
     FUNCS="truncate_file vncs bug rli make_workspace_alias bash_colors $FUNCS"
     FUNCS="diffscp compare show_progress get_ip_addr ssh_key ssh_pass $FUNCS"
-    FUNCS="batch_run batch_func $FUNCS"
+    FUNCS="batch_run batch_func batch_mkdie log_note log_crit log_err $FUNCS"
+    FUNCS="log_dbg $FUNCS"
     export_func $FUNCS;
 }
 
@@ -67,23 +68,25 @@ function dash_line() { local i; for i in {1..79}; do echo -n "-"; done; echo "-"
 function prnt() { local m="$(now) $(hostnm) $(myname)[$$] $*"; [[ -z $STDERR ]] && echo "$m" || >&2 echo "$m"; unset STDERR; return 0; }
 
 # prints to stderr instead of stdout
-function warn() { log WARN $@; return 0; }
+function log_warn() { log WARN $@; return 0; }
 
-function note() { log NOTE $@; return 0; }
+function log_crit() { log CRIT $@; return 0; }
 
-function crit() { log CRIT $@; return 0; }
+function log_note() { log NOTE $@; return 0; }
 
-function alrt() { log ALERT $@; return 0; }
+function log_info() { log INFO $@; return 0; }
 
-function dbg() { log DEBUG $@; return 0; }
+function log_alrt() { log ALERT $@; return 0; }
 
-function err() { log ERROR $@; return 0; }
+function log_dbg() { log DEBUG $@; return 0; }
+
+function log_err() { log ERROR $@; return 0; }
 
 # print input string and exit with input error value
-function die() { [[ $# -ge 2 ]] && { local e=$1; shift; warn "$@" >&2; exit $e; } || return $EINVAL; }
+function die() { [[ $# -ge 2 ]] && { local e=$1; shift; log_warn "$@" >&2; exit $e; } || return $EINVAL; }
 
 # ASSERT for a positive value.
-function assert() { [[ $# -ge 2 ]] && { [[ $1 -ne $2 ]] && { warn "ASSERT! $1 != $2. $*"; return $EASSERT; } || return 0; } || return $EINVAL; }
+function assert() { [[ $# -ge 2 ]] && { [[ $1 -ne $2 ]] && { log_warn "ASSERT! $1 != $2. $*"; return $EASSERT; } || return 0; } || return $EINVAL; }
 
 # bail-out if last command returned error. success == 0
 function bail() { local e=$?; [[ $e -ne 0 ]] && { die $e "$! failed w/ err: $e. $*"; } || return 0; }
@@ -93,7 +96,7 @@ function bail() { local e=$?; [[ $e -ne 0 ]] && { die $e "$! failed w/ err: $e. 
 function run()
 {
     test -n "$DRY_RUN" && { echo "$*"; return 0; } || { local p; local a=""; for p in "$@"; do a="${a} \"${p}\""; done; }
-    test -z "$RUN_LOG" && { RUN_LOG=/dev/null; }; dbg "$a"; eval "$a" 2>&1 | tee -a $RUN_LOG 2>&1; return ${PIPESTATUS[0]};
+    test -z "$RUN_LOG" && { RUN_LOG=/dev/null; }; log_dbg "$a"; eval "$a" 2>&1 | tee -a $RUN_LOG 2>&1; return ${PIPESTATUS[0]};
 }
 
 function batch_run()
@@ -116,7 +119,7 @@ function batch_func()
     while read line; do
         #[[ "$line" == \#* || ! -d $line ]] && { continue; } || { cdie $line; }
         [[ "$line" == \#* ]] && { continue; }
-        note "$fname $line"
+        log_note "$fname $line"
         $fname "$line"; [[ $? -ne 0 ]] && { rval=1; }  # reflects if any of runs failed
     done < $list
     return $rval;
@@ -137,6 +140,9 @@ function cdie { chk DE EX $1 && cd $1 || return $?; }
 # usage: mkdie <path>. Create directory if doesn't exist, otherwise just update timestamp.
 function mkdie { chk EQ 1 $# && { [[ ! -e $1 ]] && { mkdir -pv $1 && chmod 740 "$1"; return $?; } || return 0; } || return $?; }
 
+# usage: batch_mkdie <dir-list>.
+function batch_mkdie() { local dname; for dname in $*; do [[ ! -d $dname ]] && { mkdie $dname; } done; }
+
 # create file and directory path (if doesn't exist); else just update timestamp. return no error for already existing files.
 function mkfile() { chk EQ 1 $# && { [[ ! -e $1 ]] && { mkdie "$(dirname -- $1)" && touch -- $1 && chmod 640 $1; return $?; } || return 0; } || return $?; }
 
@@ -156,7 +162,7 @@ function bash_untrace() { set +x; }
 # Check if conditions are met. If not, die.
 function chk()
 {
-    [[ $# -ne 3 ]] && { warn "usage: chk <COND> <req-num-args> <input-num-args>\nCOND:LT|LE|EQ|NE|GE|GT|PE, REQ-PE|DE|FE:NE|EX"; return $EINVAL; }
+    [[ $# -ne 3 ]] && { log_warn "usage: chk <COND> <req-num-args> <input-num-args>\nCOND:LT|LE|EQ|NE|GE|GT|PE, REQ-PE|DE|FE:NE|EX"; return $EINVAL; }
     local cond=$1; local req=$2; local in=$3; local r=0; local ae="already exists"; local dne="does not exist";
     case $cond in
     LT) [[ $in -lt $req ]] && { r=0; } || { r=1; local m=" < "; }; ;;
@@ -169,8 +175,8 @@ function chk()
     DE) [[ NE == $req ]] && { [[ -d $in ]] && { r=2; n=$ae; } || r=0; } || { [[ ! -d $in ]] && { r=2; n=$dne; } || r=0; }; local m="Dir"; ;;
     FE) [[ NE == $req ]] && { [[ -f $in ]] && { r=2; n=$ae; } || r=0; } || { [[ ! -f $in ]] && { r=2; n=$dne; } || r=0; }; local m="File"; ;;
     esac
-    [[ $r -eq 1 ]] && { warn "Invalid #num of args. Failed check: in($in) $m req($req)"; return $EINVAL; }
-    [[ $r -eq 2 ]] && { warn "$m $in $n"; return $EEXIST; }
+    [[ $r -eq 1 ]] && { log_warn "Invalid #num of args. Failed check: in($in) $m req($req)"; return $EINVAL; }
+    [[ $r -eq 2 ]] && { log_warn "$m $in $n"; return $EEXIST; }
     return 0;
 }
 
@@ -226,7 +232,7 @@ function up() { local d=""; for ((i=1;i<=$1;i++)); do d=../$d; done; echo "cd $d
 # Colors - Enable colors for ls, etc.
 function bash_colors()
 {
-    [[ -z $PS1_COLOR ]] && { warn "ps1_prompt: PS1_COLOR not set"; return $EINVAL; } || { local d; }
+    [[ -z $PS1_COLOR ]] && { log_warn "ps1_prompt: PS1_COLOR not set"; return $EINVAL; } || { local d; }
     d="$CUST_CONFS/dir_colors_$PS1_COLOR"; [[ -f $d ]] && { (own dircolors) && { eval $(dircolors -b $d); }; }
     [[ "$TERM" == "screen-256color" ]] && return 0;
     [[ -e $CONFS/Xdefaults ]] && { (own xrdb) && xrdb $CONFS/Xdefaults; } || return 0;
@@ -235,7 +241,7 @@ function bash_colors()
 
 function ps1_prompt()
 {
-    [[ -z $PS1_COLOR ]] && { warn "ps1_prompt: PS1_COLOR not set"; return 1; }
+    [[ -z $PS1_COLOR ]] && { log_warn "ps1_prompt: PS1_COLOR not set"; return 1; }
     # B=BLACK, W=WHITE, Y=YELLOW, R=RED, G=GREEN, P=PURPLE, U=BLUE, C=CYAN, N=NO COLOR
     local N="\[\033[0m\]";
     case $PS1_COLOR in
@@ -309,7 +315,7 @@ function pvalid()
 # bash scripting helper functions
 
 # given input list of files, source them
-function source_script() { local us; for us in $*; do chk FE EX $us && { note "[SOURCE] $us"; source $us; } || { note "[OPTOUT] $us"; }; done; }
+function source_script() { local us; for us in $*; do chk FE EX $us && { log_note "[SOURCE] $us"; source $us; } || { log_note "[OPTOUT] $us"; }; done; }
 
 function pause()
 {
@@ -377,7 +383,7 @@ function read_kv()
     # Only issue with below line is, unsetting vars imported is not straight forward
     #while read -r l; do declare $l; done< $F;
     declare -g -A R; while IFS="=" read -r k v; do R[$k]="$v"; done< $1;
-    for i in "${!R[@]}"; do dbg "$i=${R[$i]}"; declare -g $i=${R[$i]}; done;
+    for i in "${!R[@]}"; do log_dbg "$i=${R[$i]}"; declare -g $i=${R[$i]}; done;
     return 0;
 }
 
@@ -543,11 +549,11 @@ function sys_status() {
 
 usage()
 {
-    warn "Usage: bash_utils.sh <-h|-l <log-level> <log-message>|-r <log-file>>"
-    warn "Options:"
-    warn "  -l <log-level> <log-message>- log given message at given log-level"
-    warn "  -r <log-file>               - rotate given log file"
-    warn "  -h                          - print this help message"
+    log_warn "Usage: bash_utils.sh <-h|-l <log-level> <log-message>|-r <log-file>>"
+    log_warn "Options:"
+    log_warn "  -l <log-level> <log-message>- log given message at given log-level"
+    log_warn "  -r <log-file>               - rotate given log file"
+    log_warn "  -h                          - print this help message"
 }
 
 # Each shell script has to be independently testable.

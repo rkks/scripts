@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Collect cpu load at regular intervals of time
 #  CREATED: 04/11/17 11:09:03 IST
-# MODIFIED: 04/11/17 12:11:50 IST
+# MODIFIED: 04/Apr/2022 21:33:40 PDT
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -19,19 +19,19 @@ ROTATE_COUNTER=60;      # 60 rotations in 30secs
 ROTATE_DIR="/var/log/external";
 
 # print to stderr. echo swallows -e, -n, options: { >&2 echo -- $*; }
-function warn() { >&2 printf "%s\n" "$@"; }
-function dump() { printf "%s\n" "$@"; }
-function die()  { warn "$@"; exit 1; }
+function log_warn() { >&2 printf "%s\n" "$@"; }
+function log_dump() { printf "%s\n" "$@"; }
+function die()  { log_warn "$@"; exit 1; }
 
 usage()
 {
-    warn "Usage: cpu-load.sh [-h|]"
-    warn "Options:"
-    warn "  -h          - print this help message"
-    warn "  -c <count>  - loop count for record collect"
-    warn "  -d <dir>    - records dump directory path"
-    warn "  -s <secs>   - sleep interval (default: 5s)"
-    warn "  -t <fname>  - file name for records write"
+    log_warn "Usage: cpu-load.sh [-h|]"
+    log_warn "Options:"
+    log_warn "  -h          - print this help message"
+    log_warn "  -c <count>  - loop count for record collect"
+    log_warn "  -d <dir>    - records dump directory path"
+    log_warn "  -s <secs>   - sleep interval (default: 5s)"
+    log_warn "  -t <fname>  - file name for records write"
 }
 
 function rotate_file()
@@ -74,10 +74,10 @@ main()
             local "opt_$opt"=1 && local "optarg_$opt"="$OPTARG"
             ;;
         \?)
-            warn "Invalid option: -$OPTARG"; usage; exit $EINVAL
+            log_warn "Invalid option: -$OPTARG"; usage; exit $EINVAL
             ;;
         :)
-            warn "[ERROR] Option -$OPTARG requires an argument";
+            log_warn "[ERROR] Option -$OPTARG requires an argument";
             usage; exit $EINVAL
             ;;
         esac

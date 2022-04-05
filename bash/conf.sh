@@ -61,7 +61,7 @@ link_confs()
     CONFS+=" cookies mail_aliases rhosts gdbinit hushlogin"
 
     link_files DOT $HOME/conf $HOME $CONFS
-    link_files DOT $HOME/conf/custom $HOME bashrc.dev
+    link_files DOT $HOME/conf/custom $HOME bashrc.dev backup
     link_files REG $HOME/conf/vnc $HOME/.vnc xstartup xstartup_safe
 
     echo "Linking Configuration Files/Directories - Done"
