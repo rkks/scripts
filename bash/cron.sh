@@ -3,7 +3,7 @@
 #
 #   AUTHOR: Ravikiran K.S. (ravikirandotks@gmail.com)
 #  CREATED: 11/08/11 13:35:02 PST
-# MODIFIED: 05/Apr/2022 00:49:32 PDT
+# MODIFIED: 02/05/2022 05:28:25 PM IST
 
 # Cron has defaults below. Redefining to suite yours(if & only if necessary).
 # HOME=user-home-directory  # LOGNAME=user.s-login-id
@@ -184,7 +184,7 @@ function usage()
 
 function main()
 {
-    local PARSE_OPTS="ha:b:c:d:e:lnr:s:tz"
+    local PARSE_OPTS="hb:c:d:e:lnr:s:tz"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -209,7 +209,6 @@ function main()
 
     #export SHDEBUG=yes;
     ((opt_m)) && { MAILTO="$optarg_m"; }
-    ((opt_a)) && { RUN_LOG="run.log"; truncate --size 0 $RUN_LOG; batch_run $optarg_a; }
     ((opt_b)) && { backup $optarg_b; }
     ((opt_c)) && { revision $optarg_c; }
     ((opt_d)) && { build $optarg_d; }

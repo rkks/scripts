@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 04/Apr/2022 23:42:01 PDT
+# MODIFIED: 02/05/2022 05:37:32 PM IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -48,7 +48,7 @@ function export_bash_funcs()
     FUNCS="truncate_file vncs bug rli make_workspace_alias bash_colors $FUNCS"
     FUNCS="diffscp compare show_progress get_ip_addr ssh_key ssh_pass $FUNCS"
     FUNCS="batch_run batch_mkdie log_note log_crit log_err log_dbg $FUNCS"
-    FUNCS="cron_batch_func cron_func_on $FUNCS"
+    FUNCS="cron_batch_func cron_func_on is_func $FUNCS"
     export_func $FUNCS;
 }
 
@@ -116,6 +116,7 @@ function cron_batch_func()
 {
     [[ $# -ne 2 ]] && { echo "Usage: $FUNCNAME <cb-func-name> <list-file>"; return $EINVAL; }
     local fname=$1; shift; local list=$1; shift; local rval=0;
+    (is_func $fname) || { echo "function $fname does not exists"; return $EINVAL; }
     while read line; do
         [[ "$line" == \#* ]] && { continue; }
         local skipname="$fname"; skipname+="4$line";
@@ -126,6 +127,9 @@ function cron_batch_func()
     done < $list
     return $rval;
 }
+
+# usage: is_func <func-name> && echo true || echo false
+function is_func() { [[ $(type -t $1) == function ]] && return 0; }
 
 # usage: shell <cmd> <args>
 function shell() { run $SHELL $*; return $?; }
@@ -322,9 +326,9 @@ function source_script() { local us; for us in $*; do chk FE EX $us && { log_not
 function pause()
 {
     [[ ! -z $DRY_RUN ]] && echo -n $* "Continue (Y/n)? " || return 0;
-    TIMEOUT=3; local reply=y; read -t $TIMEOUT reply; unset TIMEOUT;
+    TIMEOUT=3; local reply=n; read -t $TIMEOUT reply; unset TIMEOUT;
     [[ "$?" == "142" ]] && { reply=y; echo $reply; }    # On Timeout choose the default answer
-    [[ "$reply" == "n" ]] && die $ECANCELED "Operation Cancelled. Exiting." || { echo ""; }
+    [[ ! $reply =~ ^[Yy]$ ]] && die $ECANCELED "Operation Cancelled. Exiting." || { echo ""; }
 }
 
 function term()

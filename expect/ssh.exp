@@ -11,6 +11,7 @@ proc usage {} {
     puts "Usage: scp.exp <options>"
     puts "Options:"
     puts "   -h <svr-fqdn/ip>  - hostname/ip of ssh-svr"
+    puts "   -f <file-path>    - local cmds file path"
     puts "   -u <username>     - username to login with"
     puts "   -p <password>     - password for login"
     puts "   -t <seconds>      - timeout in seconds"
@@ -32,6 +33,7 @@ proc usage {} {
     set hostname ""
     set username [exec id -nu]
     set password ""
+    set filepath ""
 
     # Loop through the command line args
     for {set n 0} {$n < $argc} {incr n} {
@@ -66,6 +68,15 @@ proc usage {} {
              puts "ERROR: Missing ARG for $arg\n"
           }
 
+       } elseif { [string compare $arg "-f"] == 0} {
+          if { $n < $n+1 } {
+             incr n
+             set filepath [lindex $argv $n]
+          } else {
+             set rval 1
+             puts "ERROR: Missing ARG for $arg\n"
+          }
+
        } elseif { [string compare $arg "-t"] == 0} {
           if { $n < $n+1 } {
              incr n
@@ -93,4 +104,8 @@ proc usage {} {
     }
 
     connect_ssh $hostname $username $password
+    if { [llength $filepath] > 0 } {
+       send_user "Execute commands from file $filepath\n"
+       run_fcmds $filepath
+    }
     interact

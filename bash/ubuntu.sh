@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: ubuntu quirks and it's remedies
 #  CREATED: 04/05/18 10:34:37 PDT
-# MODIFIED: 02/Apr/2022 18:10:18 IST
+# MODIFIED: 14/04/2022 04:06:00 PM IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -21,10 +21,23 @@ function create_user()
 
 function delete_user()
 {
+    sudo deluser $1;
 }
 
 function dmi_decode_str()
 {
+    # list all serials
+    for sysdevpath in $(find /sys/bus/usb/devices/usb*/ -name dev); do
+        (
+            syspath="${sysdevpath%/dev}"
+            devname="$(udevadm info -q name -p $syspath)"
+            [[ "$devname" == "bus/"* ]] && continue
+            eval "$(udevadm info -q property --export -p $syspath)"
+            [[ -z "$ID_SERIAL" ]] && continue
+            echo "/dev/$devname - $ID_SERIAL"
+        )
+    done
+
     local DMI_DECODE_FIELDS="bios-vendor bios-version bios-release-date system-manufacturer system-product-name system-version system-serial-number system-uuid baseboard-manufacturer baseboard-product-name baseboard-version baseboard-serial-number baseboard-asset-tag chassis-manufacturer chassis-type chassis-version chassis-serial-number chassis-asset-tag processor-family processor-manufacturer processor-version processor-frequency";
     local s;
     for s in $DMI_DECODE_FIELDS;
@@ -55,13 +68,13 @@ function add_systemd_svc()
 function disable_systemd_svc()
 {
     [[ $# -ne 1 ]] && { echo "Usage: $FUNCNAME <svc-name>"; return $EINVAL; }
-    sudo systemctl stop $1 && sudo systemctl disable --now $1 && sudo systemctl mask $1;
+    sudo systemctl status $1 && sudo systemctl stop $1 && sudo systemctl disable --now $1 && sudo systemctl mask $1 && sudo systemctl status $1;
 }
 
 function enable_systemd_svc()
 {
     [[ $# -ne 1 ]] && { echo "Usage: $FUNCNAME <svc-name>"; return $EINVAL; }
-    sudo systemctl unmask $1 && sudo systemctl enable $1 && sudo systemctl restart $1;
+    sudo systemctl status $1 && sudo systemctl unmask $1 && sudo systemctl enable --now $1 && sudo systemctl restart $1 && sudo systemctl status $1;
 }
 
 function disable_netplan()
@@ -101,16 +114,6 @@ function apt_cleanup()
 
 function list_serial_dev()
 {
-    for sysdevpath in $(find /sys/bus/usb/devices/usb*/ -name dev); do
-        (
-            syspath="${sysdevpath%/dev}"
-            devname="$(udevadm info -q name -p $syspath)"
-            [[ "$devname" == "bus/"* ]] && continue
-            eval "$(udevadm info -q property --export -p $syspath)"
-            [[ -z "$ID_SERIAL" ]] && continue
-            echo "/dev/$devname - $ID_SERIAL"
-        )
-    done
 }
 
 function kernel_build()

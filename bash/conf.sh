@@ -19,8 +19,9 @@
 #set -uvx               # Treat unset variables as an error, verbose, debug mode
 
 # .bashrc.dev not sourced as it creates cyclic dependencies during first time setting up of environment.
-UNAMES=$(uname -s)      # machine type: Linux, FreeBSD, Darwin, SunOS
-UBUNTU_OS=$(uname -v | grep -i ubuntu | wc -l)  # distro: ubuntu, fedora
+UNAMES=$(uname -s)      # OS name: Linux, FreeBSD, Darwin, SunOS. $(uname -v | grep -i ubuntu)
+DISTRO_NM=$(grep '^ID=' /etc/os-release | cut -f2- -d= | sed -e 's/\"//g')  # distro: ubuntu, fedora
+DISTRO_VER=$(grep '^VERSION_ID=' /etc/os-release | cut -f2- -d= | sed -e 's/\"//g') # 20.04, 18.04
 
 function link_files()
 {
@@ -111,20 +112,67 @@ link_tools()
     echo "Linking Tool binary Files - Done"
 }
 
-install_virt()
+install_vbox()
 {
-    # qemu - hw emulator, libvirt - VM manager, brctl - bridge mgmt
+    wget -q https://www.virtualbox.org/download/oracle_vbox_2016.asc -O- | sudo apt-key add
+    sudo apt-add-repository "deb [arch=amd64] https://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib"
+    sudo apt-get update && sudo apt-get install virtualbox-6.1 && return $?; # sudo apt info virtualbox &&
+}
+
+install_kvm()
+{
+    local ver=$(lsb_release -rs); local uver=${ver%.*};
+    [[ $DISTRO_VER < 20.04 ]] && { echo "Ubuntu below 20.X not supported" && return $EINVAL; }
+    # qemu - hw emulator, libvirt - VM manager. libvirt-bin in 18.04 & before.
     # virtinst - cmdline tools for VM mgmt, virt-manager - GUI tool for VM mgmt
-    VIRT_SW="qemu-kvm libvirt-bin bridge-utils virtinst virt-manager"
-    sudo apt install -y $VIRT_SW &&
-    sudo usermod -aG libvirt $USER && sudo usermod -aG kvm $USER && return $?;
+    VIRT_SW="qemu qemu-kvm libvirt-daemon libvirt-clients virtinst virt-manager"
+    sudo apt install -y $VIRT_SW && sudo usermod -aG libvirt $USER &&
+    sudo usermod -aG kvm $USER && return $?;
+}
+
+install_vagrant()
+{
+    install_vbox && install_kvm;
+    #sudo apt install https://releases.hashicorp.com/vagrant/2.2.19/vagrant_2.2.19_x86_64.deb
+    # dnsmasq-base/bridge-utils already installed on SVR.
+    # TODO: Check on libguestfs-tools, sshpass, tree, jq
+    VAGRANT_LIBVIRT_SW="libxslt-dev libxml2-dev zlib1g-dev libvirt-dev jq"
+    VAGRANT_LIBVIRT_SW+=" libvirt-daemon-system ebtables"
+    sudo apt-get install -y $VAGRANT_LIBVIRT_SW
+    curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+    sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+    sudo apt-get update && sudo apt-get install ruby-dev ruby-libvirt vagrant
+    # vagrant-libvirt plugin head is not stable, way too many dependencies
+    LIBVIRT_PLUGIN_VER=0.4.1
+    local exists=$(vagrant plugin list | grep $LIBVIRT_PLUGIN_VER | grep vagrant-libvirt)
+    [[ -z "$exists" ]] && vagrant plugin install vagrant-libvirt --plugin-version=$LIBVIRT_PLUGIN_VER
+}
+
+install_docker()
+{
+    sudo apt-get remove docker docker-engine docker.io containerd runc
+    sudo apt install -y ca-certificates curl gnupg lsb-release
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+    sudo apt-get update && sudo apt-get install -y docker-ce docker-ce-cli containerd.io &&
+    sudo groupadd docker && sudo usermod -aG docker $USER && sudo chmod 666 /var/run/docker.sock
+    sudo systemctl enable docker.service && sudo systemctl enable containerd.service    # start on-boot
+}
+
+install_containerlab()
+{
+    sudo bash -c "$(curl -sL https://get.containerlab.dev)"
+    #echo "deb [trusted=yes] https://apt.fury.io/netdevops/ /" | sudo tee -a /etc/apt/sources.list.d/netdevops.list
+    ## Log out, Log back in, Run 'netlab test clab'
+    #sudo apt-get update && sudo apt-get install -y containerlab
 }
 
 install_tools()
 {
-    [[ $# -eq 0 ]] && { echo "Usage: $FUNCNAME <dev|lap|svr>"; return $EINVAL; }
+    [[ $# -eq 0 ]] && { local mode=dev; } || { local mode=$1; }
     [[ "$UNAMES" != "Linux" ]] && { echo "$FUNCNAME: Only linux supported"; return $EINVAL; }
-    [[ $UBUNTU_OS -eq 0 ]] && { echo "$FUNCNAME: Only ubuntu supported"; return $EINVAL; }
+    [[ $DISTRO_NM != "ubuntu" ]] && { echo "$FUNCNAME: Only ubuntu supported"; return $EINVAL; }
+    [[ $DISTRO_VER < 18.04 ]] && { echo "$FUNCNAME: Only Ubuntu18.04 or above supported"; return $EINVAL; }
 
     # Tried & junked: libcharon-standard-plugins libstrongswan-extra-plugins
     # resolvconf wpasupplicant
@@ -134,28 +182,32 @@ install_tools()
 
     # common development tools
     local UBUNTU_DEV_SW="git exuberant-ctags cscope vim autocutsel tmux expect"
-    UBUNTU_DEV_SW+=" fortune-mod cowsay toilet p7zip-full ifupdown net-tools"
+    UBUNTU_DEV_SW+=" fortune-mod cowsay toilet ifupdown net-tools dnsmasq"
 
     # common laptop software
     local UBUNTU_LAP_SW="strongswan libcharon-extra-plugins strongswan-swanctl"
-    UBUNTU_LAP_SW+=" minicom dnsmasq pptp-linux wireshark openfortivpn gpaint"
+    UBUNTU_LAP_SW+=" minicom pptp-linux wireshark openfortivpn gpaint"
     UBUNTU_LAP_SW+=" ttf-mscorefonts-installer ubuntu-restricted-extras"
-    UBUNTU_LAP_SW+=" libavcodec-extra vlc"
+    UBUNTU_LAP_SW+=" libavcodec-extra vlc p7zip-full"
 
-    # common server software
-    UBUNTU_SVR_SW="vagrant ansible"
+    # common server software. NOTE: ansible is buggy, use it?
+    UBUNTU_SVR_SW="bridge-utils openvswitch-switch"
+    #UBUNTU_SVR_SW+=" virtualbox vagrant"
 
-    sudo apt-get update; local ret=$?; [[ $ret -eq 0 ]] && return $EPERM;
+    UBUNTU_PYTHON_DEV=""
+    UBUNTU_WEB_DEV="jq"
+
+    sudo apt-get update; local ret=$?; [[ $ret -ne 0 ]] && return $EPERM;
     #sudo add-apt-repository "deb http://archive.ubuntu.com/ubuntu $(lsb_release -sc) main universe";
-    case
-    'dev')
-        sudo apt-get install -y $UBUNTU_DEV_SW;
+    case $mode in
+    dev)
+        sudo apt-get install -y $UBUNTU_DEV_SW && install_docker;
         ;;
-    'lap')
-        sudo apt-get install -y $UBUNTU_LAP_SW;
+    lap)
+        sudo apt-get install -y $UBUNTU_DEV_SW $UBUNTU_LAP_SW;
         ;;
-    'svr')
-        install_virt && sudo apt-get install -y $UBUNTU_SVR_SW;
+    svr)
+        sudo apt-get install -y $UBUNTU_SVR_SW && install_vagrant;
         ;;
     *)
         echo "Invalid input $*";
@@ -186,7 +238,7 @@ pull_github()
     cd $1 && git remote set-url origin git@github.com:rkks/$1.git && cd -
 }
 
-pull_conf()
+pull_dev()
 {
     pull_github conf;
     pull_github scripts;
@@ -240,12 +292,13 @@ main()
         usage && exit $EINVAL;
     fi
 
-    ((opt_p)) && pull_conf;
+    ((opt_i)) && install_tools $*;
+    ((opt_p)) && pull_dev;
+    ((opt_e)) && pull_extra;
     ((opt_n)) && link_confs;
     # Do not link any files: bash_history gdb_history history lesshst
     ((opt_l)) && mkdir -pv $HOME/.logs;
     ((opt_s)) && link_scripts;
-    ((opt_i)) && install_tools $*;
     ((opt_t)) && stop_cron;
     ((opt_c)) && start_cron;
     ((opt_h)) && { usage; }

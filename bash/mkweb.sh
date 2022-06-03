@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Script to build the gh-pages
 #  CREATED: 06/09/17 19:27:48 IST
-# MODIFIED: 06/Feb/2022 02:22:25 IST
+# MODIFIED: 05/Apr/2022 21:50:07 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -145,7 +145,7 @@ build_index()
 
     sort -nr $ALLPOST | sed -n '1,5 p' | awk 'BEGIN{FS="%"};{print "* ["$2"]("$3") | "$4}' > $LATEST5
     echo "[PD] $(date '+%a, %d %b %Y 00:00:00 +0530') | index.html";
-    pandoc $PD_OPTS -o $PUBLISH/index.html $CONTENT/index.$HDR $CONTENT/about.$HDR $LATEST5;
+    pandoc $PD_OPTS -o $PUBLISH/index.html $CONTENT/index.$HDR $CONTENT/about.$HDR $LATEST5 --metadata pagetitle="RK Wiki";
     rm -f $ALLPOST $LATEST5;
 }
 

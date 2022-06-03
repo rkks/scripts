@@ -1,12 +1,5 @@
-#!/usr/bin/expect --
+##!/usr/bin/expect --
 #
-# 6/15/2013 By Scott L. Miller
-# Created by Tim Evens (tim@evensweb.com), 5/2009
-# Corrected by Sergio Zavala (sergio.zavala at sidetec.com.mx), 12/2010
-# Enhanced by Ravikiran KS (ravikirandotks at gmail.com), 12/03/14
-#
-# Copyright Tim Evens, 2009
-# Copyright Scott L. Miller, 2014
 # Copyright Ravikiran KS, 2014
 
 #++++++++++++++++++++++++++
@@ -207,7 +200,6 @@ proc console {host port user pw} {
    return 0
 }
 
-
 # Login to switch using given method: telnet or ssh
 # Return
 #   Puts at interactive console -- control to user
@@ -300,10 +292,10 @@ proc connect_ssh {host usr pw} {
 
    # Start the expect/send process to login
    expect {
-      #send_user "procid: $id usr_chk: $usr_chk pw_chk: $pw_chk\n"
+       send_user "procid: $id usr_chk: $usr_chk pw_chk: $pw_chk\n"
 
        # Below handles the password prompt
-       } -nocase -re "word:" {
+       -nocase -re "word:" {
          send "$pw\r"
          incr pw_chk;
 
@@ -409,11 +401,12 @@ proc connect_telnet {host usr pw} {
 
    return 0
 }
+
 # Send 'enable' command & pass to router/switch
 # Return
 #   0 if sending enable command was successful
 #   > 0 otherwise
-proc send_enable {pw} {
+proc run_enable {pw} {
    set rval 0
 
    # If we have an enable password, lets try to send it
@@ -448,7 +441,7 @@ proc send_enable {pw} {
 }
 
 # Read cmdfile and send commands to switch
-proc send_cmd {cmdfile} {
+proc run_fcmds {cmdfile} {
    global prompt
 
    if { [llength $cmdfile] <= 0 } {

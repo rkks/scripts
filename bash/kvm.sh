@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: KVM create/modify/update VMs -- Vagrant UP alternative
 #  CREATED: 03/28/16 15:13:58 IST
-# MODIFIED: 23/Mar/2022 21:20:02 PDT
+# MODIFIED: 21/04/2022 05:32:49 PM IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -110,10 +110,20 @@ function list_vms()
     virsh list $RUN$name
 }
 
-function install_kvm()
+function add_net()
 {
-    sudo apt install -y qemu qemu-kvm libvirt-daemon libvirt-clients\
-        bridge-utils virt-manager qemu-utils;
+    [[ $# -ne 1 ]] && { echo "Usage: $FUNCNAME <net-xml-path>"; return $EINVAL; }
+    [[ ! -f $1 ]] && { echo "$FUNCNAME: File $1 not found"; return $EINVAL; }
+    [[ -z $KVM_NET_NM ]] && { echo "$FUNCNAME: input -n <net-nm> as well"; return $EINVAL; }
+    local exists=$(sudo virsh net-list --all | grep $KVM_NET_NM)
+    [[ -n "$exists" ]] && del_net $KVM_NET_NM;
+    sudo virsh net-define $1 && sudo virsh net-start $KVM_NET_NM &&
+    sudo virsh net-autostart $KVM_NET_NM
+}
+
+function del_net()
+{
+    sudo virsh net-destroy $KVM_NET_NM && sudo virsh net-undefine $KVM_NET_NM;
 }
 
 usage()
@@ -159,6 +169,7 @@ main()
     fi
 
     ((opt_t)) && { VM_TYPE=$optarg_t; } || { VM_TYPE=headless; }
+    ((opt_n)) && { KVM_NET_NM=$optarg_n; } || { KVM_NET_NM=vagrant-libvirt; }
     ((opt_b)) && { bootup_vm $*; }
     ((opt_c)) && { connect_vm $*; }
     ((opt_d)) && { setup_dpdk $optarg_d; }
