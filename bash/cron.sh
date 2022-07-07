@@ -3,7 +3,7 @@
 #
 #   AUTHOR: Ravikiran K.S. (ravikirandotks@gmail.com)
 #  CREATED: 11/08/11 13:35:02 PST
-# MODIFIED: 02/05/2022 05:28:25 PM IST
+# MODIFIED: 07/07/2022 12:25:12 PM IST
 
 # Cron has defaults below. Redefining to suite yours(if & only if necessary).
 # HOME=user-home-directory  # LOGNAME=user.s-login-id
@@ -59,6 +59,7 @@ function nightly()
     cron_func_on Fri sync;
     cron_func_on Now download;
     cron_func_on Now report;
+    cron_func_on Now cleanup $HOME/.repos;
 }
 
 function chk_revision_chgs()
@@ -161,6 +162,22 @@ function reserve()
         log_note "Reserving Router $router";    # res sh $router;
         run res co -c "Testing" -P "scripting" -s "$(date -v+3d +"%Y-%m-%d") $start" -d $duration -r $repeat $router
     done < $reserve_file
+}
+
+function cleanup_update()
+{
+    [[ $# -eq 0 ]] && { echo "Usage: $FUNCNAME <dir-path>"; return $EINVAL; }
+    cdie $1 && rm -f $DIFF_LOG;
+    #[[ $? -ne 0 ]] && { log DEBUG "Cleanup fail at $1 ($DIFF_LOG)"; return $EINVAL; }
+    log_note "Clean up successful at $1"; return 0;
+}
+
+function cleanup()
+{
+    local fname="$FUNCNAME";    # skip cleanup altogether
+    [[ $# -ne 1 ]] && { echo "Usage: $FUNCNAME <list-file>"; return $EINVAL; }
+    log_note "$FUNCNAME: Cleanup of repos list in file $1"
+    cron_batch_func cleanup_update $1
 }
 
 # openfortivpn has auto-reconnect option on disconnect, no need of cron job

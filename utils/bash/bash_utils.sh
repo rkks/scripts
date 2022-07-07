@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 02/05/2022 05:37:32 PM IST
+# MODIFIED: 06/07/2022 10:33:34 AM IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -364,7 +364,7 @@ function run_on()
 # usage: cron_func_on Mon backup_update /home/ravikiranks/conf
 function cron_func_on()
 {
-    local when=$1; shift; local fname=$1; shift;
+    local when=$1; local fname=$2; shift; shift;
     [[ ! -z "$(grep -w $fname $HOME/.cronskip)" ]] && { log_note "Skip $fname"; return; }   # skip option altogether
     case $when in
     Now)
