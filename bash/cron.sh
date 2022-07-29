@@ -3,7 +3,7 @@
 #
 #   AUTHOR: Ravikiran K.S. (ravikirandotks@gmail.com)
 #  CREATED: 11/08/11 13:35:02 PST
-# MODIFIED: 07/07/2022 12:25:12 PM IST
+# MODIFIED: 28/07/2022 04:47:30 AM
 
 # Cron has defaults below. Redefining to suite yours(if & only if necessary).
 # HOME=user-home-directory  # LOGNAME=user.s-login-id
@@ -90,7 +90,7 @@ function revision()
 function database_update()
 {
     [[ $# -ne 1 ]] && { echo "Usage: $FUNCNAME <dir-path>"; return $EINVAL; }
-    shell cscope_cgtags.sh -d $1;   # -e -u
+    shell cscope_cgtags.sh -c $1;   # -e -u
 }
 
 function database()
