@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 06/07/2022 10:33:34 AM IST
+# MODIFIED: 11/09/2022 10:14:48 PM
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -48,7 +48,7 @@ function export_bash_funcs()
     FUNCS="truncate_file vncs bug rli make_workspace_alias bash_colors $FUNCS"
     FUNCS="diffscp compare show_progress get_ip_addr ssh_key ssh_pass $FUNCS"
     FUNCS="batch_run batch_mkdie log_note log_crit log_err log_dbg $FUNCS"
-    FUNCS="cron_batch_func cron_func_on is_func $FUNCS"
+    FUNCS="cron_batch_func is_func $FUNCS"
     export_func $FUNCS;
 }
 
@@ -95,8 +95,11 @@ function bail() { local e=$?; [[ $e -ne 0 ]] && { die $e "$! failed w/ err: $e. 
 # redirect to tee will always return $? as 0. For correct retval, check PIPESTATUS[0]
 function run()
 {
-    test -n "$DRY_RUN" && { echo "$*"; return 0; } || { local p; local a=""; for p in "$@"; do a="${a} \"${p}\""; done; }
-    test -z "$RUN_LOG" && { RUN_LOG=/dev/null; }; log_dbg "$a"; eval "$a" 2>&1 | tee -a $RUN_LOG 2>&1; return ${PIPESTATUS[0]};
+    # time cmd returns return value of child program. And time takes time as argument and still works fine
+    [[ ! -z $TIMED_RUN ]] && { local HOW_LONG='time '; }
+    (is_func $1) && { local fname=$1; shift; log_dbg "$fname $*"; $HOW_LONG $fname "$*"; return $?; }
+    local p; local a="$HOW_LONG"; for p in "$@"; do a="${a} \"${p}\""; done; test -z "$RUN_LOG" && { RUN_LOG=/dev/null; };
+    log_dbg "$a"; test -n "$DRY_RUN" && { return 0; } || eval "$a" 2>&1 | tee -a $RUN_LOG 2>&1; return ${PIPESTATUS[0]};
 }
 
 function batch_run()
@@ -107,7 +110,7 @@ function batch_run()
         [[ "$line" == \#* ]] && { continue; }
         run $line; rval=$?; [[ $rval -ne 0 && $# -lt 2 ]] && { break; };
     done < $1
-    [[ ! -z $MAILTO ]] && { [[ -f $RUN_LOG ]] && mail.sh -e $MAILTO -b $RUN_LOG || echo "RUN_LOG not defined"; }
+    #[[ ! -z $MAILTO && -f $RUN_LOG ]] && mail.sh -e $MAILTO -b $RUN_LOG;
     return $rval;
 }
 
@@ -344,40 +347,24 @@ function term()
 }
 
 # usage: run_on Mon abc.sh
+# usage: run_on Mon backup_update /home/ravikiranks/conf
 function run_on()
 {
-    local when=$1; shift;
+    [[ $# -lt 2 ]] && { return $ENOTSUP; } || { local when=$1; local fname=$2; shift; }
+    [[ ! -z $CRON_RUN && ! -z "$(grep -w $fname $HOME/.cronskip)" ]] && { log_note "Skip $fname"; return; }   # skip option altogether
     case $when in
     Now)
-        run "$*"; ;;
+        run $*; ;;
     Mon|Tue|Wed|Thu|Fri|Sat|Sun)
-        [[ "$(date +'%a')" == "$when" ]] && { run "$*"; }; ;;
+        [[ "$(date +'%a')" == "$when" ]] && { run $*; }; ;;
     Date)
-        local day=$1; shift; [[ "$(date +'%d%b%Y')" == "$day" ]] && { run "$*"; }; ;;    # Day-of-Year: 01Apr2016
+        local day=$1; shift; [[ "$(date +'%d%b%Y')" == "$day" ]] && { run $*; }; ;;    # Day-of-Year: 01Apr2016
     DoM)
-        local day=$1; shift; [[ "$(date +'%d%b')" == "$day" ]] && { run "$*"; }; ;;    # Day-of-Month: 02May
+        local day=$1; shift; [[ "$(date +'%d%b')" == "$day" ]] && { run $*; }; ;;    # Day-of-Month: 02May
     Day)
-        local day=$1; shift; [[ "$(date +'%d')" == "$day" ]] && { run "$*"; }; ;;    # Day of current Month: 03
+        local day=$1; shift; [[ "$(date +'%d')" == "$day" ]] && { run $*; }; ;;    # Day of current Month: 03
     esac
-}
-
-# usage: cron_func_on Mon backup_update /home/ravikiranks/conf
-function cron_func_on()
-{
-    local when=$1; local fname=$2; shift; shift;
-    [[ ! -z "$(grep -w $fname $HOME/.cronskip)" ]] && { log_note "Skip $fname"; return; }   # skip option altogether
-    case $when in
-    Now)
-        $fname "$*"; ;;
-    Mon|Tue|Wed|Thu|Fri|Sat|Sun)
-        [[ "$(date +'%a')" == "$when" ]] && { $fname "$*"; }; ;;
-    Date)
-        local day=$1; shift; [[ "$(date +'%d%b%Y')" == "$day" ]] && { $fname "$*"; }; ;;    # Day-of-Year: 01Apr2016
-    DoM)
-        local day=$1; shift; [[ "$(date +'%d%b')" == "$day" ]] && { $fname "$*"; }; ;;    # Day-of-Month: 02May
-    Day)
-        local day=$1; shift; [[ "$(date +'%d')" == "$day" ]] && { $fname "$*"; }; ;;    # Day of current Month: 03
-    esac
+    return $?;
 }
 
 function mktmp() { local f=$(mktemp); [[ $# -eq 1 ]] && cat $1 > $f || cat $TMPLTS/read_tty > $f; echo $f; }
@@ -489,8 +476,9 @@ function make_workspace_alias()
 function vid()
 {
     [[ $# -eq 0 ]] && { echo "Usage: $FUNCNAME <file-list>"; return $EINVAL; } || { local files=""; local rval=0; }
-    while read files; do [[ "$files" == \#* ]] && { continue; } || { vim -d $files; rval=$?; }; [[ $rval -ne 0 && $# -lt 2 ]] && { break; }; done < $1
-    [[ ! -z $MAILTO ]] && { [[ -f $RUN_LOG ]] && mail.sh -e $MAILTO -b $RUN_LOG || echo "RUN_LOG not defined"; }; return $rval;
+    while read files; do
+        [[ "$files" == \#* ]] && { continue; } || { vim -d $files; rval=$?; }; [[ $rval -ne 0 && $# -lt 2 ]] && break;
+    done < $1; return $rval;
 }
 
 # usage: diffscp <relative-dir-path> <dst-server>. GUI. if relative paths are not given, we need to do circus like: echo ${file#$1}
@@ -553,6 +541,8 @@ function sys_status() {
         sudo systemctl status $svc
     done
 }
+
+function find_grep() { [[ $# -ne 1 ]] && { echo "usage: find_grep <pattern>"; } || find . -type f -exec grep -H "$*" {} \;; }
 
 usage()
 {

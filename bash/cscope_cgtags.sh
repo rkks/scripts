@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Cscope Utils
 #  CREATED: 06/25/13 11:05:14 IST
-# MODIFIED: 14/Dec/2021 20:28:58 PST
+# MODIFIED: 11/09/2022 10:16:47 PM
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -14,6 +14,7 @@
 
 export PATH="$HOME/tools/$UNAMES/bin:$PATH";
 SRC_FILES=src.list
+unset TIMED_RUN
 
 # Do not use cscope-indexer. This is slow but flexible.
 function findsrc()

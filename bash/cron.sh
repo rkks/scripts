@@ -3,7 +3,7 @@
 #
 #   AUTHOR: Ravikiran K.S. (ravikirandotks@gmail.com)
 #  CREATED: 11/08/11 13:35:02 PST
-# MODIFIED: 28/07/2022 04:47:30 AM
+# MODIFIED: 08/08/2022 11:37:34 PM
 
 # Cron has defaults below. Redefining to suite yours(if & only if necessary).
 # HOME=user-home-directory  # LOGNAME=user.s-login-id
@@ -15,6 +15,7 @@
 [[ "cron.sh" == "$(basename -- $0)" && -f $HOME/.bashrc.dev ]] && { source $HOME/.bashrc.dev; }
 
 DIFF_LOG="$(date +%d%m%Y)-nightly-$(id -nu)-u.diff";
+CRON_RUN=1;
 
 function backup_update()
 {
@@ -51,15 +52,15 @@ function nightly()
     [[ ! -z "$(grep -w cron $HOME/.cronskip)" ]] && return;  # skip cron altogether
 
     # SCM should not update repo if there is a working change in repo
-    cron_func_on Now revision $HOME/.repos;
-    cron_func_on Now database $HOME/.repos;
-    cron_func_on Now build $HOME/.repos;
-    cron_func_on Now backup $HOME/.repos;
-    cron_func_on Fri reserve $COMPANY_CONFS/reserve;
-    cron_func_on Fri sync;
-    cron_func_on Now download;
-    cron_func_on Now report;
-    cron_func_on Now cleanup $HOME/.repos;
+    run_on Now revision $HOME/.repos;
+    run_on Now database $HOME/.repos;
+    run_on Now build $HOME/.repos;
+    run_on Now backup $HOME/.repos;
+    run_on Fri reserve $COMPANY_CONFS/reserve;
+    run_on Fri sync;
+    run_on Now download;
+    run_on Now report;
+    run_on Now cleanup $HOME/.repos;
 }
 
 function chk_revision_chgs()
