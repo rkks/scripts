@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: ubuntu quirks and it's remedies
 #  CREATED: 04/05/18 10:34:37 PDT
-# MODIFIED: 14/04/2022 04:06:00 PM IST
+# MODIFIED: 16/09/2022 09:10:27 AM IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -86,7 +86,7 @@ function disable_netplan()
     local pkgs="ifupdown dnsmasq";
     for pkg in "$pkgs"; do
         sudo dpkg -V $pkg;
-        [[ $? -ne 0 ]] { echo "pkg $pkg not installed"; return $EINVAL; }
+        [[ $? -ne 0 ]] && { echo "pkg $pkg not installed"; return $EINVAL; }
     done
     enable_systemd_svc networking;
     local svcs="systemd-networkd.socket systemd-networkd networkd-dispatcher"
@@ -114,6 +114,7 @@ function apt_cleanup()
 
 function list_serial_dev()
 {
+    echo "NA";
 }
 
 function kernel_build()

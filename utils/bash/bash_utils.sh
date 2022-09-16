@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 11/09/2022 10:14:48 PM
+# MODIFIED: 16/09/2022 09:31:50 AM IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -367,6 +367,7 @@ function run_on()
     return $?;
 }
 
+# tmpfile=$(mktemp /tmp/abc-script.XXXXXX); rm $tmpfile;
 function mktmp() { local f=$(mktemp); [[ $# -eq 1 ]] && cat $1 > $f || cat $TMPLTS/read_tty > $f; echo $f; }
 
 function clean_kv() { local i; for i in "${!R[@]}"; do unset $i; done; unset R; }

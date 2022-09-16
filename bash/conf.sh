@@ -182,13 +182,14 @@ install_tools()
 
     # common development tools
     local UBUNTU_DEV_SW="git exuberant-ctags cscope vim autocutsel tmux expect"
-    UBUNTU_DEV_SW+=" fortune-mod cowsay toilet ifupdown net-tools dnsmasq"
+    UBUNTU_DEV_SW+=" fortune-mod cowsay toilet ifupdown net-tools dnsmasq twm"
+    UBUNTU_DEV_SW+=" finger "
 
     # common laptop software
     local UBUNTU_LAP_SW="strongswan libcharon-extra-plugins strongswan-swanctl"
     UBUNTU_LAP_SW+=" minicom pptp-linux wireshark openfortivpn gpaint"
     UBUNTU_LAP_SW+=" ttf-mscorefonts-installer ubuntu-restricted-extras"
-    UBUNTU_LAP_SW+=" libavcodec-extra vlc p7zip-full"
+    UBUNTU_LAP_SW+=" libavcodec-extra vlc p7zip-full numlockx asciinema"
 
     # common server software. NOTE: ansible is buggy, use it?
     UBUNTU_SVR_SW="bridge-utils openvswitch-switch"
