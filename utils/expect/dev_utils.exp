@@ -56,13 +56,17 @@ proc fortivpn {c s r u p} {
 }
 
 # scp to host
-# Input: host loc file name user pass
-proc hscp {h f u p} {
+# Input: host user pass local-path remote-path
+proc hscp {h u p f r} {
     global spawn_id
     global timeout
     global prompt
 
-    set procid [spawn scp -r $f $u@$h:]
+    if { $r == 1 } {
+        set procid [spawn scp -r $u@$h:$f .]
+    } else {
+        set procid [spawn scp -r $f $u@$h:]
+    }
     if { $procid <= 0 } {
        send_user "ERROR: Failed to connect to host $h\n"
        return 1

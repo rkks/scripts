@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Cscope Utils
 #  CREATED: 06/25/13 11:05:14 IST
-# MODIFIED: 11/09/2022 10:16:47 PM
+# MODIFIED: 12/01/2023 06:01:59 PM IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -141,7 +141,8 @@ usage()
     echo "  -f    - form new GNU global database (clean)"
     echo "  -g <cscope-num> <pattern> - grep for pattern using line-oriented cscope"
     echo "  -l    - make list of source files under given path (recursive)"
-    echo "  -s    - disable source files list update/create (recursive)"
+    echo "  -r    - do not remove source files list after db update/create"
+    echo "  -s    - do not update/create source files list (recursive)"
     echo "  -t    - create ctags database from scratch (clean)"
     echo "  -u    - update existing ctags database"
     echo "  -x    - delete all databases under given path"
@@ -152,7 +153,7 @@ usage()
 # It can then be included in other files for functions.
 main()
 {
-    PARSE_OPTS="habcdefg:lstux"
+    PARSE_OPTS="habcdefg:lrstux"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -188,6 +189,7 @@ main()
     ((opt_a || opt_d)) && cscope_db_update;
     ((opt_a || opt_e)) && global_db_update;
     ((opt_a || opt_u)) && ctags_db_update;
+    ((!opt_r && !opt_s && !opt_h && !opt_g && !opt_x )) && rm -f $SRC_FILES;
     ((opt_h)) && (usage; exit 0)
 
     exit 0

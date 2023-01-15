@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: ubuntu quirks and it's remedies
 #  CREATED: 04/05/18 10:34:37 PDT
-# MODIFIED: 16/09/2022 09:10:27 AM IST
+# MODIFIED: 08/11/2022 10:28:48 AM IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -22,6 +22,44 @@ function create_user()
 function delete_user()
 {
     sudo deluser $1;
+}
+
+function enable_router()
+{
+    # For sysctl issues check hacks/ubuntu.md
+    sudo sysctl -w net.ipv4.ip_forward=1
+    # Below is topology. Create 2 route-tables, one for each ISP
+    # LAN: eth0: 192.168.0.1/24
+    # ISP1: eth1: 192.168.1.1/24, gateway: 192.168.1.2/24
+    # ISP2: eth2: 192.168.2.1/24, gateway: 192.168.2.2/24
+    echo "10 ISP1" | sudo tee -a /etc/iproute2/rt_tables
+    echo "20 ISP2" | sudo tee -a /etc/iproute2/rt_tables
+    sudo ip route show table main | grep -Ev '^default' | \
+    while read ROUTE ; do
+        sudo ip route add table ISP1 $ROUTE
+    done
+    # Default GW to respective ISPs
+    sudo ip route add default via 192.168.1.2 table ISP1
+    sudo ip route add default via 192.168.2.2 table ISP2
+    # CONNMARK
+    sudo iptables -t mangle -A PREROUTING -j CONNMARK --restore-mark
+    sudo iptables -t mangle -A PREROUTING -m mark ! --mark 0 -j ACCEPT
+    sudo iptables -t mangle -A PREROUTING -j MARK --set-mark 10
+    sudo iptables -t mangle -A PREROUTING -m statistic --mode random --probability 0.5 -j MARK --set-mark 20
+    sudo iptables -t mangle -A PREROUTING -j CONNMARK --save-mark
+    # NATing
+    sudo iptables -t nat -A POSTROUTING -o eth1 -j MASQUERADE
+    sudo iptables -t nat -A POSTROUTING -o eth2 -j MASQUERADE
+    # Review all changes
+    sudo iptables -L -v -n
+
+    # To persist these changes, do:
+    #echo "net.ipv4.ip_forward=1" | sudo tee -a /etc/sysctl.conf    # sysctl -p
+}
+
+function disable_router()
+{
+    sudo sysctl -w net.ipv4.ip_forward=0;
 }
 
 function dmi_decode_str()
@@ -96,6 +134,7 @@ function disable_netplan()
     for svc in $svcs; do
         disable_systemd_svc $svc;
     done
+    sudo systemctl disable NetworkManager-wait-online.service
     #sudo ifdown --force -a && sudo ifup -a
     #sudo invoke-rc.d dnsmasq restart
 }

@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 16/09/2022 09:31:50 AM IST
+# MODIFIED: 11/01/2023 04:19:18 PM IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -102,6 +102,7 @@ function run()
     log_dbg "$a"; test -n "$DRY_RUN" && { return 0; } || eval "$a" 2>&1 | tee -a $RUN_LOG 2>&1; return ${PIPESTATUS[0]};
 }
 
+# It is upto caller to decide whether, when, and what to mail and to whom.
 function batch_run()
 {
     [[ $# -eq 0 ]] && { echo "Usage: $FUNCNAME <cmds-file> [continue-on-err]"; return $EINVAL; }
@@ -110,7 +111,6 @@ function batch_run()
         [[ "$line" == \#* ]] && { continue; }
         run $line; rval=$?; [[ $rval -ne 0 && $# -lt 2 ]] && { break; };
     done < $1
-    #[[ ! -z $MAILTO && -f $RUN_LOG ]] && mail.sh -e $MAILTO -b $RUN_LOG;
     return $rval;
 }
 
@@ -143,11 +143,11 @@ function own { which "$1" &>/dev/null; }        # Error moved to /dev/null becau
 # usage: (have ls) && echo true || echo flase
 function have { type -t "$1" &>/dev/null; }
 
-# usage: cdie <path>
-function cdie { chk DE EX $1 && cd $1 || return $?; }
+# usage: cdie <path>. cd can not be passed to 'run' as eval creates sub-shell.
+function cdie { chk DE EX $1 && { cd $1 && return $?; } || return $EINVAL; }
 
 # usage: mkdie <path>. Create directory if doesn't exist, otherwise just update timestamp.
-function mkdie { chk EQ 1 $# && { [[ ! -e $1 ]] && { mkdir -pv $1 && chmod 740 "$1"; return $?; } || return 0; } || return $?; }
+function mkdie { chk EQ 1 $# && { [[ ! -e $1 ]] && { mkdir -pv $1 && chmod 750 "$1"; return $?; } || return 0; } || return $EINVAL; }
 
 # usage: batch_mkdie <dir-list>.
 function batch_mkdie() { local dname; for dname in $*; do [[ ! -d $dname ]] && { mkdie $dname; } done; }
@@ -156,7 +156,7 @@ function batch_mkdie() { local dname; for dname in $*; do [[ ! -d $dname ]] && {
 function mkfile() { chk EQ 1 $# && { [[ ! -e $1 ]] && { mkdie "$(dirname -- $1)" && touch -- $1 && chmod 640 $1; return $?; } || return 0; } || return $?; }
 
 # encode file and send as attachment. uuencode 2nd arg is attachment filename (as appears in mail). mutt not available on FreeBSD 
-function email() { [[ $# -eq 1 ]] && uuencode $1 $(basename $1) | mail -s "[ARCHIVE] Old logs" $LOG_EMAIL; }
+function email() { [[ $# -eq 1 ]] && uuencode $1 $(basename $1) | mail -s "[ARCHIVE] Old logs" $MAILTO; }
 
 # usage: bkup <path>
 function bkup() { [[ -e $1 ]] && { local ext="$RANDOM.$(stat --printf="%Y" $1)"; mv $1 $1.$ext && gzip $1.$ext; }; }
@@ -399,7 +399,7 @@ function read_cfg() { read_tty $* && read_kv $F; }
 function log_init()
 {
     [[ $# -eq 0 ]] && { return $EINVAL; } || { local LVL=$1; [[ $# -eq 2 ]] && LOG_FILE="$2"; }
-    log_lvl $LVL && mkfile $LOG_FILE && file_rotate $LOG_FILE; return $?;
+    log_lvl $LVL && mkfile $LOG_FILE && file_rotate $LOG_FILE && RUN_LOG=$LOG_FILE; return $?;
 }
 
 function log_lvl()
@@ -426,7 +426,7 @@ function log()
     [[ $# -lt 2 ]] && { return $EINVAL; } || { local s=$(echo ${LOG_LVLS[@]} | grep "<$1>"); [[ -z ${s} ]] && return $EINVAL; }
     [[ -z $LOG_LVLS_ON ]] && { return $ENOENT; } || { local is_log_lvl_on=$(echo ${LOG_LVLS_ON[@]} | grep "<$1>"); } # check if log_init() done
     [[ -z ${LOG_TTY} && -z ${is_log_lvl_on} ]] && { return 0; } || { local is_crit=$(echo ${1} | grep -E "EMERG|ALERT|CRIT"); } # filter on sev
-    [[ ! -z $is_crit ]] && { STDERR=1; }; [[ ! -z $LOG_TTY ]] && { prnt "$*"; } || { prnt "$*" >> $LOG_FILE; }
+    [[ ! -z $is_crit ]] && { STDERR=1; }; [[ ! -z $LOG_TTY ]] && prnt "$*"; prnt "$*" >> $LOG_FILE;
     return 0;
 }
 

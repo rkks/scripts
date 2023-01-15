@@ -11,8 +11,8 @@ proc usage {} {
     puts "Usage: scp.exp <options>"
     puts "Options:"
     puts "   -h <svr-fqdn/ip>  - hostname/ip of ssh-svr"
-    puts "   -c <cmds-fpath>   - local cmds file path"
-    puts "   -f <file-path>    - local file path"
+    puts "   -r                - reverse copy from host"
+    puts "   -f <file-path>    - local file/dir path"
     puts "   -u <username>     - username to login with"
     puts "   -p <password>     - password for login"
     puts "   -t <seconds>      - timeout in seconds"
@@ -33,7 +33,7 @@ proc usage {} {
     set rval 0
     set hostname ""
     set filepath ""
-    set cmdsfile ""
+    set reverse 0
     set username [exec id -nu]
     set password ""
 
@@ -70,10 +70,10 @@ proc usage {} {
              puts "ERROR: Missing ARG for $arg\n"
           }
 
-       } elseif { [string compare $arg "-c"] == 0} {
+       } elseif { [string compare $arg "-r"] == 0} {
           if { $n < $n+1 } {
              incr n
-             set cmdsfile [lindex $argv $n]
+             set reverse 1
           } else {
              set rval 1
              puts "ERROR: Missing ARG for $arg\n"
@@ -114,10 +114,6 @@ proc usage {} {
        exit $rval
     }
 
-    hscp $hostname $filepath $username $password
-    if { [llength $cmdsfile] > 0 } {
-       send_user "Execute commands from file $cmdsfile\n"
-       run_fcmds $cmdsfile
-    }
+    hscp $hostname $username $password $filepath $reverse
     exit 0
     #close

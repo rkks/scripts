@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Script to build the gh-pages
 #  CREATED: 06/09/17 19:27:48 IST
-# MODIFIED: 05/Apr/2022 21:50:07 IST
+# MODIFIED: 16/11/2022 05:42:14 PM IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -25,8 +25,9 @@ usage()
     echo "  -a <abs-repo-path>  - absolute repo path"
     echo "  -b                  - build web pages"
     echo "  -c                  - clean web pages"
+    echo "  -f                  - build full resume"
     echo "  -r                  - build rss feeds"
-    echo "  -s                  - build resume/cv"
+    echo "  -s                  - build short resume"
     echo "  -u                  - create user web"
     echo "  -t                  - delete user web"
     echo "  -h                  - print this help"
@@ -51,7 +52,7 @@ set_paths()
     # order if css import matters, first bootstrap.css, then color theme
     PD_CMN_OPTS="--standalone -f markdown "; # --smart enabled by default now
 #    PD_CV_OPTS+="-c $CSS/font.css -c https://fonts.googleapis.com/css?family=Open+Sans:regular,italic,bold";
-    PD_CV_OPTS="$PD_CMN_OPTS -c $CSS/resume.css ";
+    PD_CV_OPTS="$PD_CMN_OPTS -c $CSS/resume.css";
     PD_WIKI_OPTS="--template=website.html -B $NAVBAR -A $FOOTER \
         -c $CSS/bootstrap.css -c $CSS/theme.css -c $CSS/web.css";
     PD_OPTS="$PD_CMN_OPTS $PD_WIKI_OPTS"
@@ -130,11 +131,11 @@ build_resume()
     local fpath="$1"; local file=$(basename $fpath); local name=${file%.*};
     echo "[PD] $(date '+%a, %d %b %Y 00:00:00 +0530') | $name.html";
     echo "pandoc $PD_CV_OPTS -o $PUBLISH/$name.html $fpath; pwd $(pwd)"
-    pandoc $PD_CV_OPTS --metadata pagetitle="Resume" -o $PUBLISH/$name.html $fpath
+    pandoc --verbose $PD_CV_OPTS --metadata pagetitle="Resume" -o $PUBLISH/$name.html $fpath
     #pandoc $PD_CV_OPTS --to docx -o $PUBLISH/$name.docx $fpath
     echo "[PD] $(date '+%a, %d %b %Y 00:00:00 +0530') | $name.pdf";
     # --disable-smart-shrinking 
-    wkhtmltopdf -q -s A3 $PUBLISH/$name.html $PUBLISH/$name.pdf
+    wkhtmltopdf --enable-local-file-access -q -s A3 $PUBLISH/$name.html $PUBLISH/$name.pdf
 }
 
 build_index()
@@ -202,15 +203,18 @@ build_proj_website()
     cp_static_data;
 }
 
-build_user_website()
+assemble_resume()
 {
     [[ $(basename $WEBREPO) != rkks.github.io ]] && { echo "Project website, not User. Exit"; exit 0; }
+    cat $CONTENT/title.$HDR $CONTENT/competency.$HDR $CONTENT/articles.$HDR $CONTENT/summary.$HDR > $CONTENT/resume.$HDR
+    if [ ! -z $FULL_RESUME ]; then
+        cat $CONTENT/versa.$HDR >> $CONTENT/resume.$HDR;
+        cat $CONTENT/cisco.$HDR $CONTENT/juniper.$HDR >> $CONTENT/resume.$HDR;
+        cat $CONTENT/stoke.$HDR $CONTENT/ccpu.$HDR >> $CONTENT/resume.$HDR;
+        cat $CONTENT/consult.$HDR $CONTENT/education.$HDR >> $CONTENT/resume.$HDR;
+    fi
+    cat $CONTENT/foss.$HDR $CONTENT/footer.$HDR >> $CONTENT/resume.$HDR
     build_resume $CONTENT/resume.$HDR;
-    build_resume $CONTENT/storage.$HDR;
-    build_resume $CONTENT/network.$HDR;
-    build_resume $CONTENT/kernel.$HDR;
-    build_resume $CONTENT/consult.$HDR;
-    build_resume $CONTENT/stoke.$HDR;
 }
 
 clean_proj_website()
@@ -235,7 +239,7 @@ clean_user_website()
 # It can then be included in other files for functions.
 main()
 {
-    PARSE_OPTS="ha:bcrstu"
+    PARSE_OPTS="ha:bcfrstu"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -262,7 +266,8 @@ main()
     ((opt_c)) && { check_paths; clean_proj_website; }
     ((opt_b)) && { check_paths; build_proj_website; }
     ((opt_r)) && { check_paths; build_rss_feeds; }
-    ((opt_s)) && { check_paths; build_resume $CONTENT/resume.$HDR; }
+    ((opt_f)) && { FULL_RESUME=1; }
+    ((opt_f || opt_s)) && { check_paths; assemble_resume; }
     ((opt_t)) && { check_paths; clean_user_website; }
     ((opt_u)) && { check_paths; build_user_website; }
     ((opt_h)) && { usage; }

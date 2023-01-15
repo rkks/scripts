@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: External diff tool for git
 #  CREATED: 03/20/13 21:55:08 IST
-# MODIFIED: 05/Apr/2022 00:56:58 PDT
+# MODIFIED: 21/09/2022 12:21:27 PM IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -61,7 +61,7 @@ function git_pull_update()
     [[ $# -eq 0 ]] && { echo "Usage: $FUNCNAME <repo-path>"; return $EINVAL; }
     [[ ! -d $1 ]] && { echo "$FUNCNAME: no repo $1 exists"; return $ENOENT; }
     local UPDLOG=update.log;
-    cdie $1 && echo "update repo: $PWD" && git pa >> $UPDLOG;
+    cdie $1 && echo "update repo: $PWD" && git pa >> $UPDLOG && git cln >> $UPDLOG;
 }
 
 function git_diff()
@@ -133,7 +133,6 @@ main()
         usage && exit $EINVAL;
     fi
 
-    ((opt_h)) && { usage; }
     ((opt_a)) && { add_ssh_key $optarg_a; }
     ((opt_b)) && { BRANCH=" -b $optarg_b"; } || { unset BRANCH; }
     ((opt_f)) && { DIFF_NM=$optarg_f; } || { unset DIFF_NM; }
@@ -144,6 +143,7 @@ main()
     ((opt_r)) && { new_remote $optarg_r $*; }
     ((opt_t)) && { track_branch_all $*; }
     ((opt_u)) && { git_pull_update $optarg_u; }
+    ((opt_h)) && { usage; }
 
     exit 0;
 }

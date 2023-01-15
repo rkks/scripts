@@ -116,7 +116,7 @@ install_vbox()
 {
     wget -q https://www.virtualbox.org/download/oracle_vbox_2016.asc -O- | sudo apt-key add
     sudo apt-add-repository "deb [arch=amd64] https://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib"
-    sudo apt-get update && sudo apt-get install virtualbox-6.1 && return $?; # sudo apt info virtualbox &&
+    sudo apt-get update && sudo apt-get install -y virtualbox-6.1 && return $?; # sudo apt info virtualbox &&
 }
 
 install_kvm()
@@ -141,7 +141,7 @@ install_vagrant()
     sudo apt-get install -y $VAGRANT_LIBVIRT_SW
     curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
     sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
-    sudo apt-get update && sudo apt-get install ruby-dev ruby-libvirt vagrant
+    sudo apt-get update && sudo apt-get install -y ruby-dev ruby-libvirt vagrant
     # vagrant-libvirt plugin head is not stable, way too many dependencies
     LIBVIRT_PLUGIN_VER=0.4.1
     local exists=$(vagrant plugin list | grep $LIBVIRT_PLUGIN_VER | grep vagrant-libvirt)
@@ -187,9 +187,10 @@ install_tools()
 
     # common laptop software
     local UBUNTU_LAP_SW="strongswan libcharon-extra-plugins strongswan-swanctl"
-    UBUNTU_LAP_SW+=" minicom pptp-linux wireshark openfortivpn gpaint"
+    UBUNTU_LAP_SW+=" minicom pptp-linux wireshark gpaint p7zip-full"
     UBUNTU_LAP_SW+=" ttf-mscorefonts-installer ubuntu-restricted-extras"
-    UBUNTU_LAP_SW+=" libavcodec-extra vlc p7zip-full numlockx asciinema"
+    UBUNTU_LAP_SW+=" numlockx asciinema pandoc texlive-latex-recommended"
+    #UBUNTU_LAP_SW+=" libavcodec-extra vlc openfortivpn "
 
     # common server software. NOTE: ansible is buggy, use it?
     UBUNTU_SVR_SW="bridge-utils openvswitch-switch"
@@ -205,7 +206,7 @@ install_tools()
         sudo apt-get install -y $UBUNTU_DEV_SW && install_docker;
         ;;
     lap)
-        sudo apt-get install -y $UBUNTU_DEV_SW $UBUNTU_LAP_SW;
+        sudo apt-get install -y $UBUNTU_LAP_SW;
         ;;
     svr)
         sudo apt-get install -y $UBUNTU_SVR_SW && install_vagrant;
@@ -270,7 +271,7 @@ function usage()
 
 main()
 {
-    PARSE_OPTS="hcilnpst"
+    PARSE_OPTS="hceilnpst"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
