@@ -2,7 +2,7 @@
 #  DETAILS: Makes log file by redirecting both stdout and stderr.
 #           The main difference is, this uses 'tee' than >.
 #  CREATED: 11/13/12 19:09:06 IST
-# MODIFIED: 30/08/2022 10:02:33 AM
+# MODIFIED: 20/09/2022 04:35:21 AM
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2012, Ravikiran K.S.
@@ -40,6 +40,7 @@ usage()
     echo "Usage: run.sh [-c <cmds-list-file>|-e <email-addresses>]"
     echo "Options:"
     echo "  -c <cmd-list-file>  - file having list of commands to be run"
+    echo "  -e                  - continue on error"
     echo "  -m <email-addrs>    - list of email addresses to notify"
     echo "  -h                  - print this help message"
 }
@@ -48,7 +49,7 @@ usage()
 # It can then be included in other files for functions.
 main()
 {
-    local PARSE_OPTS="hc:m:"
+    local PARSE_OPTS="hc:em:"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -73,6 +74,7 @@ main()
 
     ((opt_h)) && { usage; exit 0; }
     #export SHDEBUG=yes;
+    ((opt_e)) && { CONT_ON_ERR=1; }
     ((opt_m)) && { MAILTO="$optarg_m"; }
     ((opt_c)) && { RUN_LOG="run.log"; truncate --size 0 $RUN_LOG; batch_run $optarg_c; }
     [[ ! -z $MAILTO && -f $RUN_LOG ]] && mail.sh -e $MAILTO -b $RUN_LOG

@@ -3,7 +3,7 @@
 #
 #   AUTHOR: Ravikiran K.S. (ravikirandotks@gmail.com)
 #  CREATED: 11/08/11 13:35:02 PST
-# MODIFIED: 08/08/2022 11:37:34 PM
+# MODIFIED: 20/09/2022 05:19:17 AM
 
 # Cron has defaults below. Redefining to suite yours(if & only if necessary).
 # HOME=user-home-directory  # LOGNAME=user.s-login-id
@@ -32,7 +32,7 @@ function backup()
     [[ $# -ne 1 ]] && { echo "Usage: $FUNCNAME <dir-list>"; return $EINVAL; }
     log_note "Backing up directories list in file $1"
     # Git Backup: Preferred way to sync text stuff
-    cron_batch_func backup_update $1
+    batch_run backup_update $1
 }
 
 function sync()
@@ -85,7 +85,7 @@ function revision()
     local fname="$FUNCNAME";    # skip revision altogether
     [[ $# -ne 1 ]] && { echo "Usage: $FUNCNAME <list-file>"; return $EINVAL; }
     log_note "$FUNCNAME: Update revision of repos list in file $1"
-    cron_batch_func revision_update $1
+    batch_run revision_update $1
 }
 
 function database_update()
@@ -99,7 +99,7 @@ function database()
     local fname="$FUNCNAME";    # skip database altogether
     [[ $# -ne 1 ]] && { echo "Usage: $FUNCNAME <list-file>"; return $EINVAL; }
     log_note "Build cscope/ctags db for repos list in file $1"
-    cron_batch_func database_update $1
+    batch_run database_update $1
 }
 
 function build_update()
@@ -116,7 +116,7 @@ function build()
     local fname="$FUNCNAME";    # skip build altogether
     [[ $# -ne 1 ]] && { echo "Usage: $FUNCNAME <list-file>"; return $EINVAL; }
     log_note "Build code for repos list in file $1"
-    cron_batch_func build_update $1
+    batch_run build_update $1
 }
 
 function download()
@@ -178,7 +178,7 @@ function cleanup()
     local fname="$FUNCNAME";    # skip cleanup altogether
     [[ $# -ne 1 ]] && { echo "Usage: $FUNCNAME <list-file>"; return $EINVAL; }
     log_note "$FUNCNAME: Cleanup of repos list in file $1"
-    cron_batch_func cleanup_update $1
+    batch_run cleanup_update $1
 }
 
 # openfortivpn has auto-reconnect option on disconnect, no need of cron job

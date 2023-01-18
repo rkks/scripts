@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 11/01/2023 04:19:18 PM IST
+# MODIFIED: 17/01/2023 11:57:57 PM
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -48,7 +48,7 @@ function export_bash_funcs()
     FUNCS="truncate_file vncs bug rli make_workspace_alias bash_colors $FUNCS"
     FUNCS="diffscp compare show_progress get_ip_addr ssh_key ssh_pass $FUNCS"
     FUNCS="batch_run batch_mkdie log_note log_crit log_err log_dbg $FUNCS"
-    FUNCS="cron_batch_func is_func $FUNCS"
+    FUNCS="is_func $FUNCS"
     export_func $FUNCS;
 }
 
@@ -97,42 +97,42 @@ function run()
 {
     # time cmd returns return value of child program. And time takes time as argument and still works fine
     [[ ! -z $TIMED_RUN ]] && { local HOW_LONG='time '; }
-    (is_func $1) && { local fname=$1; shift; log_dbg "$fname $*"; $HOW_LONG $fname "$*"; return $?; }
+    [[ $(type -t "$1") != function ]] && { local fname=$1; shift; log_dbg "$fname $*"; $HOW_LONG $fname "$*"; return $?; }
     local p; local a="$HOW_LONG"; for p in "$@"; do a="${a} \"${p}\""; done; test -z "$RUN_LOG" && { RUN_LOG=/dev/null; };
     log_dbg "$a"; test -n "$DRY_RUN" && { return 0; } || eval "$a" 2>&1 | tee -a $RUN_LOG 2>&1; return ${PIPESTATUS[0]};
 }
 
-# It is upto caller to decide whether, when, and what to mail and to whom.
-function batch_run()
+# Bypass cron if input sanity chk fails. 0 is cronskip, non-zero is no-cronskip
+function is_cronskip()
 {
-    [[ $# -eq 0 ]] && { echo "Usage: $FUNCNAME <cmds-file> [continue-on-err]"; return $EINVAL; }
-    local line=""; local rval=0;
-    while read line; do
-        [[ "$line" == \#* ]] && { continue; }
-        run $line; rval=$?; [[ $rval -ne 0 && $# -lt 2 ]] && { break; };
-    done < $1
-    return $rval;
+    [[ $# -ne 2 ]] && { echo "Usage: $FUNCNAME <func-name> <path>"; return 0; }
+    [[ $(type -t "$1") != function ]] && { echo "Function $1 does not exists"; return 0; }
+    [[ ! -d $2 ]] && { echo "$1: dir $2 does not exists"; return 0; }
+    local skipname="$1"; skipname+="4$2";
+    [[ -f $HOME/.cronskip.ext && ! -z "$(grep -w $skipname $HOME/.cronskip.ext)" ]] && return 0;
+    [[ -f $HOME/.cronskip && ! -z "$(grep -w $skipname $HOME/.cronskip)" ]] && return 0;
+    return 1;
 }
 
-# Provide callback function to be called for each item in list
-function cron_batch_func()
+# Run cmds from file in a batch. If optional function provided, call function
+# with lines from file as argument
+function batch_run()
 {
-    [[ $# -ne 2 ]] && { echo "Usage: $FUNCNAME <cb-func-name> <list-file>"; return $EINVAL; }
-    local fname=$1; shift; local list=$1; shift; local rval=0;
-    (is_func $fname) || { echo "function $fname does not exists"; return $EINVAL; }
+    [[ $# -lt 1 ]] && { echo "Usage: $FUNCNAME [func-name] <cmds-file>"; return $EINVAL; }
+    [[ $# -gt 1 && $(type -t "$1") != function ]] && { echo "Usage: $FUNCNAME [func-name] <cmds-file>"; return $EINVAL; }
+    [[ $# -gt 1 && $(type -t "$1") == function ]] && { local fname=$1; shift; }
+    [[ ! -e $1 ]] && { echo "$1: No such file found"; return $EINVAL; }
+    local line=""; local rval=0; local list=$1;
     while read line; do
-        [[ "$line" == \#* ]] && { continue; }
-        local skipname="$fname"; skipname+="4$line";
-        [[ ! -z "$(grep -w $skipname $HOME/.cronskip)" ]] && { log_note "Skip $fname for $line"; continue; }
-        [[ ! -d $line ]] && { echo "$fname: dir $line does not exists"; continue; } || { cdie $line; }
-        log_note "$fname $line"
-        $fname "$line"; [[ $? -ne 0 ]] && { rval=1; }  # reflects if any of runs failed
+        [[ "$line" == \#* ]] && { continue; } || { log_note "$fname $line"; }
+        [[ ! -z $CRON_RUN && ! -z $fname ]] && eval is_cronskip $fname $line && { log_note "Skip $fname for $line"; continue; }
+        cdie $line && run $fname $line; [[ $? -ne 0 ]] && { rval=$?; [[ -z $CONT_ON_ERR ]] && break; }; cd -;
     done < $list
-    return $rval;
+    return $rval;   # reflects if any of runs failed
 }
 
 # usage: is_func <func-name> && echo true || echo false
-function is_func() { [[ $(type -t $1) == function ]] && return 0; }
+function is_func() { [[ $(type -t "$1") == function ]] && return 0 || return -1; }
 
 # usage: shell <cmd> <args>
 function shell() { run $SHELL $*; return $?; }
