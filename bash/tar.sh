@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Tar wrappers
 #  CREATED: 07/17/13 15:53:58 IST
-# MODIFIED: 19/Apr/2021 12:09:59 IST
+# MODIFIED: 16/01/2023 11:52:51 AM IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -16,22 +16,22 @@
 
 function archive()
 {
-    local ext=$1 fnm; shift;
-    [[ $# -eq 1 ]] && test ! -e $2 && { echo "'$2' is not a valid path"; return $EINVAL; }
-    fnms="$*";
-    for fnm in $fnms; do
+    local ext=$1 fnm fnms; shift;
+    for fnms in "$*"; do
+        fnm=${fnms%/};
+        test ! -e $fnm && { echo "'$fnm' does not exist"; continue; }
         echo "archive $fnm into $fnm.$ext";     # continue;
         case $ext in
-            7z)   7za a -t7z -mx9 $fnm.$ext $fnm   ;;
-            bz2)  tar cvjf $COMPRESS_OPTS $fnm.tar.$ext $fnm && rm -rf $fnm ;;
-            gz)   tar cvzf $COMPRESS_OPTS $fnm.tar.$ext $fnm && rm -rf $fnm ;;
-            tar)  tar cvf $COMPRESS_OPTS $fnm.$ext $fnm  && rm -rf $fnm ;;
-            tbz2) tar cvjf $COMPRESS_OPTS $fnm.$ext $fnm && rm -rf $fnm ;;
-            tgz)  tar cvzf $COMPRESS_OPTS $fnm.$ext $fnm && rm -rf $fnm ;;
-            rar)  rar x $fnm    ;;
-            zip)  zip $fnm      ;;
-            Z)    compress $fnm ;;
-            *)    echo "'$ext' cannot be compressed via archive()"        ;;
+            7z)   7za a -t7z -mx9 $fnm.$ext $fnm; ;;
+            bz2)  tar cvjf $COMPRESS_OPTS $fnm.tar.$ext $fnm; ;;
+            gz)   tar cvzf $COMPRESS_OPTS $fnm.tar.$ext $fnm; ;;
+            tar)  tar cvf $COMPRESS_OPTS $fnm.$ext $fnm; ;;
+            tbz2) tar cvjf $COMPRESS_OPTS $fnm.$ext $fnm; ;;
+            tgz)  tar cvzf $COMPRESS_OPTS $fnm.$ext $fnm; ;;
+            rar)  rar x $fnm; ;;
+            zip)  zip $fnm; ;;
+            Z)    compress $fnm; ;;
+            *)    echo "'$ext' cannot be compressed via archive()"; ;;
         esac
     done
     bail;
@@ -39,24 +39,24 @@ function archive()
 
 function extract()
 {
-    [[ $# -eq 1 ]] && test ! -e $1 && { echo "'$1' is not a valid path"; return $EINVAL; }
-    local fnms="$*" fnm dname;
-    for fnm in $fnms; do
+    local fnm dname;
+    for fnm in "$*"; do
+        test ! -e $fnm && { echo "'$fnm' does not exist"; continue; }
         dname=$(untar_dname $fnm);
         echo "extract $fnm into $dname/"
         case $fnm in
-            *.7z)       7za x $fnm      ;;
-            *.tar.bz2)  tar xvjf $fnm   ;;
-            *.tar.gz)   tar xvzf $fnm   ;;
-            *.bz2)      bunzip2 $fnm    ;;
-            *.rar)      unrar x $fnm    ;;
-            *.gz)       gunzip $fnm     ;;
-            *.tar)      tar xvfp $fnm   ;;
-            *.tbz2)     tar xvjf $fnm   ;;
-            *.tgz)      tar xvzf $fnm   ;;
-            *.zip)      unzip $fnm      ;;
-            *.Z)        uncompress $fnm ;;
-            *)          echo "$fnm can not be extracted via extract()" ;;
+            *.7z)       7za x $fnm; ;;
+            *.tar.bz2)  tar xvjf $fnm; ;;
+            *.tar.gz)   tar xvzf $fnm; ;;
+            *.bz2)      bunzip2 $fnm; ;;
+            *.rar)      unrar x $fnm; ;;
+            *.gz)       gunzip $fnm; ;;
+            *.tar)      tar xvfp $fnm; ;;
+            *.tbz2)     tar xvjf $fnm; ;;
+            *.tgz)      tar xvzf $fnm; ;;
+            *.zip)      unzip $fnm; ;;
+            *.Z)        uncompress $fnm; ;;
+            *)          echo "$fnm can not be extracted via extract()"; ;;
         esac
     done
     bail;
@@ -65,19 +65,19 @@ function extract()
 function list()
 {
     local filename=$(basename $1);
-    test -e $1 && echo "listing $1 contents" || { echo "'$1' is not a valid file"; return $EINVAL; }
+    test -e $1 && echo "listing $1 contents" || { echo "'$1' does not exist"; return $EINVAL; }
     case $1 in
-        *.7z)       7za l $1        ;;
-        *.tar.bz2)  tar tvjf $1     ;;
-        *.tar.gz)   tar tvzf $1     ;;
-        *.rar)      rar l $1        ;;
-        *.gz)       gzip -l $1      ;;
-        *.tar)      tar tvf $1      ;;
-        *.tbz2)     tar tvjf $1     ;;
-        *.tgz)      tar tvzf $1     ;;
-        *.zip)      unzip -l $1     ;;
-        *.Z)        zcat $1         ;;
-        *)          echo "'$1' cannot be listed via list()" ;;
+        *.7z)       7za l $1; ;;
+        *.tar.bz2)  tar tvjf $1; ;;
+        *.tar.gz)   tar tvzf $1; ;;
+        *.rar)      rar l $1; ;;
+        *.gz)       gzip -l $1; ;;
+        *.tar)      tar tvf $1; ;;
+        *.tbz2)     tar tvjf $1; ;;
+        *.tgz)      tar tvzf $1; ;;
+        *.zip)      unzip -l $1; ;;
+        *.Z)        zcat $1; ;;
+        *)          echo "'$1' cannot be listed via list()"; ;;
     esac
 }
 
