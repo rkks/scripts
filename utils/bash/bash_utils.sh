@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 08/02/2023 04:45:22 AM
+# MODIFIED: 09/02/2023 09:48:50 AM IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -28,9 +28,8 @@ export ETIMEDOUT=145 # Operation timedout
 export EASSERT=199   # Assertion failed
 
 export FILE_MAX_SZ=10240                   # In KB
-export FILE_MAX_BKUPS=1                    # max num of backup files
+export FILE_MAX_BKUPS=2                    # max num of backup files
 export LOG_LVLS=( "<DEBUG>" "<INFO>" "<NOTE>" "<WARN>" "<ERROR>" "<CRIT>" "<ALERT>" "<EMERG>" ); # RFC 5424 defines 8 levels of severity
-export LOG_FILE="$SCRPT_LOGS/$(basename -- $0).log";
 
 # {} - used for command grouping. if all commands are on single line, last command should end with a semi-colon ';'
 # invoke any program with 'env -i <prog>' for clearing all ENV variables while invoking program
@@ -60,7 +59,7 @@ function brb() { local pid=$!; ( while kill -0 $pid >/dev/null 2>&1; do sleep 1;
 function now() { date "+%Y-%m-%d %H:%M:%S"; }
 
 # prints script-name
-function myname() { echo "$(basename -- $0)"; }
+function myname() { local nm="$(basename -- $0)"; local snm=${nm#-}; echo "${snm%-}"; }
 
 function dash_line() { local i; for i in {1..79}; do echo -n "-"; done; echo "-"; }
 
