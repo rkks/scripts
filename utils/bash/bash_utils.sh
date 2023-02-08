@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 17/01/2023 11:57:57 PM
+# MODIFIED: 08/02/2023 04:45:22 AM
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -96,8 +96,8 @@ function bail() { local e=$?; [[ $e -ne 0 ]] && { die $e "$! failed w/ err: $e. 
 function run()
 {
     # time cmd returns return value of child program. And time takes time as argument and still works fine
-    [[ ! -z $TIMED_RUN ]] && { local HOW_LONG='time '; }
-    [[ $(type -t "$1") != function ]] && { local fname=$1; shift; log_dbg "$fname $*"; $HOW_LONG $fname "$*"; return $?; }
+    [[ ! -z $TIMED_RUN ]] && { local HOW_LONG="time "; }
+    [[ $(type -t "$1") == function ]] && { local fname=$1; shift; log_dbg "$fname $*"; $HOW_LONG $fname "$*"; return $?; }
     local p; local a="$HOW_LONG"; for p in "$@"; do a="${a} \"${p}\""; done; test -z "$RUN_LOG" && { RUN_LOG=/dev/null; };
     log_dbg "$a"; test -n "$DRY_RUN" && { return 0; } || eval "$a" 2>&1 | tee -a $RUN_LOG 2>&1; return ${PIPESTATUS[0]};
 }
