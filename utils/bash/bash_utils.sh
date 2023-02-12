@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 09/02/2023 09:48:50 AM IST
+# MODIFIED: 11/02/2023 04:05:20 PM
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -397,7 +397,8 @@ function read_cfg() { read_tty $* && read_kv $F; }
 # 3. Use logger api for logging:    log <LOG_LEVEL> "Your message here"
 function log_init()
 {
-    [[ $# -eq 0 ]] && { return $EINVAL; } || { local LVL=$1; [[ $# -eq 2 ]] && LOG_FILE="$2"; }
+    [[ $# -eq 0 ]] && { return $EINVAL; } || { local LVL=$1; }
+    [[ $# -eq 2 ]] && { export LOG_FILE="$2"; } || { export LOG_FILE="$SCRPT_LOGS/$(myname).log"; };
     log_lvl $LVL && mkfile $LOG_FILE && file_rotate $LOG_FILE && RUN_LOG=$LOG_FILE; return $?;
 }
 
@@ -423,7 +424,7 @@ function log_lvl()
 function log()
 {
     [[ $# -lt 2 ]] && { return $EINVAL; } || { local s=$(echo ${LOG_LVLS[@]} | grep "<$1>"); [[ -z ${s} ]] && return $EINVAL; }
-    [[ -z $LOG_LVLS_ON ]] && { return $ENOENT; } || { local is_log_lvl_on=$(echo ${LOG_LVLS_ON[@]} | grep "<$1>"); } # check if log_init() done
+    [[ -z $LOG_LVLS_ON || -z $LOG_FILE ]] && { return $ENOENT; } || { local is_log_lvl_on=$(echo ${LOG_LVLS_ON[@]} | grep "<$1>"); } # check if log_init() done
     [[ -z ${LOG_TTY} && -z ${is_log_lvl_on} ]] && { return 0; } || { local is_crit=$(echo ${1} | grep -E "EMERG|ALERT|CRIT"); } # filter on sev
     [[ ! -z $is_crit ]] && { STDERR=1; }; [[ ! -z $LOG_TTY ]] && prnt "$*"; prnt "$*" >> $LOG_FILE;
     return 0;
@@ -580,7 +581,6 @@ main()
         usage && exit $EINVAL;
     fi
 
-    #log_init $LOG_FILE
     ((opt_i)) && { LOG_FILE="$*"; log_init $optarg_i $LOG_FILE; }
     ((opt_l)) && { log $optarg_l $*; }
     ((opt_r)) && { file_rotate $optarg_r; }
