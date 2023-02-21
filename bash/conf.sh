@@ -175,29 +175,26 @@ install_tools()
     [[ $DISTRO_VER < 18.04 ]] && { echo "$FUNCNAME: Only Ubuntu18.04 or above supported"; return $EINVAL; }
 
     # Tried & junked: libcharon-standard-plugins libstrongswan-extra-plugins
-    # resolvconf wpasupplicant
-    # extra: openvpn kmplayer audacious vnc4server
-    # python-is-python3 python3-pip libxmlsec1-dev jq dnsniff tcpkill
-    # sudo apt install auditd   # To monitor which proc is modifying given file
+    # resolvconf wpasupplicant, openvpn kmplayer vnc4server
 
-    # common development tools
+    # common dev tools. auditd to monitor which proc is modifying given file
     local UBUNTU_DEV_SW="git exuberant-ctags cscope vim autocutsel tmux expect"
     UBUNTU_DEV_SW+=" fortune-mod cowsay toilet ifupdown net-tools dnsmasq twm"
-    UBUNTU_DEV_SW+=" finger "
+    UBUNTU_DEV_SW+=" finger dnsniff tcpkill ss sysstat auditd"
 
-    # common laptop software
+    # common laptop software. extra: openfortivpn
     local UBUNTU_LAP_SW="strongswan libcharon-extra-plugins strongswan-swanctl"
-    UBUNTU_LAP_SW+=" minicom pptp-linux wireshark gpaint p7zip-full"
+    UBUNTU_LAP_SW+=" minicom pptp-linux wireshark gpaint p7zip-full wakeonlan"
     UBUNTU_LAP_SW+=" ttf-mscorefonts-installer ubuntu-restricted-extras"
     UBUNTU_LAP_SW+=" numlockx asciinema pandoc texlive-latex-recommended"
-    #UBUNTU_LAP_SW+=" libavcodec-extra vlc openfortivpn "
+    UBUNTU_LAP_SW+=" libavcodec-extra vlc audacious "
 
     # common server software. NOTE: ansible is buggy, use it?
-    UBUNTU_SVR_SW="bridge-utils openvswitch-switch"
-    #UBUNTU_SVR_SW+=" virtualbox vagrant"
+    UBUNTU_SVR_SW="bridge-utils openvswitch-switch virtualbox-6.1 vagrant"
+    #UBUNTU_SVR_SW+=""
 
-    UBUNTU_PYTHON_DEV=""
-    UBUNTU_WEB_DEV="jq"
+    UBUNTU_PYTHON_DEV="python-is-python3 python3-pip "
+    UBUNTU_WEB_DEV="libxmlsec1-dev jq"
 
     sudo apt-get update; local ret=$?; [[ $ret -ne 0 ]] && return $EPERM;
     #sudo add-apt-repository "deb http://archive.ubuntu.com/ubuntu $(lsb_release -sc) main universe";

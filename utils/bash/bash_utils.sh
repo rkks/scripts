@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 11/02/2023 04:05:20 PM
+# MODIFIED: 21/02/2023 11:54:52 AM IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -455,6 +455,8 @@ function vncs() { test -z $1 && { echo "usage: vncs <geometry>\nEx:1600x900,1360
 # Enable password less login over SSH by exchanging public key to remote box
 function ssh_key() { [[ ! -e $HOME/.ssh/id_rsa.pub ]] && ssh-keygen -t rsa; }
 function ssh_pass() { ssh_key; local h; for h in "$@"; do echo $h; ssh $h 'cat >> ~/.ssh/authorized_keys' < $HOME/.ssh/id_rsa.pub; done; }
+
+function rdir_exists() { [[ $(ssh -q -o ConnectTimeout=1 -o ConnectionAttempts=1 $1 test -e $2 && echo exists) ]] && echo exists; }
 
 # development helper functions
 function bug() { [[ $# -eq 0 ]] && { ls ~/work/PR/; return; } || cdie ~/work/PR/$1; }

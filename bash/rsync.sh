@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Invokes rsyncs with well known better options.
 #  CREATED: 06/29/13 16:14:34 IST
-# MODIFIED: 01/Apr/2022 13:59:34 IST
+# MODIFIED: 21/02/2023 12:17:04 PM IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -42,21 +42,33 @@ RSYNC_MAX_BW=10m
 # -z - compress data while sync
 # -e ssh    - always use ssh for authentication
 # --force   - for if some operation requires special privileges
-# --delete  - if any file is absent in source, delete it in dest
+# --delete  - if any file is absent in source, delete it in dest.
+#   - Not safe deletes everything in dest.
 # --delete-excluded - delete any files that are excluded in RSYNC_EXCLUDE on dest
 # --out-format="%i|%n|" - Display itemized changes in this format.
 # --safe-links - ignore symlinks that point outside the tree
-RSYNC_OPTS="-ahiuWxz -e ssh --stats --force --delete --safe-links --out-format=%i|%n"
+RSYNC_OPTS="-ahiuWxz -e ssh --stats --force --safe-links --out-format=%i|%n"
 RSYNC_OPTS+=" --log-file=$SCRPT_LOGS/rsync.log --exclude-from=$RSYNC_EXCLUDE"
-RSYNC_OPTS+=" --progress --bwlimit=$RSYNC_MAX_BW"
+RSYNC_OPTS+=" --delete --progress --bwlimit=$RSYNC_MAX_BW"
 #RSYNC_OPTS+=" --rsync-path=/homes/raviks/tools/bin/freebsd/rsync"
 
 function rsync_dir()
 {
-    [[ "$#" != "2" ]] && (usage; exit $EINVAL)
+    [[ $# -ne 2 ]] && { usage; return $EINVAL; }
 
-    SRC_DIR=$1
-    DST_DIR=$2
+    if [[ $1 == *:* ]]; then
+        local spath=${1##*:} sip=${1%%:*};
+        [[ ! $(rdir_exists $sip $spath) ]] && { echo "Source $sip:$spath does not exist"; return $EINVAL; }
+    else
+        [[ ! -e $1 ]] && { echo "Source path $1 does not exist"; return $EINVAL; }
+    fi
+    if [[ $2 == *:* ]]; then
+        local dpath=${2##*:} dip=${2%%:*};
+        [[ $(rdir_exists $dip $dpath) ]] && { echo "Destination $dip:$dpath already exists"; return $EINVAL; }
+    else
+        [[ "$(ls -A $2)" ]] && { echo "Destination path $2 is not empty"; return $EINVAL; }
+    fi
+    SRC_DIR=$1; DST_DIR=$2
     [[ "" != "$RSYNC_DRY_RUN" ]] && RSYNC_OPTS+=" -n"
     echo "[SYNC] src: $SRC_DIR dst: $DST_DIR"
     run rsync $RSYNC_OPTS $SRC_DIR $DST_DIR
@@ -120,11 +132,11 @@ main()
         usage && exit $EINVAL;
     fi
 
+    ((opt_h)) && { usage; exit 0; }
     ((opt_n)) && { export RSYNC_DRY_RUN=TRUE; }
     ((opt_b)) && { RSYNC_MAX_BW=$optarg_b; }
     ((opt_r)) && { rsync_dir $*; }
     ((opt_l)) && { rsync_list "$optarg_l $*"; }
-    ((opt_h)) && { usage; exit 0; }
 
     exit 0
 }

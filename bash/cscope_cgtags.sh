@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Cscope Utils
 #  CREATED: 06/25/13 11:05:14 IST
-# MODIFIED: 12/01/2023 06:01:59 PM IST
+# MODIFIED: 14/02/2023 02:33:34 PM IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -61,9 +61,9 @@ function cscope_db_update()
     (own cscope) || { echo "cscope binary not found in PATH"; return 0; };
     [[ ! -f $SRC_FILES ]] && { echo "$PWD/$SRC_FILES doesn't exist. Use findsrc to build file list"; return; }
 
-    # -qUbe for inverted index, -cUbe for normal index. -k to refer kernel headers. 
+    # -qUbe for inverted index, -cUbe for normal index. -k to refer kernel headers.
     log DEBUG "Build cscope database for $PWD using $(which cscope)"
-    run cscope -cUbe -k -i $SRC_FILES    #> /dev/null 2>&1
+    run cscope -qUbe $KERNEL_MODE -i $SRC_FILES    #> /dev/null 2>&1
 }
 
 function global_db_clean()
@@ -139,7 +139,8 @@ usage()
     echo "  -d    - do update existing cscope database"
     echo "  -e    - extend/update existing GNU global database"
     echo "  -f    - form new GNU global database (clean)"
-    echo "  -g <cscope-num> <pattern> - grep for pattern using line-oriented cscope"
+    echo "  -g <num> <pattern> - grep for pattern using line-oriented cscope"
+    echo "  -k    - kernel mode, do not reference system hdrs, only from repo"
     echo "  -l    - make list of source files under given path (recursive)"
     echo "  -r    - do not remove source files list after db update/create"
     echo "  -s    - do not update/create source files list (recursive)"
@@ -147,13 +148,14 @@ usage()
     echo "  -u    - update existing ctags database"
     echo "  -x    - delete all databases under given path"
     echo "  -h    - print this help message"
+    echo "<num>: cscope search type (1 to 7) for grep like search"
 }
 
 # Each shell script has to be independently testable.
 # It can then be included in other files for functions.
 main()
 {
-    PARSE_OPTS="habcdefg:lrstux"
+    PARSE_OPTS="habcdefg:klrstux"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -179,6 +181,7 @@ main()
     ((opt_g)) && { csc_run $optarg_g $*; return; }
 
     [[ $# -ne 0 ]] && { cdie $1; shift; }
+    ((opt_k)) && KERNEL_MODE="-k";
     ((!opt_s && !opt_h && !opt_g && !opt_x )) && findsrc;
     ((opt_b || opt_c || opt_x)) && cscope_db_clean;
     ((opt_b || opt_f || opt_x)) && global_db_clean;
