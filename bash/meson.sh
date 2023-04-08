@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: 
 #  CREATED: 25/11/22 03:22:14 PM IST IST
-# MODIFIED: 22/01/2023 11:15:08 AM IST
+# MODIFIED: 31/03/2023 01:11:11 PM IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -25,6 +25,7 @@ usage()
     echo "  -c          - trigger (re-)configure"
     echo "  -d          - distclean build-directory"
     echo "  -p <path>   - build directory path"
+    echo "  -z          - do the dry run"
     echo "blddir: $BLDDIR"
 }
 
@@ -32,7 +33,7 @@ usage()
 # It can then be included in other files for functions.
 main()
 {
-    PARSE_OPTS="habcdp:"
+    PARSE_OPTS="habcdp:z"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in

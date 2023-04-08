@@ -3,7 +3,7 @@
 #
 #   AUTHOR: Ravikiran K.S. (ravikirandotks@gmail.com)
 #  CREATED: 11/08/11 13:35:02 PST
-# MODIFIED: 20/09/2022 05:19:17 AM
+# MODIFIED: 07/04/2023 03:43:38 PM IST
 
 # Cron has defaults below. Redefining to suite yours(if & only if necessary).
 # HOME=user-home-directory  # LOGNAME=user.s-login-id
@@ -28,7 +28,6 @@ function backup_update()
 
 function backup()
 {
-    local fname="$FUNCNAME";    # skip backup altogether
     [[ $# -ne 1 ]] && { echo "Usage: $FUNCNAME <dir-list>"; return $EINVAL; }
     log_note "Backing up directories list in file $1"
     # Git Backup: Preferred way to sync text stuff
@@ -37,7 +36,6 @@ function backup()
 
 function sync()
 {
-    local fname="$FUNCNAME";    # skip sync altogether
     [[ $# -ne 0 ]] && { local RSYNC_LST=$1; } || { local RSYNC_LST=$CUST_CONFS/rsync.lst; }
     log_note "Syncing directory list from $1";
     # Manual Sync: What can not be synced using revision-control.
@@ -82,7 +80,6 @@ function revision_update()
 
 function revision()
 {
-    local fname="$FUNCNAME";    # skip revision altogether
     [[ $# -ne 1 ]] && { echo "Usage: $FUNCNAME <list-file>"; return $EINVAL; }
     log_note "$FUNCNAME: Update revision of repos list in file $1"
     batch_run revision_update $1
@@ -96,7 +93,6 @@ function database_update()
 
 function database()
 {
-    local fname="$FUNCNAME";    # skip database altogether
     [[ $# -ne 1 ]] && { echo "Usage: $FUNCNAME <list-file>"; return $EINVAL; }
     log_note "Build cscope/ctags db for repos list in file $1"
     batch_run database_update $1
@@ -113,7 +109,6 @@ function build_update()
 
 function build()
 {
-    local fname="$FUNCNAME";    # skip build altogether
     [[ $# -ne 1 ]] && { echo "Usage: $FUNCNAME <list-file>"; return $EINVAL; }
     log_note "Build code for repos list in file $1"
     batch_run build_update $1
@@ -121,7 +116,6 @@ function build()
 
 function download()
 {
-    local fname="$FUNCNAME";    # skip download altogether
     local linkfile=$CUST_CONFS/downlinks;
     [[ ! -f $linkfile ]] && { log_dbg "$linkfile not found. No pending downloads"; return; }
     [[ ! -d $DOWNLOADS ]] && { run mkdir -p $DOWNLOADS; }
@@ -175,7 +169,6 @@ function cleanup_update()
 
 function cleanup()
 {
-    local fname="$FUNCNAME";    # skip cleanup altogether
     [[ $# -ne 1 ]] && { echo "Usage: $FUNCNAME <list-file>"; return $EINVAL; }
     log_note "$FUNCNAME: Cleanup of repos list in file $1"
     batch_run cleanup_update $1

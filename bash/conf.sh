@@ -180,14 +180,14 @@ install_tools()
     # common dev tools. auditd to monitor which proc is modifying given file
     local UBUNTU_DEV_SW="git exuberant-ctags cscope vim autocutsel tmux expect"
     UBUNTU_DEV_SW+=" fortune-mod cowsay toilet ifupdown net-tools dnsmasq twm"
-    UBUNTU_DEV_SW+=" finger dnsniff tcpkill ss sysstat auditd"
+    UBUNTU_DEV_SW+=" finger dnsniff tcpkill ss sysstat auditd ifenslave"
 
     # common laptop software. extra: openfortivpn
     local UBUNTU_LAP_SW="strongswan libcharon-extra-plugins strongswan-swanctl"
     UBUNTU_LAP_SW+=" minicom pptp-linux wireshark gpaint p7zip-full wakeonlan"
     UBUNTU_LAP_SW+=" ttf-mscorefonts-installer ubuntu-restricted-extras"
     UBUNTU_LAP_SW+=" numlockx asciinema pandoc texlive-latex-recommended"
-    UBUNTU_LAP_SW+=" libavcodec-extra vlc audacious "
+    UBUNTU_LAP_SW+=" libavcodec-extra vlc audacious ifenslave "
 
     # common server software. NOTE: ansible is buggy, use it?
     UBUNTU_SVR_SW="bridge-utils openvswitch-switch virtualbox-6.1 vagrant"
