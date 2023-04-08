@@ -3,7 +3,7 @@
 #
 #   AUTHOR: Ravikiran K.S. (ravikirandotks@gmail.com)
 #  CREATED: 11/08/11 13:35:02 PST
-# MODIFIED: 07/04/2023 03:43:38 PM IST
+# MODIFIED: 08/04/2023 04:03:52 PM IST
 
 # Cron has defaults below. Redefining to suite yours(if & only if necessary).
 # HOME=user-home-directory  # LOGNAME=user.s-login-id
@@ -20,10 +20,11 @@ CRON_RUN=1;
 function backup_update()
 {
     [[ $# -ne 1 ]] && { echo "Usage: $FUNCNAME <dir-name>"; return $EINVAL; }
-    cdie $1 && chk_revision_chgs
+    cdie $1 && chk_revision_chgs generate;
     [[ $? -eq 0 ]] && { log_note "No changes found, skip backup"; return 0; }
     log_note "Backing up: $1";
     shell backup.sh -v "$1/$DIFF_LOG" "$1";  # without -v is waste of space for repos
+    rm -f $DIFF_LOG;
 }
 
 function backup()
@@ -65,16 +66,16 @@ function chk_revision_chgs()
 {
     #Usage: $FUNCNAME [generate]
     [[ "$@" == "generate" ]] && { shell git.sh -d nightly -f $DIFF_LOG; }
-    [[ ! -f $DIFF_LOG ]] && { return 0; } || { local chgs=$(cat $DIFF_LOG | wc -l); }
-    [[ $chgs -eq 0 ]] && { rm -f $DIFF_LOG && return 0; } || return $EEXIST;
+    local chgs=$(git dir | wc -l);
+    [[ $chgs -eq 0 ]] && return 0 || return $EEXIST;
 }
 
 function revision_update()
 {
     [[ $# -eq 0 ]] && { echo "Usage: $FUNCNAME <dir-path>"; return $EINVAL; }
-    cdie $1 && chk_revision_chgs generate;
+    cdie $1 && chk_revision_chgs;
     [[ $? -ne 0 ]] && { log_note "Changes found, skip update"; return 0; }
-    log DEBUG "No changes found in $DIFF_LOG. Update repo.";
+    log DEBUG "No changes found in git diff. Update repo.";
     shell git.sh -u $1;
 }
 
@@ -103,7 +104,7 @@ function build_update()
     [[ $# -eq 0 ]] && { echo "Usage: $FUNCNAME <dir-path>"; return $EINVAL; }
     cdie $1 && chk_revision_chgs;
     [[ $? -ne 0 ]] && { log_note "Changes found, skip build"; return 0; }
-    log DEBUG "No changes found in $DIFF_LOG. Build repo.";
+    log DEBUG "No changes found in git diff. Build repo.";
     shell vbuild.sh -d waf -f;
 }
 
@@ -162,7 +163,7 @@ function reserve()
 function cleanup_update()
 {
     [[ $# -eq 0 ]] && { echo "Usage: $FUNCNAME <dir-path>"; return $EINVAL; }
-    cdie $1 && rm -f $DIFF_LOG;
+    cdie $1; [[ -e $DIFF_LOG ]] && rm -f $DIFF_LOG;
     #[[ $? -ne 0 ]] && { log DEBUG "Cleanup fail at $1 ($DIFF_LOG)"; return $EINVAL; }
     log_note "Clean up successful at $1"; return 0;
 }
