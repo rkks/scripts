@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 21/02/2023 11:54:52 AM IST
+# MODIFIED: 30/04/2023 08:03:44 AM
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -155,7 +155,7 @@ function batch_mkdie() { local dname; for dname in $*; do [[ ! -d $dname ]] && {
 function mkfile() { chk EQ 1 $# && { [[ ! -e $1 ]] && { mkdie "$(dirname -- $1)" && touch -- $1 && chmod 640 $1; return $?; } || return 0; } || return $?; }
 
 # encode file and send as attachment. uuencode 2nd arg is attachment filename (as appears in mail). mutt not available on FreeBSD 
-function email() { [[ $# -eq 1 ]] && uuencode $1 $(basename $1) | mail -s "[ARCHIVE] Old logs" $MAILTO; }
+function email() { [[ $# -eq 1 ]] && [[ ! -z $MAILTO ]] && uuencode $1 $(basename $1) | mail -s "[ARCHIVE] Old logs" $MAILTO; }
 
 # usage: bkup <path>
 function bkup() { [[ -e $1 ]] && { local ext="$RANDOM.$(stat --printf="%Y" $1)"; mv $1 $1.$ext && gzip $1.$ext; }; }
@@ -204,7 +204,7 @@ function file_rotate()
     # Find out upto which sequence file.0..9 the archive has grown. ${f:$len} extracts .suffix-num. Ex. 3 for log.3
     for f in ${file}.[0-$FILE_MAX_BKUPS]*; do [ -f "$f" ] && num=${f:$len} && [ $num -gt $max ] && max=$num; done
     f="$file.$(($max + 1))";
-    [[ $max -ge $FILE_MAX_BKUPS && -f "$f" ]] && { [[ ! -z $MAILTO ]] && { gzip $f && email $f.gz; rm -f $f $f.gz; } || { rm -f $f; }; }
+    [[ $max -ge $FILE_MAX_BKUPS && -f "$f" ]] && { [[ ! -z $ROTATE_MAIL ]] && { gzip $f && email $f.gz; rm -f $f $f.gz; } || { rm -f $f; }; }
     for ((i = $max;i >= 0;i -= 1)); do [[ -f "$file.$i" ]] && mv -f $file.$i "$file.$(($i + 1))" > /dev/null 2>&1; done
     return 0;
 }
