@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Bash Utility Functions.
 #  CREATED: 06/25/13 10:30:22 IST
-# MODIFIED: 30/04/2023 08:03:44 AM
+# MODIFIED: 16/06/2023 11:56:13 AM IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -546,6 +546,26 @@ function sys_status() {
 }
 
 function find_grep() { [[ $# -ne 1 ]] && { echo "usage: find_grep <pattern>"; } || find . -type f -exec grep -H "$*" {} \;; }
+
+function apt-history() {
+    case "$1" in
+      install)
+            cat /var/log/dpkg.log | grep 'install '
+            ;;
+      upgrade|remove)
+            cat /var/log/dpkg.log | grep $1
+            ;;
+      rollback)
+            cat /var/log/dpkg.log | grep upgrade | \
+                grep "$2" -A10000000 | \
+                grep "$3" -B10000000 | \
+                awk '{print $4"="$5}'
+            ;;
+      *)
+            cat /var/log/dpkg.log
+            ;;
+    esac
+}
 
 usage()
 {

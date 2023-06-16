@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: 
 #  CREATED: 25/11/22 03:22:14 PM IST IST
-# MODIFIED: 31/03/2023 01:11:11 PM IST
+# MODIFIED: 16/06/2023 11:51:31 AM IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -24,16 +24,18 @@ usage()
     echo "  -b          - start (re-)build"
     echo "  -c          - trigger (re-)configure"
     echo "  -d          - distclean build-directory"
+    echo "  -o <opts>   - pass build-time options"
     echo "  -p <path>   - build directory path"
     echo "  -z          - do the dry run"
     echo "blddir: $BLDDIR"
+    echo "opts ex: \"-Dbypass_pb=true\""
 }
 
 # Each shell script has to be independently testable.
 # It can then be included in other files for functions.
 main()
 {
-    PARSE_OPTS="habcdp:z"
+    PARSE_OPTS="habcdo:p:z"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -57,10 +59,11 @@ main()
     fi
 
     ((opt_z)) && { DRY_RUN=1; LOG_TTY=1; }
+    ((opt_o)) && { BLD_OPTS="$optarg_o"; }
     ((opt_p)) && { BLD_PATH="$optarg_p"; }
     ((opt_a || opt_d)) && { [[ -d $BLD_PATH ]] && rm -rf $BLD_PATH; }
     # meson setup deprecated, but mandatory to use for compatibility
-    ((opt_a || opt_c)) && { run meson setup $BLD_PATH; bail; }
+    ((opt_a || opt_c)) && { run meson setup $BLD_OPTS $BLD_PATH; bail; }
     ((opt_a || opt_b)) && { run meson compile -vC $BLD_PATH; bail; }
     ((opt_i)) && { run meson install $BLD_PATH; }
     ((opt_h)) && { usage; }
