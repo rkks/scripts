@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: 
 #  CREATED: 25/11/22 03:22:14 PM IST IST
-# MODIFIED: 16/06/2023 11:51:31 AM IST
+# MODIFIED: 12/10/2023 12:37:35 AM
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -64,7 +64,7 @@ main()
     ((opt_a || opt_d)) && { [[ -d $BLD_PATH ]] && rm -rf $BLD_PATH; }
     # meson setup deprecated, but mandatory to use for compatibility
     ((opt_a || opt_c)) && { run meson setup $BLD_OPTS $BLD_PATH; bail; }
-    ((opt_a || opt_b)) && { run meson compile -vC $BLD_PATH; bail; }
+    ((opt_a || opt_b)) && { run ninja -j 8 -vC $BLD_PATH; bail; }
     ((opt_i)) && { run meson install $BLD_PATH; }
     ((opt_h)) && { usage; }
 
