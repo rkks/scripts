@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Cscope Utils
 #  CREATED: 06/25/13 11:05:14 IST
-# MODIFIED: 14/02/2023 02:33:34 PM IST
+# MODIFIED: 31/07/2023 10:50:34 AM IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -192,7 +192,7 @@ main()
     ((opt_a || opt_d)) && cscope_db_update;
     ((opt_a || opt_e)) && global_db_update;
     ((opt_a || opt_u)) && ctags_db_update;
-    ((!opt_r && !opt_s && !opt_h && !opt_g && !opt_x )) && rm -f $SRC_FILES;
+    ((!opt_r && !opt_s && !opt_h && !opt_g )) && rm -f $SRC_FILES;
     ((opt_h)) && (usage; exit 0)
 
     exit 0

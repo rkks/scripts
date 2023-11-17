@@ -54,11 +54,12 @@ link_confs()
 {
     echo "Linking Configuration Files/Directories - Start"
 
+    # deprecated, moved to tmux, does not work for console access: screenrc
     local CONFS="elinks links vim"
     CONFS+=" alias bashrc bash_profile bash_logout profile shrc"
     CONFS+=" login login_conf cshrc Xdefaults"
     CONFS+=" cvsignore cvspass svnignore gitignore gitattributes gitconfig"
-    CONFS+=" mailrc pinerc screenrc toprc tmux.conf gvimrc vimrc indent.pro"
+    CONFS+=" mailrc pinerc toprc tmux.conf gvimrc vimrc indent.pro"
     CONFS+=" cookies mail_aliases rhosts gdbinit hushlogin"
 
     link_files DOT $HOME/conf $HOME $CONFS

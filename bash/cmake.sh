@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: 
 #  CREATED: 25/12/22 11:50:49 AM IST IST
-# MODIFIED: 15/01/2023 08:10:52 PM IST
+# MODIFIED: 08/11/2023 10:07:00 PM IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -15,7 +15,8 @@ PATH="/usr/bin:/usr/sbin:.:/auto/opt/bin:/bin:/sbin"
 
 BLD_BASE="$PWD";
 BLD_PATH=$(echo "./bld-$(uname -s)-$(uname -m)" | tr '[:upper:]' '[:lower:]');
-CMAKE_OPTS="-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
+CMAKE_OPTS="--debug-trycompile"     #--trace --debug-output ""
+CMAKE_OPTS+=" -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
 MAKE_OPTS="";   # "VERBOSE=1" --no-print-directory
 
 usage()
@@ -24,7 +25,7 @@ usage()
     echo "Options:"
     echo "  -h              - print this help"
     echo "  -z              - dry run this script"
-    echo "  -a              - clean build everything (-c -d -b)"
+    echo "  -a              - clean build everything (-d -c -b)"
     echo "  -b              - build from generated files"
     echo "  -c              - generate config, makefiles"
     echo "  -d              - delete/clean everything"

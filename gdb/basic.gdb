@@ -97,12 +97,14 @@ end
 
 #----------Logs-----------
 define logenable
- set logging file gdb.log
- set logging on
+    set logging file gdb.log
+    set logging enabled on
+    set trace-commands on
 end
 
 define logdisable
- set logging off
+    set logging enabled off
+    set trace-commands off
 end
 
 #------Break Points-------
