@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: tmux handler script
 #  CREATED: 01/28/14 10:51:03 IST
-# MODIFIED: 25/Mar/2022 04:25:35 PDT
+# MODIFIED: 17/11/2023 03:44:07 AM
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2014, Ravikiran K.S.
@@ -12,7 +12,7 @@
 # No utilities from ~/.bashrc.dev are used here, except PATH. So, only doing that.
 UNAMES=$(uname -s)
 export PATH=".:$HOME/scripts/bin:$HOME/tools/$UNAMES/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-WIN_NAMES='bld tb1 tb2 tb3 th1 th2 th3 any all dev'
+SESS_DEF_NM=rk
 
 function check_os_load()
 {
@@ -23,19 +23,19 @@ function check_os_load()
     echo "$UPTIME" #(tmux_load.sh)
 }
 
-function create_session()
+function build_session()
 {
-    [[ $# -ne 1 ]] && { echo "Usage: $FUNCNAME <sess-name>"; return $EINVAL; }
-    # has-session is better, $(tmux list-sessions -F '#S' | grep -w $1)
-    tmux has-session -t $1 > /dev/null 2>&1; local rval=$?;
-    [[ $rval -eq 0 ]] && { echo "session $1 already exists"; return $EINVAL; }
+    # has-session is better, $(tmux list-sessions -F '#S' | grep -w $SESS_NM)
+    tmux has-session -t $SESS_NM > /dev/null 2>&1; local rval=$?;
+    [[ $rval -eq 0 ]] && { echo "session $SESS_NM already exists"; return $EINVAL; }
     tmux start-server
-    for name in $WIN_NAMES; do
+    [[ -z $WIN_LIST ]] && { tmux new-session -d -s $SESS_NM -n $SESS_NM\; return 0; }
+    for name in "$(cat $WIN_LIST)"; do
         if [ -z $SESS_UP ]; then
-            local SESS_UP=$1;
-            tmux new-session -d -s $1 -n $name\; split-window -h;
+            local SESS_UP=$SESS_NM;
+            tmux new-session -d -s $SESS_NM -n $name\; split-window -h;
         else
-            tmux new-window -a -t $1 -n $name\; split-window -h;
+            tmux new-window -a -t $SESS_NM -n $name\; split-window -h;
         fi
     done
 }
@@ -69,6 +69,7 @@ usage()
     echo "Usage: tmux.sh <-h|-a|-c|-e|-k|-l|-n <new-session-name>|-o|-r>"
     echo "Options:"
     echo "  -a <sess-name>  - attach to given session (pass -x for exclusive)"
+    echo "  -b <win-list>   - start new session and given windows inside"
     echo "  -c              - check OS, user load on this machine"
     echo "  -e <cmd-file>   - execute tmux commands in the given file"
     echo "  -i              - print tmux information on this machine"
@@ -79,6 +80,7 @@ usage()
     echo "  -r              - reload ~/.tmux.conf for current session"
     echo "  -s <sess-name>  - stop session with given name, all windows in it"
     echo "  -t              - start tmux server alone, no sessions "
+    echo "  -w <win-list>   - when used with (-b), these windows created inside"
     echo "  -x              - exclusive attach (detaches other clients)"
     echo "  -y              - list tmux key bindings of current ~/.tmux.conf"
     echo "  -h              - print this help message"
@@ -88,7 +90,7 @@ usage()
 # It can then be included in other files for functions.
 main()
 {
-    local PARSE_OPTS="ha:ce:iklmn:rs:txy"
+    local PARSE_OPTS="ha:bce:iklmn:rs:tw:xy"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -111,6 +113,9 @@ main()
         usage && exit $EINVAL;
     fi
 
+    ((opt_n)) && SESS_NM=$optarg_n || SESS_NM=$SESS_DEF_NM;
+    ((opt_w)) && WIN_LIST=$optarg_w;;           # windows list
+    [[ ! -e $WIN_LIST ]] && { echo "Windows list file $1 does not exist"; exit $EINVAL; }
     ((opt_c)) && check_os_load;                 # check machine load
     ((opt_i)) && show_info;                     # dumps detailed tmux info
     ((opt_y)) && tmux list-keys;                # 'C-a ?' within tmux window
@@ -120,7 +125,7 @@ main()
     ((opt_k)) && tmux kill-server;              # kill tmux server
     ((opt_t)) && tmux start-server;             # start tmux server
     ((opt_r)) && tmux source-file ~/.tmux.conf; # reload conf file
-    ((opt_n)) && create_session $optarg_n;      # new session
+    ((opt_b)) && build_session;                 # build session
     ((opt_e)) && execute_cmds $optarg_e;        # execute tmux cmds from file
     ((opt_x)) && { XCL="-d"; }  # exclusive (detach all other clients)
     ((opt_a)) && tmux attach -t $optarg_a $XCL; # attach to existing sess
