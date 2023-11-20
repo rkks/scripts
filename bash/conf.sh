@@ -182,6 +182,7 @@ install_tools()
     local UBUNTU_DEV_SW="git exuberant-ctags cscope vim autocutsel tmux expect"
     UBUNTU_DEV_SW+=" fortune-mod cowsay toilet ifupdown net-tools dnsmasq twm"
     UBUNTU_DEV_SW+=" finger dnsniff tcpkill ss sysstat auditd ifenslave"
+    UBUNTU_DEV_SW+=" bpftrace"
 
     # common laptop software. extra: openfortivpn
     local UBUNTU_LAP_SW="strongswan libcharon-extra-plugins strongswan-swanctl"

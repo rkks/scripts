@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 #  DETAILS: External diff tool for git
 #  CREATED: 03/20/13 21:55:08 IST
-# MODIFIED: 25/09/2023 03:25:52 PM IST
+# MODIFIED: 20/11/23 15:42:27 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
 
-#set -uvx               # Treat unset variables as an error, verbose, debug mode
+#set -uvx       # Treat unset variables as an error, verbose, debug mode
 [[ "$(basename git.sh)" == "$(basename -- $0)" && -f $HOME/.bashrc.dev ]] && { source $HOME/.bashrc.dev; }
 
 # .mailmap allows users with different email-addrs to be recognized by same name
@@ -30,7 +30,7 @@ function new_remote()
 function config_local_repo()
 {
     [[ $# -ne 1 ]] && { echo "usage: set_local_repo_user <key-value-conf-file-path>"; return 1; }
-    cp $COMP_CONFS/vimrc.local "$PWD/.vimrc.local"
+    [[ ! -z $COMP_CONFS ]] && cp $COMP_CONFS/vimrc.local "$PWD/.vimrc.local"
     while IFS== read -r key value; do
         [[ $key == \#* ]] && { continue; }
         echo "git config $key \"$value\"";
