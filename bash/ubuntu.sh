@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: ubuntu quirks and it's remedies
 #  CREATED: 04/05/18 10:34:37 PDT
-# MODIFIED: 13/02/2023 03:10:40 PM IST
+# MODIFIED: 25/11/23 16:46:33 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -22,6 +22,22 @@ function create_user()
 function delete_user()
 {
     sudo deluser $1;
+}
+
+function modify_username()
+{
+    # You can not modify username & home dir while being logged in as the user.
+    # Enable root login, then login as root and perform these operations.
+    # sudo passwd root          # set passwd for root
+    # sudo passwd -u root       # enable root login
+    [[ $# -ne 2 ]] && { echo "Usage: $FUNCNAME <oldusername> <newusername>"; return $EINVAL; }
+    # home directory rename does not need permissions change because file perms
+    # are attached to user UID, not name. And UID remains same.
+    usermod -l $2 -d /home/$2 -m $1;
+    groupmod -n $2 $1;
+    passwd $2   # modify passwd for new user
+    # Disable root login now by
+    # sudo passwd -l root
 }
 
 function enable_router()

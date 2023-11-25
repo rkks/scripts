@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Cscope Utils
 #  CREATED: 06/25/13 11:05:14 IST
-# MODIFIED: 31/07/2023 10:50:34 AM IST
+# MODIFIED: 25/11/23 16:43:52 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -142,7 +142,7 @@ usage()
     echo "  -g <num> <pattern> - grep for pattern using line-oriented cscope"
     echo "  -k    - kernel mode, do not reference system hdrs, only from repo"
     echo "  -l    - make list of source files under given path (recursive)"
-    echo "  -r    - do not remove source files list after db update/create"
+    echo "  -r    - do not remove $SRC_FILES after db create/update/delete"
     echo "  -s    - do not update/create source files list (recursive)"
     echo "  -t    - create ctags database from scratch (clean)"
     echo "  -u    - update existing ctags database"
@@ -192,7 +192,7 @@ main()
     ((opt_a || opt_d)) && cscope_db_update;
     ((opt_a || opt_e)) && global_db_update;
     ((opt_a || opt_u)) && ctags_db_update;
-    ((!opt_r && !opt_s && !opt_h && !opt_g )) && rm -f $SRC_FILES;
+    ((opt_r)) && log_dbg "Source files list in $SRC_FILES" || rm -f $SRC_FILES;
     ((opt_h)) && (usage; exit 0)
 
     exit 0
