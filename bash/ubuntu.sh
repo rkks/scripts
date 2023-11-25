@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: ubuntu quirks and it's remedies
 #  CREATED: 04/05/18 10:34:37 PDT
-# MODIFIED: 08/11/2022 10:28:48 AM IST
+# MODIFIED: 13/02/2023 03:10:40 PM IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -106,13 +106,13 @@ function add_systemd_svc()
 function disable_systemd_svc()
 {
     [[ $# -ne 1 ]] && { echo "Usage: $FUNCNAME <svc-name>"; return $EINVAL; }
-    sudo systemctl status $1 && sudo systemctl stop $1 && sudo systemctl disable --now $1 && sudo systemctl mask $1 && sudo systemctl status $1;
+    sudo systemctl status $1; sudo systemctl stop $1 && sudo systemctl disable --now $1 && sudo systemctl mask $1 && sudo systemctl status $1;
 }
 
 function enable_systemd_svc()
 {
     [[ $# -ne 1 ]] && { echo "Usage: $FUNCNAME <svc-name>"; return $EINVAL; }
-    sudo systemctl status $1 && sudo systemctl unmask $1 && sudo systemctl enable --now $1 && sudo systemctl restart $1 && sudo systemctl status $1;
+    sudo systemctl status $1; sudo systemctl unmask $1 && sudo systemctl enable --now $1 && sudo systemctl restart $1 && sudo systemctl status $1;
 }
 
 function disable_netplan()
