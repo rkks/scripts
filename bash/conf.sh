@@ -149,15 +149,16 @@ install_vagrant()
     [[ -z "$exists" ]] && vagrant plugin install vagrant-libvirt --plugin-version=$LIBVIRT_PLUGIN_VER
 }
 
-install_docker()
+# docker-ce comes pre-compiled w/ all dependent libs within. docker.io is stock
+# debian w/ all libs external, independent. Keeps you safe from lib version hell
+# https://stackoverflow.com/questions/45023363/what-is-docker-io-in-relation-to-docker-ce-and-docker-ee-now-called-mirantis-k
+install_docker_ce()
 {
     sudo apt-get remove docker docker-engine docker.io containerd runc
     sudo apt install -y ca-certificates curl gnupg lsb-release
     curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
     echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
     sudo apt-get update && sudo apt-get install -y docker-ce docker-ce-cli containerd.io &&
-    sudo groupadd docker && sudo usermod -aG docker $USER && sudo chmod 666 /var/run/docker.sock
-    sudo systemctl enable docker.service && sudo systemctl enable containerd.service    # start on-boot
 }
 
 install_containerlab()
@@ -182,8 +183,8 @@ install_tools()
     # common development tools
     local UBUNTU_DEV_SW="git exuberant-ctags cscope vim autocutsel tmux expect"
     UBUNTU_DEV_SW+=" fortune-mod cowsay toilet ifupdown net-tools dnsmasq twm"
-    #UBUNTU_DEV_SW+=" finger dnsniff tcpkill ss sysstat auditd ifenslave"
-    #UBUNTU_DEV_SW+=" bpftrace"
+    UBUNTU_DEV_SW+=" finger cifs-utils "
+    #UBUNTU_DEV_SW+=" bpftrace dnsniff tcpkill ss sysstat auditd ifenslave"
 
     # common laptop software
     local UBUNTU_LAP_SW="strongswan libcharon-extra-plugins strongswan-swanctl"
@@ -213,7 +214,10 @@ install_tools()
         sudo apt-get install -y $UBUNTU_SVR_SW;
         ;;
     dev|lap|svr|dkr)
-        install_docker;
+        #install_docker_ce;
+        sudo apt-get install -y docker.io;
+        sudo groupadd docker && sudo usermod -aG docker $USER && sudo chmod 666 /var/run/docker.sock
+        sudo systemctl enable docker.service && sudo systemctl enable containerd.service    # start on-boot
         ;;
     kvm)
         # when Docker has out-of-box isolation, packaging, migration & registry,
