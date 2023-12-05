@@ -65,6 +65,7 @@ link_confs()
     link_files DOT $HOME/conf $HOME $CONFS
     link_files DOT $HOME/conf/custom $HOME bashrc.dev backup
     link_files REG $HOME/conf/vnc $HOME/.vnc xstartup xstartup_safe
+    link_files REG $HOME/conf/ssh $HOME/.ssh config README
 
     echo "Linking Configuration Files/Directories - Done"
 }
@@ -161,6 +162,14 @@ install_docker_ce()
     sudo apt-get update && sudo apt-get install -y docker-ce docker-ce-cli containerd.io &&
 }
 
+install_docker()
+{
+    [[ $1 =~ *ce ]] && install_docker_ce || sudo apt-get install -y docker.io;
+    # If group is already created by installer, do not stop proceed further.
+    sudo groupadd docker; sudo usermod -aG docker $USER; sudo chmod 0660 /var/run/docker.sock;
+    sudo systemctl enable docker.service; sudo systemctl enable containerd.service    # start on-boot
+}
+
 install_containerlab()
 {
     sudo bash -c "$(curl -sL https://get.containerlab.dev)"
@@ -214,10 +223,7 @@ install_tools()
         sudo apt-get install -y $UBUNTU_SVR_SW;
         ;;
     dev|lap|svr|dkr)
-        #install_docker_ce;
-        sudo apt-get install -y docker.io;
-        sudo groupadd docker && sudo usermod -aG docker $USER && sudo chmod 666 /var/run/docker.sock
-        sudo systemctl enable docker.service && sudo systemctl enable containerd.service    # start on-boot
+        install_docker;
         ;;
     kvm)
         # when Docker has out-of-box isolation, packaging, migration & registry,
