@@ -128,8 +128,7 @@ install_kvm()
     # qemu - hw emulator, libvirt - VM manager. libvirt-bin in 18.04 & before.
     # virtinst - cmdline tools for VM mgmt, virt-manager - GUI tool for VM mgmt
     VIRT_SW="qemu qemu-kvm libvirt-daemon libvirt-clients virtinst virt-manager"
-    sudo apt install -y $VIRT_SW && sudo usermod -aG libvirt $USER &&
-    sudo usermod -aG kvm $USER && return $?;
+    sudo apt install -y $VIRT_SW && sudo usermod -aG libvirt $USER && sudo usermod -aG kvm $USER; return $?;
 }
 
 install_vagrant()
@@ -192,7 +191,7 @@ install_tools()
     # common development tools
     local UBUNTU_DEV_SW="git exuberant-ctags cscope vim autocutsel tmux expect"
     UBUNTU_DEV_SW+=" fortune-mod cowsay toilet ifupdown net-tools dnsmasq twm"
-    UBUNTU_DEV_SW+=" finger cifs-utils "
+    UBUNTU_DEV_SW+=" finger cifs-utils openssh-server"
     #UBUNTU_DEV_SW+=" bpftrace dnsniff tcpkill ss sysstat auditd ifenslave"
 
     # common laptop software
@@ -222,7 +221,7 @@ install_tools()
     svr)
         sudo apt-get install -y $UBUNTU_SVR_SW;
         ;;
-    dev|lap|svr|dkr)
+    dkr)
         install_docker;
         ;;
     kvm)

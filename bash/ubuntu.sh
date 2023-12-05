@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: ubuntu quirks and it's remedies
 #  CREATED: 04/05/18 10:34:37 PDT
-# MODIFIED: 25/11/23 16:46:33 IST
+# MODIFIED: 05/12/23 17:41:50 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -242,9 +242,11 @@ usage()
     echo "  -e              - laptop serial number (DMI) details"
     echo "  -i <nfs-ip>     - NFS server IP-addr/FQDN"
     echo "  -l <lcl-path>   - local path for NFS mount"
-    echo "  -p <nfs-path>   - path on NFS server for NFS mount"
     echo "  -m              - mount NFS with given inputs (-i,-l,-p)"
     echo "  -n              - disable netplan, re-enable ifupdown, dns"
+    echo "  -p <nfs-path>   - path on NFS server for NFS mount"
+    echo "  -q <svc-name>   - enable systemd service of given name"
+    echo "  -r <svc-name>   - disable systemd service of given name"
     echo "  -s              - list all serial devices on laptop"
     echo "  -u              - unmount NFS with given inputs (-l)"
 }
@@ -253,7 +255,7 @@ usage()
 # It can then be included in other files for functions.
 main()
 {
-    PARSE_OPTS="ha:cd:ei:l:p:mnrsu"
+    PARSE_OPTS="ha:cd:ei:l:mnp:q:r:su"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -287,6 +289,8 @@ main()
     ((opt_p)) && { NFS_PATH=$optarg_p; }
     ((opt_m)) && { mount_nfs $NFS_IP $NFS_PATH $LCL_PATH; }
     ((opt_n)) && { disable_netplan; }
+    ((opt_q)) && { enable_systemd_svc $optarg_q; }
+    ((opt_r)) && { disable_systemd_svc $optarg_r; }
     ((opt_s)) && { list_serial_dev $*; }
     ((opt_u)) && { umount_nfs $LCL_PATH; }
 
