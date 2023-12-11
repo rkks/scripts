@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: ubuntu quirks and it's remedies
 #  CREATED: 04/05/18 10:34:37 PDT
-# MODIFIED: 05/12/23 17:41:50 IST
+# MODIFIED: 06/12/23 10:06:14 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -36,6 +36,7 @@ function modify_username()
     usermod -l $2 -d /home/$2 -m $1;
     groupmod -n $2 $1;
     passwd $2   # modify passwd for new user
+    #newgrp $2  # ex, 'newgrp docker' to enable new group in current shell
     # Disable root login now by
     # sudo passwd -l root
 }
