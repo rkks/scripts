@@ -1,13 +1,25 @@
 #!/usr/bin/env bash
 #  DETAILS: External diff tool for git
 #  CREATED: 03/20/13 21:55:08 IST
-# MODIFIED: 20/11/23 15:42:27 IST
+# MODIFIED: 16/12/23 22:06:11 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
 
 #set -uvx       # Treat unset variables as an error, verbose, debug mode
 [[ "$(basename git.sh)" == "$(basename -- $0)" && -f $HOME/.bashrc.dev ]] && { source $HOME/.bashrc.dev; }
+
+# TODO: Add support for git submodule add & delete from given path
+git_submodule_add()
+{
+    git lspriv;
+}
+
+# https://gist.github.com/myusuf3/7f645819ded92bda6677
+git_submodule_del()
+{
+    git rm --cached $1;
+}
 
 # .mailmap allows users with different email-addrs to be recognized by same name
 function add_mailmap()
@@ -64,6 +76,14 @@ function git_pull_update()
     cdie $1 && echo "update repo: $PWD" && git pa >> $UPDLOG && git cln >> $UPDLOG;
 }
 
+# pulls every remote branch from every remote repo by adding tracking & rebasing
+git_pull_all()
+{
+    git branch -r | grep -v '\->' | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g" | while read remote; do git branch --track "${remote#origin/}" "$remote"; done
+    git fetch --all
+    git pull --all
+}
+
 function git_diff()
 {
     if [ -z $DIFF_NM ]; then
@@ -98,6 +118,7 @@ function usage()
     echo "  -d <diff-name>          - use given diff-name generate diff file-name"
     echo "  -f <diff-file-path>     - do not generate file-name, use provided name"
     echo "  -l [ws-name]            - clone repo from GIT_REPO url with opts"
+    echo "  -p                      - pull & track all branches in remote repo"
     echo "  -r <remote-name> <url>  - move git repo to different hosting"
     echo "  -t                      - track all branches in remote repo"
     echo "  -h                      - print this help message"
@@ -110,7 +131,7 @@ main()
     local DIFF=$(which diff 2>/dev/null);
     [[ $# -eq 7 ]] && { [[ ! -z $DIFF ]] && $DIFF "$2" "$5"; exit 0; }  # echo $*
 
-    PARSE_OPTS="ha:b:c:d:f:lr:tu:"
+    PARSE_OPTS="ha:b:c:d:f:lpr:tu:"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -137,10 +158,11 @@ main()
     ((opt_b)) && { BRANCH=" -b $optarg_b"; } || { unset BRANCH; }
     ((opt_f)) && { DIFF_NM=$optarg_f; } || { unset DIFF_NM; }
     ((opt_l)) && { git_clone $*; exit 0; }
-    ((opt_d)) && { git_diff $optarg_d; }
+    ((opt_d)) && { git_diff $optarg_d; return; }
     [[ ! -d .git ]] && { echo "Unknown git repo, .git not found"; return; }
     ((opt_c)) && { config_local_repo $optarg_c; }
     ((opt_r)) && { new_remote $optarg_r $*; }
+    ((opt_p)) && { git_pull_all $*; }
     ((opt_t)) && { track_branch_all $*; }
     ((opt_u)) && { git_pull_update $optarg_u; }
     ((opt_h)) && { usage; }
