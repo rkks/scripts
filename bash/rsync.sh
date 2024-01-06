@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Invokes rsyncs with well known better options.
 #  CREATED: 06/29/13 16:14:34 IST
-# MODIFIED: 21/02/2023 12:17:04 PM IST
+# MODIFIED: 06/01/24 18:15:13 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -69,7 +69,6 @@ function rsync_dir()
         [[ "$(ls -A $2)" ]] && { echo "Destination path $2 is not empty"; return $EINVAL; }
     fi
     SRC_DIR=$1; DST_DIR=$2
-    [[ "" != "$RSYNC_DRY_RUN" ]] && RSYNC_OPTS+=" -n"
     echo "[SYNC] src: $SRC_DIR dst: $DST_DIR"
     run rsync $RSYNC_OPTS $SRC_DIR $DST_DIR
     unset SRC_DIR DST_DIR
@@ -133,7 +132,7 @@ main()
     fi
 
     ((opt_h)) && { usage; exit 0; }
-    ((opt_n)) && { export RSYNC_DRY_RUN=TRUE; }
+    ((opt_n)) && { RSYNC_OPTS+=" --dry-run"; }  # -n
     ((opt_b)) && { RSYNC_MAX_BW=$optarg_b; }
     ((opt_r)) && { rsync_dir $*; }
     ((opt_l)) && { rsync_list "$optarg_l $*"; }
