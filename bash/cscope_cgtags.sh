@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: Cscope Utils
 #  CREATED: 06/25/13 11:05:14 IST
-# MODIFIED: 25/11/23 16:43:52 IST
+# MODIFIED: 10/01/24 15:41:34 IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -32,7 +32,7 @@ function findsrc()
 
     truncate_file $SRC_FILES
     log DEBUG "Find source files from $PWD"
-    for d in $(ls -d */); do
+    for d in $(ls -d */ 2> /dev/null); do
         dir=${d%/};
         [[ -f $findexclude ]] && { local exclude=$(grep -Eo "(^|[[:space:]])$dir($|[[:space:]])" $findexclude | wc -l); } || { local exclude=0; }
         [[ $exclude -eq 0 ]] && { run find $FINDOPT $dpath/$dir -type f -regex "$SRC_PAT" -print >> $SRC_FILES; }
