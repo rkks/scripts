@@ -131,22 +131,29 @@ install_kvm()
     sudo apt install -y $VIRT_SW && sudo usermod -aG libvirt $USER && sudo usermod -aG kvm $USER; return $?;
 }
 
-install_vagrant()
+install_vagrant_kvm()
 {
-    install_vbox && install_kvm;
-    #sudo apt install https://releases.hashicorp.com/vagrant/2.2.19/vagrant_2.2.19_x86_64.deb
-    # dnsmasq-base/bridge-utils already installed on SVR.
-    # TODO: Check on libguestfs-tools, sshpass, tree, jq
+    install_kvm || exit 1;
     VAGRANT_LIBVIRT_SW="libxslt-dev libxml2-dev zlib1g-dev libvirt-dev jq"
-    VAGRANT_LIBVIRT_SW+=" libvirt-daemon-system ebtables"
+    VAGRANT_LIBVIRT_SW+=" libvirt-daemon-system ebtables dnsmasq-base"
+    VAGRANT_LIBVIRT_SW+=" bridge-utils ruby-dev ruby-libvirt"
+    #VAGRANT_LIBVIRT_SW+=" libguestfs-tools sshpass tree jq" # TODO: Check if needed
     sudo apt-get install -y $VAGRANT_LIBVIRT_SW
-    curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
-    sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
-    sudo apt-get update && sudo apt-get install -y ruby-dev ruby-libvirt vagrant
     # vagrant-libvirt plugin head is not stable, way too many dependencies
     LIBVIRT_PLUGIN_VER=0.4.1
     local exists=$(vagrant plugin list | grep $LIBVIRT_PLUGIN_VER | grep vagrant-libvirt)
     [[ -z "$exists" ]] && vagrant plugin install vagrant-libvirt --plugin-version=$LIBVIRT_PLUGIN_VER
+}
+
+install_vagrant()
+{
+    [[ $# -eq 0 ]] && install_vbox || exit 1;
+    #sudo apt install https://releases.hashicorp.com/vagrant/2.2.19/vagrant_2.2.19_x86_64.deb
+    #curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+    #sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+    #sudo apt-get update &&
+    sudo apt-get install -y vagrant || exit 1;
+    [[ $# -ne 0 ]] && install_vagrant_kvm;
 }
 
 # docker-ce comes pre-compiled w/ all dependent libs within. docker.io is stock

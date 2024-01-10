@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Docker Compose (dc) helper script to perform day-to-day tasks
 #  CREATED: 18/12/23 07:08:21 UTC
-# MODIFIED: 18/12/23 11:09:37 UTC
+# MODIFIED: 10/01/24 10:41:59 PM +0530
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -13,7 +13,8 @@ PATH="/usr/bin:/usr/sbin:.:/auto/opt/bin:/bin:/sbin"
 
 DKR_REG_URLS="hub.b4cloud.com"  # space separated URLs
 DC_CMD='docker -D compose --progress plain'
-DC_BLD_ARGS='--squash'  # If any secret files are removed after build, compress img
+# If any files are removed after build, compress img. squash is obsolete option
+#DC_BLD_ARGS='--squash'
 
 # Push input docker image to pre-configured registry
 docker_reg_push()
