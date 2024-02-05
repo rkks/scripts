@@ -27,6 +27,16 @@ docker_reg_push()
     return $?;
 }
 
+docker_stop_rm()
+{
+    [[ $1 != all ]] && { docker stop $1 && docker rm $1; return $?; }
+    local dkr;
+    for dkr in $(docker ps -a | grep -v CREATED | awk '{print $1}'); do
+        docker stop $dkr && docker rm $dkr; bail;
+    done
+    return 0;
+}
+
 usage()
 {
     echo "Usage: dc.sh [-h|]"
@@ -41,7 +51,7 @@ usage()
     echo "  -m <img/sha>- remove the given docker image"
     echo "  -n          - do not use cache during docker compose build"
     echo "  -p <img:tag>- push given docker image:tag to docker registry"
-    echo "  -r <sha>    - run docker stop & docker rm, proc & FS both cleaned"
+    echo "  -r <sha|all>- run docker stop & docker rm, on single or all"
     echo "  -s [svc]    - run docker compose stop, proc stopped, FS still kept"
     echo "  -t [img]    - show docker history for given container image"
     echo "  -u [svc]    - run docker compose up in interactive mode for test"
@@ -90,7 +100,7 @@ main()
     ((opt_s)) && { $DC_CMD stop $@; bail; }
     ((opt_p)) && { docker_reg_push $optarg_p; bail; }
     # rm removes the FS, but it requires container to have stopped first
-    ((opt_r)) && { docker stop $optarg_r && docker rm $optarg_r; bail; }
+    ((opt_r)) && { docker_stop_rm $optarg_r; bail; }
     ((opt_t)) && { docker attach $@; bail; }
     ((opt_h)) && { usage; }
 
