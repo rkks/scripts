@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Helper script for VPP install/testing
 #  CREATED: 15/11/23 08:58:34 AM IST
-# MODIFIED: 10/01/24 10:37:40 PM +0530 +0530
+# MODIFIED: 12/01/24 11:50:02 AM +0530
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -24,11 +24,6 @@ apt_install()
     [[ -z $APT_UPDATED ]] && { sudo apt update && APT_UPDATED=1 || return -1; }
     sudo apt install -y --no-install-recommends $@;
     return $?;
-}
-
-install_vagrant()
-{
-    apt_install vagrant && vagrant plugin install vagrant-cachier; return $?;
 }
 
 install_vpp()

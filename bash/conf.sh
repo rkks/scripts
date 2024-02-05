@@ -116,9 +116,10 @@ link_tools()
 
 install_vbox()
 {
-    wget -q https://www.virtualbox.org/download/oracle_vbox_2016.asc -O- | sudo apt-key add
-    sudo apt-add-repository "deb [arch=amd64] https://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib"
-    sudo apt-get update && sudo apt-get install -y virtualbox-6.1 && return $?; # sudo apt info virtualbox &&
+    #wget -q https://www.virtualbox.org/download/oracle_vbox_2016.asc -O- | sudo apt-key add
+    #sudo apt-add-repository "deb [arch=amd64] https://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib"
+    #sudo apt update && sudo apt install -y virtualbox-6.1; return $?; # sudo apt info virtualbox &&
+    sudo apt update && sudo apt install -y virtualbox; return $?;
 }
 
 install_kvm()
@@ -128,17 +129,19 @@ install_kvm()
     # qemu - hw emulator, libvirt - VM manager. libvirt-bin in 18.04 & before.
     # virtinst - cmdline tools for VM mgmt, virt-manager - GUI tool for VM mgmt
     VIRT_SW="qemu qemu-kvm libvirt-daemon libvirt-clients virtinst virt-manager"
-    sudo apt install -y $VIRT_SW && sudo usermod -aG libvirt $USER && sudo usermod -aG kvm $USER; return $?;
+    sudo apt install -y $VIRT_SW && \
+    sudo usermod -aG libvirt $USER && sudo usermod -aG kvm $USER; return $?;
 }
 
 install_vagrant_kvm()
 {
     install_kvm || exit 1;
-    VAGRANT_LIBVIRT_SW="libxslt-dev libxml2-dev zlib1g-dev libvirt-dev jq"
-    VAGRANT_LIBVIRT_SW+=" libvirt-daemon-system ebtables dnsmasq-base"
-    VAGRANT_LIBVIRT_SW+=" bridge-utils ruby-dev ruby-libvirt"
-    #VAGRANT_LIBVIRT_SW+=" libguestfs-tools sshpass tree jq" # TODO: Check if needed
-    sudo apt-get install -y $VAGRANT_LIBVIRT_SW
+    local VAGRANT_LIBVIRT_SW="libxslt-dev libxml2-dev zlib1g-dev libvirt-dev"
+    VAGRANT_LIBVIRT_SW+=" libvirt-daemon-system ebtables dnsmasq-base jq"
+    VAGRANT_LIBVIRT_SW+=" bridge-utils ruby-dev ruby-libvirt ebtables"
+    #VAGRANT_LIBVIRT_SW+=" libguestfs-tools sshpass tree" # TODO: Check if needed
+    sudo apt install -y $VAGRANT_LIBVIRT_SW && \
+    sudo systemctl enable libvirtd && sudo systemctl start libvirtd;
     # vagrant-libvirt plugin head is not stable, way too many dependencies
     LIBVIRT_PLUGIN_VER=0.4.1
     local exists=$(vagrant plugin list | grep $LIBVIRT_PLUGIN_VER | grep vagrant-libvirt)
@@ -151,9 +154,10 @@ install_vagrant()
     #sudo apt install https://releases.hashicorp.com/vagrant/2.2.19/vagrant_2.2.19_x86_64.deb
     #curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
     #sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
-    #sudo apt-get update &&
-    sudo apt-get install -y vagrant || exit 1;
+    # Instead of plugin 'vagrant-scp', just copy file to Vagrantfile dir on Host & access through /vagrant dir on VM
+    sudo apt update && sudo apt install -y vagrant && vagrant plugin install vagrant-cachier vagrant-docker-compose && \
     [[ $# -ne 0 ]] && install_vagrant_kvm;
+    return $?;
 }
 
 # docker-ce comes pre-compiled w/ all dependent libs within. docker.io is stock
@@ -161,16 +165,16 @@ install_vagrant()
 # https://stackoverflow.com/questions/45023363/what-is-docker-io-in-relation-to-docker-ce-and-docker-ee-now-called-mirantis-k
 install_docker_ce()
 {
-    sudo apt-get remove docker docker-engine docker.io containerd runc
+    sudo apt remove docker docker-engine docker.io containerd runc
     sudo apt install -y ca-certificates curl gnupg lsb-release
     curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
     echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-    sudo apt-get update && sudo apt-get install -y docker-ce docker-ce-cli containerd.io; return $?;
+    sudo apt update && sudo apt install -y docker-ce docker-ce-cli containerd.io; return $?;
 }
 
 install_docker()
 {
-    [[ $1 =~ *ce ]] && install_docker_ce || sudo apt-get install -y docker.io;
+    [[ $1 =~ *ce ]] && install_docker_ce || sudo apt install -y docker.io;
     # If group is already created by installer, do not stop proceed further.
     sudo groupadd docker; sudo usermod -aG docker $USER; sudo chmod 0660 /var/run/docker.sock;
     sudo systemctl enable docker.service; sudo systemctl enable containerd.service    # start on-boot
@@ -181,7 +185,7 @@ install_containerlab()
     sudo bash -c "$(curl -sL https://get.containerlab.dev)"
     #echo "deb [trusted=yes] https://apt.fury.io/netdevops/ /" | sudo tee -a /etc/apt/sources.list.d/netdevops.list
     ## Log out, Log back in, Run 'netlab test clab'
-    #sudo apt-get update && sudo apt-get install -y containerlab
+    #sudo apt update && sudo apt install -y containerlab
 }
 
 install_tools()
@@ -216,17 +220,17 @@ install_tools()
     UBUNTU_PYTHON_DEV="python-is-python3 python3-pip "
     UBUNTU_WEB_DEV="libxmlsec1-dev jq"
 
-    sudo apt-get update; local ret=$?; [[ $ret -ne 0 ]] && return $EPERM;
+    sudo apt update; local ret=$?; [[ $ret -ne 0 ]] && return $EPERM;
     #sudo add-apt-repository "deb http://archive.ubuntu.com/ubuntu $(lsb_release -sc) main universe";
     case $mode in
     dev)
-        sudo apt-get install -y $UBUNTU_DEV_SW;
+        sudo apt install -y $UBUNTU_DEV_SW;
         ;;
     lap)
-        sudo apt-get install -y $UBUNTU_LAP_SW;
+        sudo apt install -y $UBUNTU_LAP_SW;
         ;;
     svr)
-        sudo apt-get install -y $UBUNTU_SVR_SW;
+        sudo apt install -y $UBUNTU_SVR_SW;
         ;;
     dkr)
         install_docker;

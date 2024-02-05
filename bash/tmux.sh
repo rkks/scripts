@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: tmux handler script
 #  CREATED: 01/28/14 10:51:03 IST
-# MODIFIED: 19/11/2023 08:17:19 AM
+# MODIFIED: 05/02/24 05:05:41 PM +0530
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2014, Ravikiran K.S.
@@ -32,13 +32,14 @@ function build_session()
     tmux start-server
     [[ $# -eq 0 ]] && { tmux new-session -d -s $SESS_NM -n $SESS_NM\; return 0; }
     [[ ! -e $1 ]] && { echo "input cmds file $1 does not exist"; return $EINVAL; }
-    WIN_LIST=$(cat $1 | grep $SESS_NM | awk -F. '{print $1}' | awk -F: '{print $2}' | uniq | tr '\n' ' ')
+    WIN_LIST=$(cat $1 | grep -v '#' | grep $SESS_NM | awk -F. '{print $1}' | awk -F: '{print $2}' | uniq | tr '\n' ' ')
     for name in $WIN_LIST; do
         if [ -z $SESS_UP ]; then
             local SESS_UP=$SESS_NM;
-            tmux new-session -d -s $SESS_NM -n $name\; split-window -h;
+            tmux new-session -d -s $SESS_NM -n $name\; split-window -h\; split-window -v\; select-pane -t 0\; split-window -v\; select-pane -t 0\;
         else
-            tmux new-window -a -t $SESS_NM -n $name\; split-window -h;
+            # To cd pane to specified dir like $HOME: new-window -c ~
+            tmux new-window -a -t $SESS_NM -n $name\; split-window -h\; split-window -v\; select-pane -t 0\; split-window -v\; select-pane -t 0\;
         fi
     done
 }
