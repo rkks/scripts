@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Script to build the gh-pages
 #  CREATED: 06/09/17 19:27:48 IST
-# MODIFIED: 16/11/2022 05:42:14 PM IST
+# MODIFIED: 09/02/24 12:58:39 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -51,6 +51,8 @@ set_paths()
 
     # order if css import matters, first bootstrap.css, then color theme
     PD_CMN_OPTS="--standalone -f markdown "; # --smart enabled by default now
+    PD_CMN_OPTS+=" --include-in-header=$HOME/.google.hdr";  # https://codeyarns.com/tech/2019-07-06-how-to-add-google-analytics-to-pandoc-webpages.html#gsc.tab=0
+    PD_CMN_OPTS+=" --include-before-body=$HOME/.google.tag";
 #    PD_CV_OPTS+="-c $CSS/font.css -c https://fonts.googleapis.com/css?family=Open+Sans:regular,italic,bold";
     PD_CV_OPTS="$PD_CMN_OPTS -c $CSS/resume.css";
     PD_WIKI_OPTS="--template=website.html -B $NAVBAR -A $FOOTER \
@@ -212,6 +214,7 @@ assemble_resume()
         cat $CONTENT/cisco.$HDR $CONTENT/juniper.$HDR >> $CONTENT/resume.$HDR;
         cat $CONTENT/stoke.$HDR $CONTENT/ccpu.$HDR >> $CONTENT/resume.$HDR;
         cat $CONTENT/consult.$HDR $CONTENT/education.$HDR >> $CONTENT/resume.$HDR;
+        cat $CONTENT/language.$HDR >> $CONTENT/resume.$HDR;
     fi
     cat $CONTENT/foss.$HDR $CONTENT/footer.$HDR >> $CONTENT/resume.$HDR
     build_resume $CONTENT/resume.$HDR;

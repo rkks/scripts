@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Helper script for VPP install/testing
 #  CREATED: 15/11/23 08:58:34 AM IST
-# MODIFIED: 12/01/24 11:50:02 AM +0530
+# MODIFIED: 26/02/24 10:43:32 IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -48,10 +48,15 @@ install_vpp()
     apt_install vpp-ext-deps
     echo "Relevant configs & files installed"
     sudo ls -l /etc/apt/sources.list.d/fdio*.list /etc/apt/keyrings/fdio*.gpg
+    # modify uio_pci_generic w/ DPDK igb_uio or other driver if NIC not recognized
     cat /usr/lib/systemd/system/vpp.service
     # vpp installer creates new "vpp" usergroup, add current user & session to it
     sudo usermod -a -G vpp $(id -nu)
     newgrp vpp
+    # by default vpp sets num of hugepages (2MB each) at OS level to 1024. Total 2GB hugepages.
+    # this setting applies on vpp install & on system reboot. If VM does not have enough mem,
+    # then boot process will go into abort & reboot cycle due to failed hugepage reserve.
+    cat /etc/sysctl.d/80-vpp.conf
 }
 
 uninstall_vpp()
