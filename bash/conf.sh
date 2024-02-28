@@ -23,6 +23,16 @@ UNAMES=$(uname -s)      # OS name: Linux, FreeBSD, Darwin, SunOS. $(uname -v | g
 DISTRO_NM=$(grep '^ID=' /etc/os-release | cut -f2- -d= | sed -e 's/\"//g')  # distro: ubuntu, fedora
 DISTRO_VER=$(grep '^VERSION_ID=' /etc/os-release | cut -f2- -d= | sed -e 's/\"//g') # 20.04, 18.04
 
+function apt_clean() { sudo rm -rf /var/lib/apt/lists/*; unset APT_UPDATED; return 0; }
+
+# Expects NOPASSWD sudo
+function apt_install()
+{
+    [[ -z $APT_UPDATED ]] && { sudo apt update && APT_UPDATED=1 || return -1; }
+    sudo apt install -y --no-install-recommends $@;
+    return $?;
+}
+
 function link_files()
 {
     [[ $# -lt 3 ]] && { echo "Usage: link_files <flag> <src-dir> <dst-dir> [files-list]"; echo "  flag = DOT|NORMAL"; return; }
@@ -114,6 +124,43 @@ link_tools()
     echo "Linking Tool binary Files - Done"
 }
 
+install_vpp()
+{
+    apt_install curl
+    # Setup apt repository to pull vpp debian pkgs. LTS pkgs are named YYMM (Ex: 23/10)
+    # If script does not work, manual steps:
+    # - Installs GPG keyring /etc/apt/keyrings/fdio_2310-archive-keyring.gpg
+    # $ sudo apt-get install curl gnupg apt-transport-https
+    # $ curl -fsSL https://packagecloud.io/fdio/2310/gpgkey > 2310-gpgkey
+    # $ gpg --dearmor < 2310-gpgkey > fdio_2310-archive-keyring.gpg
+    # $ sudo mv fdio_2310-archive-keyring.gpg /etc/apt/keyrings/fdio_2310-archive-keyring.gpg
+    # - Install apt deb ppa pkg-src to https://packagecloud.io/fdio/2310/ubuntu
+    # $ sudo vim /etc/apt/sources.list.d/fdio_2310.list
+    # $ cat /etc/apt/sources.list.d/fdio_2310.list
+    # deb [signed-by=/etc/apt/keyrings/fdio_2310-archive-keyring.gpg] https://packagecloud.io/fdio/2310/ubuntu jammy main
+    # deb-src [signed-by=/etc/apt/keyrings/fdio_2310-archive-keyring.gpg] https://packagecloud.io/fdio/2310/ubuntu jammy main
+    curl -s https://packagecloud.io/install/repositories/fdio/2310/script.deb.sh | sudo bash
+    apt_install vpp vpp-plugin-core vpp-plugin-dpdk;    # core vpp packages
+    # optional vpp packages
+    apt_install python3-vpp-api vpp-dbg vpp-dev vpp-plugin-devtools
+    apt_install vpp-ext-deps
+    echo "Relevant configs & files installed"
+    sudo ls -l /etc/apt/sources.list.d/fdio*.list /etc/apt/keyrings/fdio*.gpg
+    cat /usr/lib/systemd/system/vpp.service
+    # vpp installer creates new "vpp" usergroup, add current user & session to it
+    sudo usermod -a -G vpp $(id -nu)
+    newgrp vpp
+}
+
+uninstall_vpp()
+{
+    # Searches give RE pattern in apt-cache & then deletes all matching pkgs
+    sudo apt autoremove --purge -y "vpp*"
+    sudo apt autoremove --purge -y "python3-vpp-api"
+    # Clear GPG keyring & apt deb ppa pkg-src
+    sudo rm -f /etc/apt/sources.list.d/fdio*.list /etc/apt/keyrings/fdio*.gpg
+}
+
 install_vbox()
 {
     #wget -q https://www.virtualbox.org/download/oracle_vbox_2016.asc -O- | sudo apt-key add
@@ -155,7 +202,8 @@ install_vagrant()
     #curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
     #sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
     # Instead of plugin 'vagrant-scp', just copy file to Vagrantfile dir on Host & access through /vagrant dir on VM
-    sudo apt update && sudo apt install -y vagrant && vagrant plugin install vagrant-cachier vagrant-docker-compose && \
+    VGT_PLUGINS="vagrant-vbguest vagrant-cachier vagrant-docker-compose"
+    sudo apt update && sudo apt install -y vagrant && vagrant plugin install $VGT_PLUGINS && \
     [[ $# -ne 0 ]] && install_vagrant_kvm;
     return $?;
 }
@@ -245,11 +293,48 @@ install_tools()
         # virtualbox is slow, buggy, cumbersome. If you must, use KVM instead.
         install_vagrant;
         ;;
+    vpp)
+        install_vpp;
+        ;;
     *)
         echo "Invalid input $*";
         ;;
     esac
     return $?;
+}
+
+uninstall_tools()
+{
+    case $1 in
+    dev)
+        sudo apt autoremove -y $UBUNTU_DEV_SW;
+        ;;
+    lap)
+        sudo apt autoremove -y $UBUNTU_LAP_SW;
+        ;;
+    svr)
+        sudo apt autoremove -y $UBUNTU_SVR_SW;
+        ;;
+    dkr)
+        uninstall_docker;
+        ;;
+    kvm)
+        # when Docker has out-of-box isolation, packaging, migration & registry,
+        # unless a workload needs OS isolation, no need of KVM/libvirt overhead
+        uninstall_kvm;
+        ;;
+    vgt)
+        # vagrant natively supports only virtualbox. kvm plugin does not work.
+        # virtualbox is slow, buggy, cumbersome. If you must, use KVM instead.
+        uninstall_vagrant;
+        ;;
+    vpp)
+        uninstall_vpp;
+        ;;
+    *)
+        echo "Invalid input $*";
+        ;;
+    esac
 }
 
 stop_cron()
@@ -274,38 +359,43 @@ pull_github()
     cd $1 && git remote set-url origin git@github.com:rkks/$1.git && cd -
 }
 
-pull_dev()
+pull_repo()
 {
-    pull_github conf;
-    pull_github scripts;
-}
-
-pull_extra()
-{
-    pull_github rkks.github.io;
-    pull_github wiki;
-    pull_github notes;
-    pull_github refer;
+    case $1 in
+    extra)
+        pull_github rkks.github.io;
+        pull_github wiki;
+        pull_github notes;
+        pull_github refer;
+        ;;
+    *)
+        pull_github conf;
+        pull_github scripts;
+        ;;
+    esac
 }
 
 function usage()
 {
     echo "Usage: conf.sh <-a|-c|-h|-l|-n|-s|-t>"
     echo "Options:"
+    echo "  -h              - print this help message"
     echo "  -c              - start cron job of user"
-    echo "  -i [dev|lap|svr]- install tools on ubuntu"
+    echo "  -i <pkg-sets>   - install tools on ubuntu"
     echo "  -l              - create scripts log directory"
     echo "  -n              - create symlink of conf files"
-    echo "  -p              - pull conf, scripts from github"
+    echo "  -p              - pull conf/scripts repos from github"
     echo "  -s              - create symlink of scripts"
     echo "  -t              - stop cron job of user"
-    echo "  -h              - print this help message"
+    echo "  -u <pkg-sets>   - uninstall tools from system"
+    echo "  -z              - dry run this script"
+    echo "pkg-sets: dev|lap|svr|vpp|vgt"
     echo "NOTE: to do everything and start cron (-cilnst)"
 }
 
 main()
 {
-    PARSE_OPTS="hceilnpst"
+    PARSE_OPTS="hcilnpst"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -328,9 +418,10 @@ main()
         usage && exit $EINVAL;
     fi
 
+    ((opt_z)) && { DRY_RUN=1; LOG_TTY=1; }
+    ((opt_u)) && uninstall_tools $*;
     ((opt_i)) && install_tools $*;
-    ((opt_p)) && pull_dev;
-    ((opt_e)) && pull_extra;
+    ((opt_p)) && pull_repo $*;
     ((opt_n)) && link_confs;
     # Do not link any files: bash_history gdb_history history lesshst
     ((opt_l)) && mkdir -pv $HOME/.logs;
@@ -345,4 +436,3 @@ main()
 if [ "$(basename -- $0)" == "$(basename conf.sh)" ]; then
     main $*
 fi
-
