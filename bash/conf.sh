@@ -175,7 +175,7 @@ install_kvm()
     [[ $DISTRO_VER < 20.04 ]] && { echo "Ubuntu below 20.X not supported" && return $EINVAL; }
     # qemu - hw emulator, libvirt - VM manager. libvirt-bin in 18.04 & before.
     # virtinst - cmdline tools for VM mgmt, virt-manager - GUI tool for VM mgmt
-    VIRT_SW="qemu qemu-kvm libvirt-daemon libvirt-clients virtinst virt-manager"
+    VIRT_SW="qemu qemu-kvm libvirt-daemon libvirt-clients virtinst virt-manager bridge-utils"
     sudo apt install -y $VIRT_SW && \
     sudo usermod -aG libvirt $USER && sudo usermod -aG kvm $USER; return $?;
 }
@@ -389,7 +389,7 @@ function usage()
     echo "  -t              - stop cron job of user"
     echo "  -u <pkg-sets>   - uninstall tools from system"
     echo "  -z              - dry run this script"
-    echo "pkg-sets: dev|lap|svr|vpp|vgt"
+    echo "pkg-sets: dev|lap|svr|kvm|dkr|vpp|vgt"
     echo "NOTE: to do everything and start cron (-cilnst)"
 }
 
