@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Helper script for Vagrant
 #  CREATED: 16/01/24 10:33:18 PM +0530
-# MODIFIED: 18/01/24 06:47:10 PM +0530
+# MODIFIED: 08/05/24 12:39:23 PM +0530
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -12,11 +12,13 @@
 PATH="/usr/bin:/usr/sbin:.:/auto/opt/bin:/bin:/sbin"
 
 export VAGRANT_DEFAULT_PROVIDER=virtualbox
+export VAGRANT_NO_PARALLEL=yes
+export VAGRANT_LOG=warn
 VGTENV=vgtenv
 
 usage()
 {
-    echo "Usage: vagrant.sh [-h|-d|-g|-l|-p|-t|-u|-v|-z]"
+    echo "Usage: vagrant.sh [-h|-d|-g|-l|-p|-s|-t|-u|-v|-z]"
     echo "Options:"
     echo "  -h          - print this help"
     echo "  -d          - destroy given VM (use -v option)"
@@ -27,13 +29,14 @@ usage()
     echo "  -u          - do vagrant up"
     echo "  -v <vm-sha> - SHA of VM to perform ops on"
     echo "  -z          - dry run this script"
+    echo "log-lvl: info(-v)/debug(-vv), warn/error(quiet)"
 }
 
 # Each shell script has to be independently testable.
 # It can then be included in other files for functions.
 main()
 {
-    PARSE_OPTS="hdglstuv:z"
+    PARSE_OPTS="hdgl:stuv:z"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -56,16 +59,16 @@ main()
         usage && exit $EINVAL;
     fi
 
-    [[ -f $VGTENV ]] && { source $VGTENV; } # cd $(dirname $0);
+    [[ -f $VGTENV ]] && { source $VGTENV; } # override default
     ((opt_z)) && { DRY_RUN=1; LOG_TTY=1; }
-    ((opt_l)) && { export VAGRANT_LOG=info; }
+    ((opt_l)) && { export VAGRANT_LOG=$optarg_l; }  # override $VGTENV
     ((opt_v)) && { VM_NAME=$optarg_v; }
-    ((opt_d || opt_t)) && { [[ -z $VM_NAME ]] && usage; }
+    ((opt_d || opt_t || opt_s)) && { [[ -z $VM_NAME ]] && usage; }
     ((opt_t)) && { vagrant halt $VM_NAME; }
     ((opt_d)) && { vagrant destroy $VM_NAME; }
-    ((opt_u)) && { vagrant up; }
+    ((opt_u)) && { vagrant up; } # no need of --debug option, $VAGRANT_LOG set
     ((opt_g)) && { vagrant global-status; }
-    ((opt_u)) && { vagrant ssh $VM_NAME; }
+    ((opt_s)) && { vagrant ssh $VM_NAME; }
     ((opt_h)) && { usage; }
     unset VAGRANT_LOG;
 
