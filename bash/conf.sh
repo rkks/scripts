@@ -339,17 +339,20 @@ uninstall_tools()
 
 stop_cron()
 {
-    echo "Configuring Cron - Stop"
-    $HOME/scripts/bin/cron.sh -l -t
-    echo "Configuring Cron - Done"
+    local tmpfile=$(mktemp)
+    $HOME/scripts/bin/cron.sh -l > $tmpfile
+    $HOME/scripts/bin/cron.sh -t
+    echo "Stop Cron - Existing contents saved into $tmpfile"
 }
 
 start_cron()
 {
-    echo "Configuring Cron - Start"
-    $HOME/scripts/bin/cron.sh -l -s $HOME/conf/custom/crontab
-    $HOME/scripts/bin/cron.sh -l
-    echo "Configuring Cron - Done"
+    local tmpfile=$(mktemp)
+    $HOME/scripts/bin/cron.sh -l > $tmpfile
+    cat $HOME/conf/custom/crontab >> $tmpfile
+    $HOME/scripts/bin/cron.sh -s $tmpfile
+    echo "Started Cron w/ content"
+    cat $tmpfile && rm -f $tmpfile
 }
 
 pull_github()
