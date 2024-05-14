@@ -22,15 +22,25 @@
 UNAMES=$(uname -s)      # OS name: Linux, FreeBSD, Darwin, SunOS. $(uname -v | grep -i ubuntu)
 DISTRO_NM=$(grep '^ID=' /etc/os-release | cut -f2- -d= | sed -e 's/\"//g')  # distro: ubuntu, fedora
 DISTRO_VER=$(grep '^VERSION_ID=' /etc/os-release | cut -f2- -d= | sed -e 's/\"//g') # 20.04, 18.04
+VGT_PROVIDER=vbox
 
 function apt_clean() { sudo rm -rf /var/lib/apt/lists/*; unset APT_UPDATED; return 0; }
+
+function apt_update()
+{
+    sudo apt update && APT_UPDATED=1 || return -1; return 0;
+}
 
 # Expects NOPASSWD sudo
 function apt_install()
 {
-    [[ -z $APT_UPDATED ]] && { sudo apt update && APT_UPDATED=1 || return -1; }
-    sudo apt install -y --no-install-recommends $@;
-    return $?;
+    [[ -z $APT_UPDATED ]] && { apt_update || return -1; }
+    sudo apt install -y --no-install-recommends --no-install-suggests $@; return $?;
+}
+
+function apt_upd_install()
+{
+    apt_update && apt_install $@; return $?;
 }
 
 function link_files()
@@ -124,6 +134,33 @@ link_tools()
     echo "Linking Tool binary Files - Done"
 }
 
+uninstall_vpp()
+{
+    # Searches give RE pattern in apt-cache & then deletes all matching pkgs
+    sudo apt autoremove --purge -y "vpp*"
+    sudo apt autoremove --purge -y "python3-vpp-api"
+    # Clear GPG keyring & apt deb ppa pkg-src
+    sudo rm -f /etc/apt/sources.list.d/fdio*.list /etc/apt/keyrings/fdio*.gpg
+}
+
+uninstall_vbox()
+{
+    sudo apt autoremove --purge -y "virtualbox*"; return $?;
+}
+
+uninstall_kvm()
+{
+    local VIRT_SW="qemu qemu-kvm libvirt-daemon libvirt-clients virtinst virt-manager"
+    local VAGRANT_LIBVIRT_SW="libvirt-dev libvirt-daemon-system ruby-dev ruby-libvirt"
+    sudo apt autoremove -y $VIRT_SW $VAGRANT_LIBVIRT_SW; return $?;
+}
+
+uninstall_vagrant()
+{
+    VGT_PLUGINS="vagrant-vbguest vagrant-cachier vagrant-docker-compose"
+    vagrant plugin uninstall $VGT_PLUGINS && sudo apt autoremove --purge -y vagrant; return $?;
+}
+
 install_vpp()
 {
     apt_install curl
@@ -152,21 +189,17 @@ install_vpp()
     newgrp vpp
 }
 
-uninstall_vpp()
-{
-    # Searches give RE pattern in apt-cache & then deletes all matching pkgs
-    sudo apt autoremove --purge -y "vpp*"
-    sudo apt autoremove --purge -y "python3-vpp-api"
-    # Clear GPG keyring & apt deb ppa pkg-src
-    sudo rm -f /etc/apt/sources.list.d/fdio*.list /etc/apt/keyrings/fdio*.gpg
-}
-
+# https://www.dedoimedo.com/computers/virtualbox-kernel-driver-gcc-12.html
 install_vbox()
 {
-    #wget -q https://www.virtualbox.org/download/oracle_vbox_2016.asc -O- | sudo apt-key add
-    #sudo apt-add-repository "deb [arch=amd64] https://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib"
-    #sudo apt update && sudo apt install -y virtualbox-6.1; return $?; # sudo apt info virtualbox &&
-    sudo apt update && sudo apt install -y virtualbox; return $?;
+    sudo apt_install gcc-12;    # mandatory to compile drivers locally
+    # '| sudo apt-key add' is deprecated
+    wget -q https://www.virtualbox.org/download/oracle_vbox_2016.asc -O- | sudo gpg --yes --output /usr/share/keyrings/oracle-virtualbox-2016.gpg --dearmor
+    # sudo apt-add-repository does not work?
+    local pkg_exists=$(cat /etc/apt/sources.list | grep virtualbox | wc -l)
+    [[ $pkg_exists -eq 0 ]] && { echo "deb [arch=amd64 signed-by=/usr/share/keyrings/oracle-virtualbox-2016.gpg] https://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib" | sudo tee -a /etc/apt/sources.list; }
+    apt_upd_install virtualbox-6.1; return $?; # sudo apt info virtualbox &&
+    #apt_install virtualbox; return $?;
 }
 
 install_kvm()
@@ -175,36 +208,31 @@ install_kvm()
     [[ $DISTRO_VER < 20.04 ]] && { echo "Ubuntu below 20.X not supported" && return $EINVAL; }
     # qemu - hw emulator, libvirt - VM manager. libvirt-bin in 18.04 & before.
     # virtinst - cmdline tools for VM mgmt, virt-manager - GUI tool for VM mgmt
-    VIRT_SW="qemu qemu-kvm libvirt-daemon libvirt-clients virtinst virt-manager bridge-utils"
-    sudo apt install -y $VIRT_SW && \
-    sudo usermod -aG libvirt $USER && sudo usermod -aG kvm $USER; return $?;
-}
-
-install_vagrant_kvm()
-{
-    install_kvm || exit 1;
+    local VIRT_SW="qemu qemu-kvm libvirt-daemon libvirt-clients virtinst virt-manager bridge-utils"
     local VAGRANT_LIBVIRT_SW="libxslt-dev libxml2-dev zlib1g-dev libvirt-dev"
     VAGRANT_LIBVIRT_SW+=" libvirt-daemon-system ebtables dnsmasq-base jq"
-    VAGRANT_LIBVIRT_SW+=" bridge-utils ruby-dev ruby-libvirt ebtables"
+    VAGRANT_LIBVIRT_SW+=" bridge-utils ruby-dev ruby-libvirt"
     #VAGRANT_LIBVIRT_SW+=" libguestfs-tools sshpass tree" # TODO: Check if needed
-    sudo apt install -y $VAGRANT_LIBVIRT_SW && \
+    apt_install $VIRT_SW $VAGRANT_LIBVIRT_SW && sudo usermod -aG libvirt $USER && sudo usermod -aG kvm $USER && \
     sudo systemctl enable libvirtd && sudo systemctl start libvirtd;
     # vagrant-libvirt plugin head is not stable, way too many dependencies
-    LIBVIRT_PLUGIN_VER=0.4.1
-    local exists=$(vagrant plugin list | grep $LIBVIRT_PLUGIN_VER | grep vagrant-libvirt)
-    [[ -z "$exists" ]] && vagrant plugin install vagrant-libvirt --plugin-version=$LIBVIRT_PLUGIN_VER
+    #LIBVIRT_PLUGIN_VER=0.4.1
+    #local exists=$(vagrant plugin list | grep $LIBVIRT_PLUGIN_VER | grep vagrant-libvirt)
+    #[[ -z "$exists" ]] && vagrant plugin install vagrant-libvirt --plugin-version=$LIBVIRT_PLUGIN_VER
+    return $?;
 }
 
 install_vagrant()
 {
-    [[ $# -eq 0 ]] && install_vbox || exit 1;
-    #sudo apt install https://releases.hashicorp.com/vagrant/2.2.19/vagrant_2.2.19_x86_64.deb
-    #curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
-    #sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+    #Old: curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+    wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+    #Old, Does not work: sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+    echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+    #Old, You can directly install by URL: apt_install https://releases.hashicorp.com/vagrant/2.2.19/vagrant_2.2.19_x86_64.deb
+    apt_update
     # Instead of plugin 'vagrant-scp', just copy file to Vagrantfile dir on Host & access through /vagrant dir on VM
-    VGT_PLUGINS="vagrant-vbguest vagrant-cachier vagrant-docker-compose"
-    sudo apt update && sudo apt install -y vagrant && vagrant plugin install $VGT_PLUGINS && \
-    [[ $# -ne 0 ]] && install_vagrant_kvm;
+    local VGT_PLUGINS="vagrant-vbguest vagrant-cachier vagrant-docker-compose"
+    apt_install vagrant && vagrant plugin install $VGT_PLUGINS && \
     return $?;
 }
 
@@ -214,15 +242,15 @@ install_vagrant()
 install_docker_ce()
 {
     sudo apt remove docker docker-engine docker.io containerd runc
-    sudo apt install -y ca-certificates curl gnupg lsb-release
+    apt_install ca-certificates curl gnupg lsb-release
     curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
     echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-    sudo apt update && sudo apt install -y docker-ce docker-ce-cli containerd.io; return $?;
+    apt_upd_install docker-ce docker-ce-cli containerd.io; return $?;
 }
 
 install_docker()
 {
-    [[ $1 =~ *ce ]] && install_docker_ce || sudo apt install -y docker.io;
+    [[ $1 =~ *ce ]] && install_docker_ce || apt_install docker.io;
     # If group is already created by installer, do not stop proceed further.
     sudo groupadd docker; sudo usermod -aG docker $USER; sudo chmod 0660 /var/run/docker.sock;
     sudo systemctl enable docker.service; sudo systemctl enable containerd.service    # start on-boot
@@ -233,7 +261,7 @@ install_containerlab()
     sudo bash -c "$(curl -sL https://get.containerlab.dev)"
     #echo "deb [trusted=yes] https://apt.fury.io/netdevops/ /" | sudo tee -a /etc/apt/sources.list.d/netdevops.list
     ## Log out, Log back in, Run 'netlab test clab'
-    #sudo apt update && sudo apt install -y containerlab
+    #apt_upd_install containerlab
 }
 
 install_tools()
@@ -245,7 +273,7 @@ install_tools()
 
     # Tried & junked: libcharon-standard-plugins libstrongswan-extra-plugins
     # resolvconf wpasupplicant
-    # sudo apt install auditd   # To monitor which proc is modifying given file
+    # apt_install auditd   # To monitor which proc is modifying given file
 
     # common development tools
     local UBUNTU_DEV_SW="git exuberant-ctags cscope vim autocutsel tmux expect"
@@ -272,13 +300,13 @@ install_tools()
     #sudo add-apt-repository "deb http://archive.ubuntu.com/ubuntu $(lsb_release -sc) main universe";
     case $mode in
     dev)
-        sudo apt install -y $UBUNTU_DEV_SW;
+        apt_install $UBUNTU_DEV_SW;
         ;;
     lap)
-        sudo apt install -y $UBUNTU_LAP_SW;
+        apt_install $UBUNTU_LAP_SW;
         ;;
     svr)
-        sudo apt install -y $UBUNTU_SVR_SW;
+        apt_install $UBUNTU_SVR_SW;
         ;;
     dkr)
         install_docker;
@@ -287,6 +315,9 @@ install_tools()
         # when Docker has out-of-box isolation, packaging, migration & registry,
         # unless a workload needs OS isolation, no need of KVM/libvirt overhead
         install_kvm;
+        ;;
+    vbox)
+        install_vbox;
         ;;
     vgt)
         # vagrant natively supports only virtualbox. kvm plugin does not work.
@@ -322,6 +353,9 @@ uninstall_tools()
         # when Docker has out-of-box isolation, packaging, migration & registry,
         # unless a workload needs OS isolation, no need of KVM/libvirt overhead
         uninstall_kvm;
+        ;;
+    vbox)
+        uninstall_vbox;
         ;;
     vgt)
         # vagrant natively supports only virtualbox. kvm plugin does not work.
@@ -392,13 +426,13 @@ function usage()
     echo "  -t              - stop cron job of user"
     echo "  -u <pkg-sets>   - uninstall tools from system"
     echo "  -z              - dry run this script"
-    echo "pkg-sets: dev|lap|svr|kvm|dkr|vpp|vgt"
+    echo "pkg-sets: dev|lap|svr|vbox|kvm|dkr|vpp|vgt"
     echo "NOTE: to do everything and start cron (-cilnst)"
 }
 
 main()
 {
-    PARSE_OPTS="hcilnpst"
+    PARSE_OPTS="hcilnpstu"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in

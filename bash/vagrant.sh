@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Helper script for Vagrant
 #  CREATED: 16/01/24 10:33:18 PM +0530
-# MODIFIED: 08/05/24 12:39:23 PM +0530
+# MODIFIED: 14/05/24 11:00:14 AM +0530
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -14,7 +14,16 @@ PATH="/usr/bin:/usr/sbin:.:/auto/opt/bin:/bin:/sbin"
 export VAGRANT_DEFAULT_PROVIDER=virtualbox
 export VAGRANT_NO_PARALLEL=yes
 export VAGRANT_LOG=warn
-VGTENV=vgtenv
+export VAGRANT_VAGRANTFILE=$(pwd)/Vagrantfile
+
+function run()
+{
+    # time cmd returns return value of child program. And time takes time as argument and still works fine
+    [[ ! -z $TIMED_RUN ]] && { local HOW_LONG="time "; }
+    [[ $(type -t "$1") == function ]] && { local fname=$1; shift; echo "$fname $*"; $HOW_LONG $fname "$*"; return $?; }
+    local p; local a="$HOW_LONG"; for p in "$@"; do a="${a} \"${p}\""; done; test -z "$RUN_LOG" && { RUN_LOG=/dev/null; };
+    echo "$a"; test -n "$DRY_RUN" && { return 0; } || eval "$a" 2>&1 | tee -a $RUN_LOG 2>&1; return ${PIPESTATUS[0]};
+}
 
 usage()
 {
@@ -22,6 +31,7 @@ usage()
     echo "Options:"
     echo "  -h          - print this help"
     echo "  -d          - destroy given VM (use -v option)"
+    echo "  -f <fpath>  - relative path of Vagrantfile"
     echo "  -g          - show vagrant global status"
     echo "  -l          - enable debug logging of vagrant op"
     echo "  -s          - ssh into guest VM (use -v option)"
@@ -30,13 +40,14 @@ usage()
     echo "  -v <vm-sha> - SHA of VM to perform ops on"
     echo "  -z          - dry run this script"
     echo "log-lvl: info(-v)/debug(-vv), warn/error(quiet)"
+    return 0;
 }
 
 # Each shell script has to be independently testable.
 # It can then be included in other files for functions.
 main()
 {
-    PARSE_OPTS="hdgl:stuv:z"
+    PARSE_OPTS="hdf:gl:stuv:z"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -59,16 +70,17 @@ main()
         usage && exit $EINVAL;
     fi
 
-    [[ -f $VGTENV ]] && { source $VGTENV; } # override default
     ((opt_z)) && { DRY_RUN=1; LOG_TTY=1; }
-    ((opt_l)) && { export VAGRANT_LOG=$optarg_l; }  # override $VGTENV
+    ((opt_f)) && { export VAGRANT_VAGRANTFILE=$optarg_f; }
+    [[ -f "$(dirname $VAGRANT_VAGRANTFILE)/vgtenv" ]] && { source "$(dirname $VAGRANT_VAGRANTFILE)/vgtenv"; } # override default
+    ((opt_l)) && { export VAGRANT_LOG=$optarg_l; }  # override vgtenv
     ((opt_v)) && { VM_NAME=$optarg_v; }
-    ((opt_d || opt_t || opt_s)) && { [[ -z $VM_NAME ]] && usage; }
-    ((opt_t)) && { vagrant halt $VM_NAME; }
-    ((opt_d)) && { vagrant destroy $VM_NAME; }
-    ((opt_u)) && { vagrant up; } # no need of --debug option, $VAGRANT_LOG set
-    ((opt_g)) && { vagrant global-status; }
-    ((opt_s)) && { vagrant ssh $VM_NAME; }
+    ((opt_d || opt_t || opt_s)) && { [[ -z $VM_NAME ]] && echo "-d|-t|-s require -v input" && exit $EINVAL; }
+    ((opt_t)) && { run vagrant halt $VM_NAME; }
+    ((opt_d)) && { run vagrant destroy $VM_NAME; }
+    ((opt_u)) && { run vagrant up; }    # no need of --debug option, $VAGRANT_LOG set
+    ((opt_g)) && { run vagrant global-status; }
+    ((opt_s)) && { run vagrant ssh $VM_NAME; }
     ((opt_h)) && { usage; }
     unset VAGRANT_LOG;
 
