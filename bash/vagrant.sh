@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Helper script for Vagrant
 #  CREATED: 16/01/24 10:33:18 PM +0530
-# MODIFIED: 14/05/24 11:00:14 AM +0530
+# MODIFIED: 16/05/24 05:42:03 PM +0530
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -15,6 +15,7 @@ export VAGRANT_DEFAULT_PROVIDER=virtualbox
 export VAGRANT_NO_PARALLEL=yes
 export VAGRANT_LOG=warn
 export VAGRANT_VAGRANTFILE=$(pwd)/Vagrantfile
+VGT_OPTS="--color"
 
 function run()
 {
@@ -27,18 +28,23 @@ function run()
 
 usage()
 {
-    echo "Usage: vagrant.sh [-h|-d|-g|-l|-p|-s|-t|-u|-v|-z]"
+    echo "Usage: vagrant.sh [-h|-a|-c|-d|-e|-f|-g|-l|-r|-s|-t|-u|-v|-z]"
     echo "Options:"
     echo "  -h          - print this help"
+    echo "  -a          - display vagrant status (use -f option)"
+    echo "  -c          - display vagrant ssh config (use -f option)"
     echo "  -d          - destroy given VM (use -v option)"
+    echo "  -e          - check Vagrantfile for any errors (use -f option)"
     echo "  -f <fpath>  - relative path of Vagrantfile"
-    echo "  -g          - show vagrant global status"
+    echo "  -g          - show vagrant global-status (use -v option)"
     echo "  -l          - enable debug logging of vagrant op"
+    echo "  -r          - reload guest VM applying Vagrantfile again (use -v option)"
     echo "  -s          - ssh into guest VM (use -v option)"
     echo "  -t          - halt given VM (use -v option)"
-    echo "  -u          - do vagrant up"
+    echo "  -u          - do vagrant up (use -f option)"
     echo "  -v <vm-sha> - SHA of VM to perform ops on"
     echo "  -z          - dry run this script"
+    echo "-f input is must for -a|-c|-u, use either -v or -f input for the rest"
     echo "log-lvl: info(-v)/debug(-vv), warn/error(quiet)"
     return 0;
 }
@@ -47,7 +53,7 @@ usage()
 # It can then be included in other files for functions.
 main()
 {
-    PARSE_OPTS="hdf:gl:stuv:z"
+    PARSE_OPTS="hacdef:gl:rstuv:z"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -71,17 +77,21 @@ main()
     fi
 
     ((opt_z)) && { DRY_RUN=1; LOG_TTY=1; }
+    ((opt_h)) && { usage; }
     ((opt_f)) && { export VAGRANT_VAGRANTFILE=$optarg_f; }
-    [[ -f "$(dirname $VAGRANT_VAGRANTFILE)/vgtenv" ]] && { source "$(dirname $VAGRANT_VAGRANTFILE)/vgtenv"; } # override default
     ((opt_l)) && { export VAGRANT_LOG=$optarg_l; }  # override vgtenv
     ((opt_v)) && { VM_NAME=$optarg_v; }
-    ((opt_d || opt_t || opt_s)) && { [[ -z $VM_NAME ]] && echo "-d|-t|-s require -v input" && exit $EINVAL; }
-    ((opt_t)) && { run vagrant halt $VM_NAME; }
-    ((opt_d)) && { run vagrant destroy $VM_NAME; }
-    ((opt_u)) && { run vagrant up; }    # no need of --debug option, $VAGRANT_LOG set
-    ((opt_g)) && { run vagrant global-status; }
-    ((opt_s)) && { run vagrant ssh $VM_NAME; }
-    ((opt_h)) && { usage; }
+    ((opt_e)) && { run vagrant $VGT_OPTS validate; }
+    ((opt_g)) && { run vagrant $VGT_OPTS global-status $VM_NAME; } # VM_NAME is optional
+    ((opt_r)) && { run vagrant $VGT_OPTS reload --provision $VM_NAME; } # VM_NAME is optional
+    ((opt_s)) && { run vagrant $VGT_OPTS ssh $VM_NAME; }
+    ((opt_t)) && { run vagrant $VGT_OPTS halt $VM_NAME; }
+    ((opt_d)) && { run vagrant $VGT_OPTS destroy $VM_NAME; }
+    ((opt_a || opt_u)) && { [[ ! -e $VAGRANT_VAGRANTFILE ]] && echo "Input valid -f <vagrantfile-path>" && exit $EINVAL; }
+    [[ -f "$(dirname $VAGRANT_VAGRANTFILE)/vgtenv" ]] && { source "$(dirname $VAGRANT_VAGRANTFILE)/vgtenv"; } # override default
+    ((opt_u)) && { run vagrant $VGT_OPTS up; }    # no need of --debug option, $VAGRANT_LOG set
+    ((opt_a)) && { run vagrant $VGT_OPTS status; }
+    ((opt_c)) && { run vagrant $VGT_OPTS ssh-config; }
     unset VAGRANT_LOG;
 
     exit 0;
