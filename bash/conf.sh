@@ -192,7 +192,7 @@ install_vpp()
 # https://www.dedoimedo.com/computers/virtualbox-kernel-driver-gcc-12.html
 install_vbox()
 {
-    sudo apt_install gcc-12;    # mandatory to compile drivers locally
+    apt_install gcc-12;    # mandatory to compile drivers locally
     # '| sudo apt-key add' is deprecated
     wget -q https://www.virtualbox.org/download/oracle_vbox_2016.asc -O- | sudo gpg --yes --output /usr/share/keyrings/oracle-virtualbox-2016.gpg --dearmor
     # sudo apt-add-repository does not work?
