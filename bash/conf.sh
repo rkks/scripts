@@ -161,6 +161,13 @@ uninstall_vagrant()
     vagrant plugin uninstall $VGT_PLUGINS && sudo apt autoremove --purge -y vagrant; return $?;
 }
 
+uninstall_docker()
+{
+    sudo systemctl disable docker.service containerd.service &&  \
+    rm -f ~/.docker/cli-plugins/docker-compose && sudo apt autoremove docker*;
+    return $?;
+}
+
 install_vpp()
 {
     apt_install curl
@@ -250,10 +257,14 @@ install_docker_ce()
 
 install_docker()
 {
-    [[ $1 =~ *ce ]] && install_docker_ce || apt_install docker.io;
     # If group is already created by installer, do not stop proceed further.
+    [[ $1 =~ *ce ]] && install_docker_ce || apt_install docker.io; [[ $? -ne 0 ]] && return $?;
     sudo groupadd docker; sudo usermod -aG docker $USER; sudo chmod 0660 /var/run/docker.sock;
-    sudo systemctl enable docker.service; sudo systemctl enable containerd.service    # start on-boot
+    sudo systemctl enable docker.service containerd.service &&  \
+    [[ ! -f ~/.docker/cli-plugins/docker-compose ]] && mkdir -p ~/.docker/cli-plugins/ &&   \
+    curl -SL https://github.com/docker/compose/releases/download/v2.23.3/docker-compose-linux-x86_64 \
+    -o ~/.docker/cli-plugins/docker-compose && chmod +x ~/.docker/cli-plugins/docker-compose;
+    return $?;
 }
 
 install_containerlab()
@@ -432,7 +443,7 @@ function usage()
 
 main()
 {
-    PARSE_OPTS="hcilnpstu"
+    PARSE_OPTS="hci:lnpstu:"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -456,8 +467,8 @@ main()
     fi
 
     ((opt_z)) && { DRY_RUN=1; LOG_TTY=1; }
-    ((opt_u)) && uninstall_tools $*;
-    ((opt_i)) && install_tools $*;
+    ((opt_u)) && uninstall_tools $optarg_u;
+    ((opt_i)) && install_tools $optarg_i;
     ((opt_p)) && pull_repo $*;
     ((opt_n)) && link_confs;
     # Do not link any files: bash_history gdb_history history lesshst

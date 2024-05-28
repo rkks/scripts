@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Helper script for Vagrant
 #  CREATED: 16/01/24 10:33:18 PM +0530
-# MODIFIED: 16/05/24 05:42:03 PM +0530
+# MODIFIED: 19/05/24 05:17:46 PM +0530
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -9,7 +9,7 @@
 
 #set -uvx   # Warn unset vars, Verbose (echo each command), Enable debug mode
 
-PATH="/usr/bin:/usr/sbin:.:/auto/opt/bin:/bin:/sbin"
+#PATH="/usr/bin:/usr/sbin:.:/auto/opt/bin:/bin:/sbin"
 
 export VAGRANT_DEFAULT_PROVIDER=virtualbox
 export VAGRANT_NO_PARALLEL=yes
@@ -32,6 +32,7 @@ usage()
     echo "Options:"
     echo "  -h          - print this help"
     echo "  -a          - display vagrant status (use -f option)"
+    echo "  -b          - list all vagrant boxes available"
     echo "  -c          - display vagrant ssh config (use -f option)"
     echo "  -d          - destroy given VM (use -v option)"
     echo "  -e          - check Vagrantfile for any errors (use -f option)"
@@ -53,7 +54,7 @@ usage()
 # It can then be included in other files for functions.
 main()
 {
-    PARSE_OPTS="hacdef:gl:rstuv:z"
+    PARSE_OPTS="habcdef:gl:rstuv:z"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -77,10 +78,10 @@ main()
     fi
 
     ((opt_z)) && { DRY_RUN=1; LOG_TTY=1; }
-    ((opt_h)) && { usage; }
     ((opt_f)) && { export VAGRANT_VAGRANTFILE=$optarg_f; }
     ((opt_l)) && { export VAGRANT_LOG=$optarg_l; }  # override vgtenv
     ((opt_v)) && { VM_NAME=$optarg_v; }
+    ((opt_b)) && { run vagrant $VGT_OPTS box list; }
     ((opt_e)) && { run vagrant $VGT_OPTS validate; }
     ((opt_g)) && { run vagrant $VGT_OPTS global-status $VM_NAME; } # VM_NAME is optional
     ((opt_r)) && { run vagrant $VGT_OPTS reload --provision $VM_NAME; } # VM_NAME is optional
@@ -92,6 +93,7 @@ main()
     ((opt_u)) && { run vagrant $VGT_OPTS up; }    # no need of --debug option, $VAGRANT_LOG set
     ((opt_a)) && { run vagrant $VGT_OPTS status; }
     ((opt_c)) && { run vagrant $VGT_OPTS ssh-config; }
+    ((opt_h)) && { usage; }
     unset VAGRANT_LOG;
 
     exit 0;
