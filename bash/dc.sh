@@ -1,7 +1,10 @@
 #!/bin/bash
 #  DETAILS: Docker Compose (dc) helper script to perform day-to-day tasks
+#  Concatenated build is supported by docker-compose, example:
+#  $ docker-compose -f docker-compose.yml -f docker-compose.dev.yml
+#
 #  CREATED: 18/12/23 07:08:21 UTC
-# MODIFIED: 10/01/24 10:41:59 PM +0530
+# MODIFIED: 21/05/24 09:59:41 PM IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -11,12 +14,15 @@
 
 PATH="/usr/bin:/usr/sbin:.:/auto/opt/bin:/bin:/sbin"
 
+# Exposing port 5000 on host & directly referring it is unnecessary: hub.b4cloud.com:5000/v2/_catalog
 DKR_REG_URLS="hub.b4cloud.com"  # space separated URLs
 DC_CMD='docker -D compose --progress plain'
 # If any files are removed after build, compress img. squash is obsolete option
 #DC_BLD_ARGS='--squash'
 
-# Push input docker image to pre-configured registry
+# Push input docker image to pre-configured local registry.
+# ${IMG_TAG/:/_} - replaces first occurrance of char ':'
+# ${IMG_TAG//:/_} - replaces all occurrances of char ':'.
 docker_reg_push()
 {
     [[ $# -ne 1 ]] && { echo "Usage: $FUNCNAME <image:tag>"; return 1; }
@@ -25,6 +31,14 @@ docker_reg_push()
         docker tag $1 $reg/${1//\//_} && docker push $reg/${1//\//_}; bail;
     done
     return $?;
+}
+
+print_tag_digest()
+{
+    [[ $# -ne 2 ]] && { echo "Usage: $FUNCNAME <repo-name> <tag-name>"; return 2; }
+    #curl -sS -H 'Accept: application/vnd.docker.distribution.manifest.v2+json'  \
+    #    -o /dev/null -w '%header{Docker-Content-Digest}' $DKR_REG_URLS/v2/$1/manifests/$2;
+    curl -sS -H 'Accept: application/vnd.docker.distribution.manifest.v2+json' $DKR_REG_URLS/v2/$1/manifests/$2;
 }
 
 docker_stop_rm()
@@ -46,7 +60,11 @@ usage()
     echo "  -b [svc]    - run docker compose build"
     echo "  -c          - list all running/stopped containers (docker ps -a)"
     echo "  -d [svc]    - run docker compose up in daemon mode"
+    echo "  -e <repo>   - external repo name (from -f o/p) to perform ops on registry"
+    echo "  -f          - full catalog of all repos in registry"
+    echo "  -g          - list all tags for (-e) repo in registry"
     echo "  -i          - list all docker images"
+    echo "  -j <tag>    - print digest of tag (from -g o/p) of (-e) repo in registry"
     echo "  -l [svc]    - show docker compose up logs"
     echo "  -m <img/sha>- remove the given docker image"
     echo "  -n          - do not use cache during docker compose build"
@@ -63,7 +81,7 @@ usage()
 # It can then be included in other files for functions.
 main()
 {
-    PARSE_OPTS="habcdilm:np:r:st:uz"
+    PARSE_OPTS="habcde:fgij:lm:np:r:st:uz"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -87,6 +105,11 @@ main()
     fi
 
     ((opt_z)) && { DRY_RUN=1; LOG_TTY=1; }
+    ((opt_f)) && { curl -sS $DKR_REG_URLS/v2/_catalog; }
+    ((opt_e)) && { REPO_NM=$optarg_e; }
+    ((opt_g || opt_j)) && { [[ -z $REPO_NM ]] && { echo "-d, -t option require repo name, use -r option"; exit -1; }; }
+    ((opt_g)) && { curl -sS $REGISTRY_URL/v2/$REPO_NM/tags/list; }
+    ((opt_j)) && { print_tag_digest $REPO_NM $optarg_j; }
     ((opt_a)) && { docker attach $@; bail; }
     ((opt_l)) && { $DC_CMD logs --no-color $@; bail; }
     ((opt_i)) && { docker images; bail; }
@@ -99,7 +122,8 @@ main()
     # stop kills container proc, but FS is kept, you can do docker commit w/ it
     ((opt_s)) && { $DC_CMD stop $@; bail; }
     ((opt_p)) && { docker_reg_push $optarg_p; bail; }
-    # rm removes the FS, but it requires container to have stopped first
+    # docker compose down $* - Also deletes n/w, images, volumes, along w/ FS
+    # rm removes FS, but requires container to have stopped first
     ((opt_r)) && { docker_stop_rm $optarg_r; bail; }
     ((opt_t)) && { docker attach $@; bail; }
     ((opt_h)) && { usage; }

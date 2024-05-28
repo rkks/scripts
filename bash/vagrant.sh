@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Helper script for Vagrant
 #  CREATED: 16/01/24 10:33:18 PM +0530
-# MODIFIED: 19/05/24 05:17:46 PM +0530
+# MODIFIED: 28/05/24 10:15:10 PM IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -83,11 +83,11 @@ main()
     ((opt_v)) && { VM_NAME=$optarg_v; }
     ((opt_b)) && { run vagrant $VGT_OPTS box list; }
     ((opt_e)) && { run vagrant $VGT_OPTS validate; }
-    ((opt_g)) && { run vagrant $VGT_OPTS global-status $VM_NAME; } # VM_NAME is optional
     ((opt_r)) && { run vagrant $VGT_OPTS reload --provision $VM_NAME; } # VM_NAME is optional
     ((opt_s)) && { run vagrant $VGT_OPTS ssh $VM_NAME; }
     ((opt_t)) && { run vagrant $VGT_OPTS halt $VM_NAME; }
-    ((opt_d)) && { run vagrant $VGT_OPTS destroy $VM_NAME; }
+    ((opt_d)) && { run vagrant $VGT_OPTS destroy -f $VM_NAME; GS_OPTS="--prune"; } # -f optional
+    ((opt_g)) && { run vagrant $VGT_OPTS global-status $GS_OPTS $VM_NAME; } # VM_NAME is optional
     ((opt_a || opt_u)) && { [[ ! -e $VAGRANT_VAGRANTFILE ]] && echo "Input valid -f <vagrantfile-path>" && exit $EINVAL; }
     [[ -f "$(dirname $VAGRANT_VAGRANTFILE)/vgtenv" ]] && { source "$(dirname $VAGRANT_VAGRANTFILE)/vgtenv"; } # override default
     ((opt_u)) && { run vagrant $VGT_OPTS up; }    # no need of --debug option, $VAGRANT_LOG set
