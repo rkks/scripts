@@ -35,7 +35,8 @@ function apt_update()
 function apt_install()
 {
     [[ -z $APT_UPDATED ]] && { apt_update || return -1; }
-    sudo apt install -y --no-install-recommends --no-install-suggests $@; return $?;
+    # Dependencies matter for vagrant-libvirt: --no-install-recommends --no-install-suggests
+    sudo apt install -y $@; return $?;
 }
 
 function apt_upd_install()
@@ -238,7 +239,7 @@ install_vagrant()
     #Old, You can directly install by URL: apt_install https://releases.hashicorp.com/vagrant/2.2.19/vagrant_2.2.19_x86_64.deb
     apt_update
     # Instead of plugin 'vagrant-scp', just copy file to Vagrantfile dir on Host & access through /vagrant dir on VM
-    local VGT_PLUGINS="vagrant-vbguest vagrant-cachier vagrant-docker-compose"
+    local VGT_PLUGINS="vagrant-vbguest vagrant-cachier vagrant-docker-compose vagrant-libvirt"
     apt_install vagrant && vagrant plugin install $VGT_PLUGINS && \
     return $?;
 }
