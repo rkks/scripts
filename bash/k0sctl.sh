@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: k0sctl helper script 
 #  CREATED: 28/05/24 05:25:23 PM IST IST
-# MODIFIED: 28/05/24 05:36:40 PM IST
+# MODIFIED: 29/05/24 03:37:23 PM IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -19,6 +19,7 @@ usage()
     echo "Options:"
     echo "  -h              - print this help"
     echo "  -c <cfg-path>   - relative/absolute path to k0sctl config"
+    echo "  -k              - dump kubeconfig of given (-c) k0sctl config"
     echo "  -s              - start cluster with given (-c) k0sctl config"
     echo "  -t              - teardown cluster with given (-c) k0sctl config"
     echo "  -z              - dry run this script"
@@ -28,7 +29,7 @@ usage()
 # It can then be included in other files for functions.
 main()
 {
-    PARSE_OPTS="hc:stz"
+    PARSE_OPTS="hc:kstz"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -53,8 +54,9 @@ main()
 
     ((opt_z)) && { DRY_RUN=1; LOG_TTY=1; }
     ((opt_c)) && { K0SCTL_CFG=$optarg_c; }
-    ((opt_t)) && { k0sctl reset --config $K0SCTL_CFG; }
+    ((opt_t)) && { k0sctl reset --config $K0SCTL_CFG; echo "Run rm -rf /var/lib/kubelet on all nodes, reboot them"; }
     ((opt_s)) && { k0sctl apply --config $K0SCTL_CFG; }
+    ((opt_k)) && { k0sctl kubeconfig --config $K0SCTL_CFG; }
     ((opt_h)) && { usage; }
 
     exit 0;

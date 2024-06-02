@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Helper script for Vagrant
 #  CREATED: 16/01/24 10:33:18 PM +0530
-# MODIFIED: 28/05/24 10:15:10 PM IST
+# MODIFIED: 30/05/24 03:37:26 PM IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -11,9 +11,10 @@
 
 #PATH="/usr/bin:/usr/sbin:.:/auto/opt/bin:/bin:/sbin"
 
-export VAGRANT_DEFAULT_PROVIDER=virtualbox
+#export VAGRANT_DEFAULT_PROVIDER=virtualbox
+export VAGRANT_DEFAULT_PROVIDER=libvirt
 export VAGRANT_NO_PARALLEL=yes
-export VAGRANT_LOG=warn
+#export VAGRANT_LOG=warn
 export VAGRANT_VAGRANTFILE=$(pwd)/Vagrantfile
 VGT_OPTS="--color"
 
