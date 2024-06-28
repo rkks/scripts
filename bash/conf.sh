@@ -24,6 +24,8 @@ DISTRO_NM=$(grep '^ID=' /etc/os-release | cut -f2- -d= | sed -e 's/\"//g')  # di
 DISTRO_VER=$(grep '^VERSION_ID=' /etc/os-release | cut -f2- -d= | sed -e 's/\"//g') # 20.04, 18.04
 VGT_PROVIDER=vbox
 
+function bail() { local e=$?; [[ $e -ne 0 ]] && { echo "$! failed w/ err: $e." >&2; exit $e; } || return 0; }
+
 function apt_clean() { sudo rm -rf /var/lib/apt/lists/*; unset APT_UPDATED; return 0; }
 
 function apt_update()
@@ -278,10 +280,12 @@ install_containerlab()
 
 install_tools()
 {
-    [[ $# -eq 0 ]] && { local mode=dev; } || { local mode=$1; }
+    [[ $# -eq 0 ]] && { echo "Usage: $FUNCNAME <pkgset>"; return $EINVAL; }
     [[ "$UNAMES" != "Linux" ]] && { echo "$FUNCNAME: Only linux supported"; return $EINVAL; }
     [[ $DISTRO_NM != "ubuntu" ]] && { echo "$FUNCNAME: Only ubuntu supported"; return $EINVAL; }
     [[ $DISTRO_VER < 18.04 ]] && { echo "$FUNCNAME: Only Ubuntu18.04 or above supported"; return $EINVAL; }
+
+    local pkgsets=$(echo "$1" | sed 's/,/ /g');
 
     # Tried & junked: libcharon-standard-plugins libstrongswan-extra-plugins
     # resolvconf wpasupplicant
@@ -308,79 +312,89 @@ install_tools()
     UBUNTU_PYTHON_DEV="python-is-python3 python3-pip "
     UBUNTU_WEB_DEV="libxmlsec1-dev jq"
 
-    sudo apt update; local ret=$?; [[ $ret -ne 0 ]] && return $EPERM;
+    apt_update; local ret=$?; [[ $ret -ne 0 ]] && return $EPERM;
     #sudo add-apt-repository "deb http://archive.ubuntu.com/ubuntu $(lsb_release -sc) main universe";
-    case $mode in
-    dev)
-        apt_install $UBUNTU_DEV_SW;
-        ;;
-    lap)
-        apt_install $UBUNTU_LAP_SW;
-        ;;
-    svr)
-        apt_install $UBUNTU_SVR_SW;
-        ;;
-    dkr)
-        install_docker;
-        ;;
-    kvm)
-        # when Docker has out-of-box isolation, packaging, migration & registry,
-        # unless a workload needs OS isolation, no need of KVM/libvirt overhead
-        install_kvm;
-        ;;
-    vbox)
-        install_vbox;
-        ;;
-    vgt)
-        # vagrant natively supports only virtualbox. kvm plugin does not work.
-        # virtualbox is slow, buggy, cumbersome. If you must, use KVM instead.
-        install_vagrant;
-        ;;
-    vpp)
-        install_vpp;
-        ;;
-    *)
-        echo "Invalid input $*";
-        ;;
-    esac
+    local pkgset;
+    for pkgset in "$pkgsets"; do
+        case $pkgset in
+        dev)
+            apt_install $UBUNTU_DEV_SW; bail;
+            ;;
+        lap)
+            apt_install $UBUNTU_LAP_SW; bail;
+            ;;
+        svr)
+            apt_install $UBUNTU_SVR_SW; bail;
+            ;;
+        dkr)
+            install_docker; bail;
+            ;;
+        kvm)
+            # when Docker has out-of-box isolation, packaging, migration & registry,
+            # unless a workload needs OS isolation, no need of KVM/libvirt overhead
+            install_kvm; bail;
+            ;;
+        vbox)
+            install_vbox; bail;
+            ;;
+        vgt)
+            # vagrant natively supports only virtualbox. kvm plugin does not work.
+            # virtualbox is slow, buggy, cumbersome. If you must, use KVM instead.
+            install_vagrant; bail;
+            ;;
+        vpp)
+            install_vpp; bail;
+            ;;
+        *)
+            echo "Invalid input $*";
+            ;;
+        esac
+    done
     return $?;
 }
 
 uninstall_tools()
 {
-    case $1 in
-    dev)
-        sudo apt autoremove -y $UBUNTU_DEV_SW;
-        ;;
-    lap)
-        sudo apt autoremove -y $UBUNTU_LAP_SW;
-        ;;
-    svr)
-        sudo apt autoremove -y $UBUNTU_SVR_SW;
-        ;;
-    dkr)
-        uninstall_docker;
-        ;;
-    kvm)
-        # when Docker has out-of-box isolation, packaging, migration & registry,
-        # unless a workload needs OS isolation, no need of KVM/libvirt overhead
-        uninstall_kvm;
-        ;;
-    vbox)
-        uninstall_vbox;
-        ;;
-    vgt)
-        # vagrant natively supports only virtualbox. kvm plugin does not work.
-        # virtualbox is slow, buggy, cumbersome. If you must, use KVM instead.
-        uninstall_vagrant;
-        ;;
-    vpp)
-        uninstall_vpp;
-        ;;
-    *)
-        echo "Invalid input $*";
-        ;;
-    esac
+    [[ $# -eq 0 ]] && { echo "Usage: $FUNCNAME <pkgset>"; return $EINVAL; }
+
+    local pkgsets=$(echo "$1" | sed 's/,/ /g');
+
+    local pkgset;
+    for pkgset in "$pkgsets"; do
+        case $pkgset in
+        dev)
+            sudo apt autoremove -y $UBUNTU_DEV_SW; bail;
+            ;;
+        lap)
+            sudo apt autoremove -y $UBUNTU_LAP_SW; bail;
+            ;;
+        svr)
+            sudo apt autoremove -y $UBUNTU_SVR_SW; bail;
+            ;;
+        dkr)
+            uninstall_docker; bail;
+            ;;
+        kvm)
+            # when Docker has out-of-box isolation, packaging, migration & registry,
+            # unless a workload needs OS isolation, no need of KVM/libvirt overhead
+            uninstall_kvm; bail;
+            ;;
+        vbox)
+            uninstall_vbox; bail;
+            ;;
+        vgt)
+            # vagrant natively supports only virtualbox. kvm plugin does not work.
+            # virtualbox is slow, buggy, cumbersome. If you must, use KVM instead.
+            uninstall_vagrant; bail;
+            ;;
+        vpp)
+            uninstall_vpp; bail;
+            ;;
+        *)
+            echo "Invalid input $*";
+            ;;
+        esac
+    done
 }
 
 stop_cron()
@@ -430,13 +444,13 @@ function usage()
     echo "Options:"
     echo "  -h              - print this help message"
     echo "  -c              - start cron job of user"
-    echo "  -i <pkg-sets>   - install tools on ubuntu"
+    echo "  -i <pkg-sets>   - install tools on ubuntu (comma separated)"
     echo "  -l              - create scripts log directory"
     echo "  -n              - create symlink of conf files"
     echo "  -p              - pull conf/scripts repos from github"
     echo "  -s              - create symlink of scripts"
     echo "  -t              - stop cron job of user"
-    echo "  -u <pkg-sets>   - uninstall tools from system"
+    echo "  -u <pkg-sets>   - uninstall tools from system (comma separated)"
     echo "  -z              - dry run this script"
     echo "pkg-sets: dev|lap|svr|vbox|kvm|dkr|vpp|vgt"
     echo "NOTE: to do everything and start cron (-cilnst)"

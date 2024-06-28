@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Helper script for Vagrant
 #  CREATED: 16/01/24 10:33:18 PM +0530
-# MODIFIED: 30/05/24 03:37:26 PM IST
+# MODIFIED: 18/06/24 05:35:59 PM +0530
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -11,10 +11,9 @@
 
 #PATH="/usr/bin:/usr/sbin:.:/auto/opt/bin:/bin:/sbin"
 
-#export VAGRANT_DEFAULT_PROVIDER=virtualbox
 export VAGRANT_DEFAULT_PROVIDER=libvirt
 export VAGRANT_NO_PARALLEL=yes
-#export VAGRANT_LOG=warn
+#export VAGRANT_LOG=info
 export VAGRANT_VAGRANTFILE=$(pwd)/Vagrantfile
 VGT_OPTS="--color"
 
@@ -32,7 +31,7 @@ usage()
     echo "Usage: vagrant.sh [-h|-a|-c|-d|-e|-f|-g|-l|-r|-s|-t|-u|-v|-z]"
     echo "Options:"
     echo "  -h          - print this help"
-    echo "  -a          - display vagrant status (use -f option)"
+    echo "  -a          - export vagrant package (use -f option)"
     echo "  -b          - list all vagrant boxes available"
     echo "  -c          - display vagrant ssh config (use -f option)"
     echo "  -d          - destroy given VM (use -v option)"
@@ -40,6 +39,9 @@ usage()
     echo "  -f <fpath>  - relative path of Vagrantfile"
     echo "  -g          - show vagrant global-status (use -v option)"
     echo "  -l          - enable debug logging of vagrant op"
+    echo "  -n          - display vagrant status (use -f option)"
+    echo "  -o          - pass --provision option vagrant up (use -v option)"
+    echo "  -p          - toggle vagrant provider to virtualbox (default: libvirt)"
     echo "  -r          - reload guest VM applying Vagrantfile again (use -v option)"
     echo "  -s          - ssh into guest VM (use -v option)"
     echo "  -t          - halt given VM (use -v option)"
@@ -55,7 +57,7 @@ usage()
 # It can then be included in other files for functions.
 main()
 {
-    PARSE_OPTS="habcdef:gl:rstuv:z"
+    PARSE_OPTS="habcdef:glnoprstuv:z"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -79,9 +81,14 @@ main()
     fi
 
     ((opt_z)) && { DRY_RUN=1; LOG_TTY=1; }
+    # Take argument for option -p in future, when more than 2 provider supported
+    ((opt_p)) && { export VAGRANT_DEFAULT_PROVIDER=virtualbox; }
     ((opt_f)) && { export VAGRANT_VAGRANTFILE=$optarg_f; }
-    ((opt_l)) && { export VAGRANT_LOG=$optarg_l; }  # override vgtenv
+    # Take argument for option -l in future, when more debug options needed
+    ((opt_l)) && { export VAGRANT_LOG=info; VGT_OPTS="$VGT_OPTS --debug"; }  # override vgtenv
     ((opt_v)) && { VM_NAME=$optarg_v; }
+    ((opt_o)) && { VGT_UP_OPTS="--provision"; }
+    ((opt_a)) && { run vagrant $VGT_OPTS package --base $VM_NAME && run vagrant $VGT_OPTS box add $VM_NAME package.box; }
     ((opt_b)) && { run vagrant $VGT_OPTS box list; }
     ((opt_e)) && { run vagrant $VGT_OPTS validate; }
     ((opt_r)) && { run vagrant $VGT_OPTS reload --provision $VM_NAME; } # VM_NAME is optional
@@ -91,8 +98,8 @@ main()
     ((opt_g)) && { run vagrant $VGT_OPTS global-status $GS_OPTS $VM_NAME; } # VM_NAME is optional
     ((opt_a || opt_u)) && { [[ ! -e $VAGRANT_VAGRANTFILE ]] && echo "Input valid -f <vagrantfile-path>" && exit $EINVAL; }
     [[ -f "$(dirname $VAGRANT_VAGRANTFILE)/vgtenv" ]] && { source "$(dirname $VAGRANT_VAGRANTFILE)/vgtenv"; } # override default
-    ((opt_u)) && { run vagrant $VGT_OPTS up; }    # no need of --debug option, $VAGRANT_LOG set
-    ((opt_a)) && { run vagrant $VGT_OPTS status; }
+    ((opt_u)) && { run vagrant $VGT_OPTS up $VGT_UP_OPTS; } # no need of --debug option, $VAGRANT_LOG set
+    ((opt_n)) && { run vagrant $VGT_OPTS status; }
     ((opt_c)) && { run vagrant $VGT_OPTS ssh-config; }
     ((opt_h)) && { usage; }
     unset VAGRANT_LOG;
