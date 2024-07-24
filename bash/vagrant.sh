@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Helper script for Vagrant
 #  CREATED: 16/01/24 10:33:18 PM +0530
-# MODIFIED: 18/06/24 05:35:59 PM +0530
+# MODIFIED: 24/07/24 09:34:34 PM +0530
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -26,6 +26,42 @@ function run()
     echo "$a"; test -n "$DRY_RUN" && { return 0; } || eval "$a" 2>&1 | tee -a $RUN_LOG 2>&1; return ${PIPESTATUS[0]};
 }
 
+# Bit complicated box creation process for libvirt
+bld_vgt_libvirt_box_manual()
+{
+    local dpath=$(mktemp -d); cd $dpath;
+    sudo qemu-img convert -O qcow2 /var/lib/libvirt/images/images_$VM_NAME.img box.img;
+    echo -e "{\n\t\"format\":\"qcow2\",\n\t\"provider\":\"libvirt\",\n\t\"virtual_size\":128\n}" > metadata.json;
+    echo -e "{\n\t\"Author\": \"$USERNM\",\n\t\"Website\": \"https://b4cloud.wordpress.com/\",\n\t\"Artifacts\": \"https://vagrantcloud.com/b4cloud/\",\n\t\"Repository\": \"https://github.com/rkks/images/\",\n\t\"Description\": \"VM base box images, for different hypervisors\"\n}" > info.json;
+    echo -e "Vagrant.configure(\"2\") do |config|\n\tconfig.vm.provider :libvirt do |lv|\n\t\tlv.driver = \"kvm\"\n\tend\nend" > Vagrantfile;
+    # File path needs to be absolute path, not relative path. Else, err: "URL rejected: Bad file:// URL"
+    echo -e "{\n\t\"name\": \"$VM_NAME\",\n\t\"description\": \"This box contains B4C base image off Ubuntu 22.04 64-bit.\",\n\t\"versions\": [\n\t\t{\n\t\t\t\"version\": \"0.0.1\",\n\t\t\t\"providers\": [\n\t\t\t\t{\n\t\t\t\t\t\"name\": \"libvirt\",\n\t\t\t\t\t\"url\": \"file://$dpath/$VM_NAME.box\",\n\t\t\t\t\t\"architecture\": \"amd64\",\n\t\t\t\t\t\"default_architecture\": true\n\t\t\t\t}\n\t\t\t]\n\t\t}\n\t]\n}" > catalog.json;
+    tar cvzf $VM_NAME.box Vagrantfile box.img metadata.json info.json;
+    return $?;
+}
+
+# https://github.com/vagrant-libvirt/vagrant-libvirt/issues/851
+bld_vgt_box()
+{
+    run vagrant $VGT_OPTS halt $VM_NAME;
+    [[ $VAGRANT_DEFAULT_PROVIDER == libvirt ]] && { bld_vgt_libvirt_box_manual; return $?; }
+    [[ $VAGRANT_DEFAULT_PROVIDER == libvirt ]] && { PKG_OPTS="--output $VM_NAME.box"; export VAGRANT_LIBVIRT_VIRT_SYSPREP_OPTIONS="--run $(pwd)/images.sh -s vgtinf"; }
+    [[ $VAGRANT_DEFAULT_PROVIDER == virtualbox ]] && { PKG_OPTS="--base $VM_NAME"; }
+    PKG_OPTS="--vagrantfile $VAGRANT_VAGRANTFILE $PKG_OPTS";
+    run vagrant $VGT_OPTS package $PKG_OPTS $VM_NAME; return $?;
+}
+
+add_vgt_box()
+{
+    local exists=$(vagrant box list | grep $VM_NAME | wc -l)
+    [[ $exists -ne 0 ]] && { vagrant box remove $VM_NAME; }
+    exists=$(virsh vol-list --pool default | grep $VM_NAME | grep vagrant_box | wc -l);
+    vname=$(virsh vol-list --pool default | grep $VM_NAME | grep vagrant_box | awk -F' ' '{print $1}');
+    [[ $exists -ne 0 ]] && { virsh vol-delete --pool default $vname; }
+    run vagrant $VGT_OPTS box add catalog.json; return $?;
+    run vagrant $VGT_OPTS box add --name $VM_NAME $VM_NAME.box; return $?;  # -f $VM_NAME
+}
+
 usage()
 {
     echo "Usage: vagrant.sh [-h|-a|-c|-d|-e|-f|-g|-l|-r|-s|-t|-u|-v|-z]"
@@ -40,8 +76,8 @@ usage()
     echo "  -g          - show vagrant global-status (use -v option)"
     echo "  -l          - enable debug logging of vagrant op"
     echo "  -n          - display vagrant status (use -f option)"
-    echo "  -o          - pass --provision option vagrant up (use -v option)"
-    echo "  -p          - toggle vagrant provider to virtualbox (default: libvirt)"
+    echo "  -o          - build vagrant base box (use -f, -v option)"
+    echo "  -p          - pass --provision option vagrant up (use -v option)"
     echo "  -r          - reload guest VM applying Vagrantfile again (use -v option)"
     echo "  -s          - ssh into guest VM (use -v option)"
     echo "  -t          - halt given VM (use -v option)"
@@ -82,22 +118,23 @@ main()
 
     ((opt_z)) && { DRY_RUN=1; LOG_TTY=1; }
     # Take argument for option -p in future, when more than 2 provider supported
-    ((opt_p)) && { export VAGRANT_DEFAULT_PROVIDER=virtualbox; }
-    ((opt_f)) && { export VAGRANT_VAGRANTFILE=$optarg_f; }
+    #((opt_p)) && { export VAGRANT_DEFAULT_PROVIDER=virtualbox; }
+    ((opt_f)) && { export VAGRANT_VAGRANTFILE=$optarg_f; vagrant validate $VAGRANT_VAGRANTFILE; }
     # Take argument for option -l in future, when more debug options needed
     ((opt_l)) && { export VAGRANT_LOG=info; VGT_OPTS="$VGT_OPTS --debug"; }  # override vgtenv
     ((opt_v)) && { VM_NAME=$optarg_v; }
-    ((opt_o)) && { VGT_UP_OPTS="--provision"; }
-    ((opt_a)) && { run vagrant $VGT_OPTS package --base $VM_NAME && run vagrant $VGT_OPTS box add $VM_NAME package.box; }
-    ((opt_b)) && { run vagrant $VGT_OPTS box list; }
-    ((opt_e)) && { run vagrant $VGT_OPTS validate; }
-    ((opt_r)) && { run vagrant $VGT_OPTS reload --provision $VM_NAME; } # VM_NAME is optional
-    ((opt_s)) && { run vagrant $VGT_OPTS ssh $VM_NAME; }
-    ((opt_t)) && { run vagrant $VGT_OPTS halt $VM_NAME; }
-    ((opt_d)) && { run vagrant $VGT_OPTS destroy -f $VM_NAME; GS_OPTS="--prune"; } # -f optional
-    ((opt_g)) && { run vagrant $VGT_OPTS global-status $GS_OPTS $VM_NAME; } # VM_NAME is optional
+    ((opt_p)) && { VGT_UP_OPTS="--provision"; }
     ((opt_a || opt_u)) && { [[ ! -e $VAGRANT_VAGRANTFILE ]] && echo "Input valid -f <vagrantfile-path>" && exit $EINVAL; }
     [[ -f "$(dirname $VAGRANT_VAGRANTFILE)/vgtenv" ]] && { source "$(dirname $VAGRANT_VAGRANTFILE)/vgtenv"; } # override default
+    ((opt_o)) && { bld_vgt_box; }
+    ((opt_a)) && { add_vgt_box; }
+    ((opt_b)) && { run vagrant $VGT_OPTS box list; }
+    ((opt_e)) && { run vagrant $VGT_OPTS validate; }
+    ((opt_r)) && { run vagrant $VGT_OPTS reload $VGT_UP_OPTS $VM_NAME; } # VM_NAME is optional
+    ((opt_s)) && { run vagrant $VGT_OPTS ssh $VM_NAME; }
+    ((opt_t)) && { run vagrant $VGT_OPTS halt $VM_NAME; }
+    ((opt_d)) && { run vagrant $VGT_OPTS destroy -f $VM_NAME; } # -f optional
+    ((opt_g)) && { run vagrant $VGT_OPTS global-status $VM_NAME; } # VM_NAME & "--prune" are optional
     ((opt_u)) && { run vagrant $VGT_OPTS up $VGT_UP_OPTS; } # no need of --debug option, $VAGRANT_LOG set
     ((opt_n)) && { run vagrant $VGT_OPTS status; }
     ((opt_c)) && { run vagrant $VGT_OPTS ssh-config; }

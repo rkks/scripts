@@ -208,7 +208,7 @@ install_vbox()
     # sudo apt-add-repository does not work?
     local pkg_exists=$(cat /etc/apt/sources.list | grep virtualbox | wc -l)
     [[ $pkg_exists -eq 0 ]] && { echo "deb [arch=amd64 signed-by=/usr/share/keyrings/oracle-virtualbox-2016.gpg] https://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib" | sudo tee -a /etc/apt/sources.list; }
-    apt_upd_install virtualbox-6.1; return $?; # sudo apt info virtualbox &&
+    apt_upd_install virtualbox-7.0; return $?; # sudo apt info virtualbox &&
     #apt_install virtualbox; return $?;
 }
 
@@ -222,8 +222,9 @@ install_kvm()
     local VAGRANT_LIBVIRT_SW="libxslt-dev libxml2-dev zlib1g-dev libvirt-dev"
     VAGRANT_LIBVIRT_SW+=" libvirt-daemon-system ebtables dnsmasq-base jq"
     VAGRANT_LIBVIRT_SW+=" bridge-utils ruby-dev ruby-libvirt"
-    #VAGRANT_LIBVIRT_SW+=" libguestfs-tools sshpass tree" # TODO: Check if needed
+    #VAGRANT_LIBVIRT_SW+=" libguestfs-tools" # Needed for 'vagrant package' on kvm, not stable, use 'packer'.
     apt_install $VIRT_SW $VAGRANT_LIBVIRT_SW && sudo usermod -aG libvirt $USER && sudo usermod -aG kvm $USER && \
+    sudo usermod --append --groups $USER libvirt-qemu && \
     sudo systemctl enable libvirtd && sudo systemctl start libvirtd;
     # vagrant-libvirt plugin head is not stable, way too many dependencies
     #LIBVIRT_PLUGIN_VER=0.4.1
@@ -261,7 +262,7 @@ install_docker_ce()
 install_docker()
 {
     # If group is already created by installer, do not stop proceed further.
-    [[ $1 =~ *ce ]] && install_docker_ce || apt_install docker.io; [[ $? -ne 0 ]] && return $?;
+    [[ $# -ne 0 ]] && install_docker_ce || apt_install docker.io; [[ $? -ne 0 ]] && return $?;
     sudo groupadd docker; sudo usermod -aG docker $USER; sudo chmod 0660 /var/run/docker.sock;
     sudo systemctl enable docker.service containerd.service &&  \
     [[ ! -f ~/.docker/cli-plugins/docker-compose ]] && mkdir -p ~/.docker/cli-plugins/ &&   \
@@ -327,7 +328,7 @@ install_tools()
             apt_install $UBUNTU_SVR_SW; bail;
             ;;
         dkr)
-            install_docker; bail;
+            install_docker ce; bail;
             ;;
         kvm)
             # when Docker has out-of-box isolation, packaging, migration & registry,
