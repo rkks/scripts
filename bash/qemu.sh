@@ -1,8 +1,10 @@
 #!/bin/bash
 #  DETAILS: QEMU helper script to manage life-cycle of KVM VMs using cloud-init
 # provisioner, cloud-images, and libvirt tools.
+# Reference:
+# https://earlruby.org/2023/02/quickly-create-guest-vms-using-virsh-cloud-image-files-and-cloud-init/
 #  CREATED: 24/07/24 03:54:36 PM +0530
-# MODIFIED: 24/07/24 09:32:27 PM +0530
+# MODIFIED: 28/07/24 07:28:12 PM +0530
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -13,7 +15,7 @@
 PATH="/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:.:/auto/opt/bin:/bin:/sbin"
 CI_VM_NUM_CPU=2
 CI_VM_RAM_SZ=4096
-CI_DISK_SIZE=16G
+CI_DISK_SIZE=16
 CI_SSH_PUBKEY=~/.ssh/id_ed25519.pub
 CI_IMG_LOC=$HOME/ws/cloud-images
 CI_IMG_URL="https://cloud-images.ubuntu.com/releases/jammy/release/ubuntu-22.04-server-cloudimg-amd64.img"
@@ -40,6 +42,8 @@ function run()
 
 write_user_data()
 {
+    [[ ! -e $CI_SSH_PUBKEY ]] && { echo "SSH public key not found at $CI_SSH_PUBKEY"; exit -1; }
+
     local pubkey=$(cat ${CI_SSH_PUBKEY})
     echo -e "#cloud-config" > user-data;    # First line must be #cloud-config
     echo -e "hostname: ${CI_VM_HOSTNM}" >> user-data
@@ -57,6 +61,7 @@ write_user_data()
     echo -e "" >> user-data
     echo -e "# both cert auth as well as passwd auth via ssh " >> user-data
     echo -e "ssh_pwauth: true" >> user-data
+    # TODO: Check if disable_root should be true instead
     echo -e "disable_root: false" >> user-data
     echo -e "chpasswd:" >> user-data
     echo -e "  list: |" >> user-data
@@ -66,19 +71,23 @@ write_user_data()
     echo -e "packages:" >> user-data
     echo -e "  - qemu-guest-agent" >> user-data
     echo -e "" >> user-data
-    echo -e "# add network config for both public, private infs " >> user-data
+    # TODO: First default NAT for provision through internet does not work.
+    #echo -e "        ens3:" >> user-data
+    #echo -e "          dhcp4: true" >> user-data
+    #echo -e "          dhcp6: false" >> user-data
+    echo -e "# 1 NAT for provision, 1 mgmt, 1 WAN/pub, 1 LAN/pvt inf" >> user-data
     echo -e "write_files:" >> user-data
     echo -e "- path: /etc/cloud/cloud.cfg.d/99-custom-networking.cfg" >> user-data
     echo -e "  permissions: '0644'" >> user-data
     echo -e "  content: |" >> user-data
     echo -e "      network: {config: disabled}" >> user-data
-    echo -e "- path: /etc/netplan/my-new-config.yaml" >> user-data
-    echo -e "  permissions: '0644'" >> user-data
+    echo -e "- path: /etc/netplan/80-tgw-config.yaml" >> user-data
+    echo -e "  permissions: '0600'" >> user-data
     echo -e "  content: |" >> user-data
     echo -e "    network:" >> user-data
     echo -e "      version: 2" >> user-data
     echo -e "      ethernets:" >> user-data
-    echo -e "        ens3:" >> user-data
+    echo -e "        enp3s0:" >> user-data
     echo -e "          addresses:" >> user-data
     echo -e "            - 192.168.1.${CI_VM_IP_LSB}/24" >> user-data
     echo -e "          nameservers:" >> user-data
@@ -87,12 +96,16 @@ write_user_data()
     echo -e "          routes:" >> user-data
     echo -e "            - to: default" >> user-data
     echo -e "              via: 192.168.1.1" >> user-data
-    echo -e "        ens4:" >> user-data
+    echo -e "        enp4s0:" >> user-data
+    echo -e "          dhcp4: true" >> user-data
+    echo -e "          dhcp6: false" >> user-data
+    echo -e "        enp5s0:" >> user-data
     echo -e "          addresses:" >> user-data
     echo -e "            - 192.168.122.${CI_VM_IP_LSB}/24" >> user-data
-    echo -e "          routes:" >> user-data
-    echo -e "            - to: default" >> user-data
-    echo -e "              via: 192.168.122.1" >> user-data
+    # CAUTION: No default routes through private LAN interface, only via WAN
+    #echo -e "          routes:" >> user-data
+    #echo -e "            - to: default" >> user-data
+    #echo -e "              via: 192.168.122.1" >> user-data
     echo -e "" >> user-data
     echo -e "# Configure where output will go" >> user-data
     echo -e "output:" >> user-data
@@ -106,7 +119,7 @@ write_user_data()
     echo -e "" >> user-data
     echo -e "# disable cloud-init from running provision again" >> user-data
     echo -e "runcmd:" >> user-data
-    echo -e "  - rm /etc/netplan/50-cloud-init.yaml" >> user-data
+    echo -e "  - rm -f /etc/netplan/50-cloud-init.yaml" >> user-data
     echo -e "  - netplan generate" >> user-data
     echo -e "  - netplan apply" >> user-data
     echo -e "  - apt -y remove cloud-init" >> user-data
@@ -134,7 +147,7 @@ bld_cidata_iso()
     return $?;
 }
 
-print_vm_ip()
+print_vm_ip_addr()
 {
     [[ -z $CI_VM_HOSTNM ]] && { echo "Pass -n option with -t argument"; exit -1; }
 
@@ -144,36 +157,70 @@ print_vm_ip()
 
 teardown_vm()
 {
-    [[ -z $CI_VM_HOSTNM ]] && { echo "Pass -n option with -t argument"; exit -1; }
+    [[ -z $CI_VM_HOSTNM || -z $CI_IMG_EXT ]] && { echo "-u, -n mandatory for -t arg"; exit -1; }
     [[ ! -e $CI_VM_HOSTNM.$CI_IMG_EXT || ! -e ${CI_VM_HOSTNM}.xml ]] && { echo "run this cmd from init directory"; exit -1; }
     [[ ! -e ${CI_VM_HOSTNM}-cidata.iso || ! -e meta-data || ! -e user-data ]] && { echo "run this cmd from init directory"; exit -1; }
 
     virsh destroy "${CI_VM_HOSTNM}"
     virsh undefine "${CI_VM_HOSTNM}"
-    rm -vf $CI_VM_HOSTNM.$CI_IMG_EXT meta-data user-data ${CI_VM_HOSTNM}-cidata.iso; ${CI_VM_HOSTNM}.xml;
+    rm -vf $CI_VM_HOSTNM.$CI_IMG_EXT meta-data user-data ${CI_VM_HOSTNM}-cidata.iso ${CI_VM_HOSTNM}.xml;
     local vol;
-    for vol in $(virsh vol-list --pool cloud-init | grep $(basename $PWD) | awk '{print $1}'); do
+    for vol in $(virsh vol-list --pool $(basename $PWD) | grep $(basename $PWD) | awk '{print $1}'); do
         virsh vol-delete --pool $(basename $PWD) $vol;
     done
 }
 
 setup_vm()
 {
-    [[ -z $CI_VM_HOSTNM ]] && { echo "Pass -n option with -s argument"; exit -1; }
+    [[ -z $CI_VM_HOSTNM || -z $CI_PUB_BR || -z $CI_VM_IP_LSB ]] && { echo "-b, -n, -i are mandatory for -s"; exit -1; }
 
     [[ ! -z $CI_VM_MACADDR ]] && { local virtopts="--mac $CI_VM_MACADDR"; }
     bld_cidata_iso || exit -1;
+
+    # DPDK recommends e1000 VM NICs: https://doc.dpdk.org/guides-16.07/nics/e1000em.html
+    # --network "bridge=br0,model=virtio": But virtio are more performant
+
+    # --force: TODO: What is this for?
+    # --network default: # 1st NAT IP for cloud-init over internet does not work
     # --hvm/-v: full virtualization, default for QEMU
+    # --connect=qemu:///system: if it is not finding right domain to connect to
+    # --osinfo detect=on,require=off: Using --osinfo generic, VM performance may suffer
+    #   - use cmd 'virt-install --osinfo list' to see list of all supported OS
+    # --console pty,target_type=serial: to automatically jump user to console
+    # --graphics vnc,listen=0.0.0.0: useful for ubuntu-desktop
+    # --location 'http://archive.ubuntu.com/ubuntu/dists/focal/main/installer-amd64/' --extra-args 'console=ttyS0,115200n8 serial': for auto-install
     virt-install --name="${CI_VM_HOSTNM}" \
+        --network "bridge=${CI_PUB_BR},model=virtio" \
         --network "bridge=${CI_PUB_BR},model=virtio" \
         --network "bridge=${CI_PVT_BR},model=virtio" \
         $virtopts --import \
-        --disk "path=$PWD/${CI_VM_HOSTNM}.${CI_IMG_EXT},format=qcow2" \
+        --disk "path=$PWD/${CI_VM_HOSTNM}.${CI_IMG_EXT},format=qcow2,size=$CI_DISK_SIZE" \
         --disk "path=$PWD/${CI_VM_HOSTNM}-cidata.iso,device=cdrom" \
         --ram="${CI_VM_RAM_SZ}" --vcpus="${CI_VM_NUM_CPU}" --check-cpu \
-        --autostart --arch x86_64 --accelerate \
-        --osinfo detect=on,require=off --debug --force \
-        --watchdog=default --graphics vnc,listen=0.0.0.0 --noautoconsole
+        --autostart --arch x86_64 --accelerate --osinfo ubuntu22.04 --debug \
+        --watchdog=default --graphics none --noautoconsole
+    # https://game.ci/docs/self-hosting/host-creation/QEMU/linux-cloudimage/
+    # SMP=$(( $PHYSICAL_CORES * $HYPR_THRDS ))
+    #sudo qemu-system-x86_64 \
+    #    -machine accel=kvm,type=q35 \
+    #    -cpu host \
+    #    -smp $SMP,sockets=1,cores="$PHYSICAL_CORES",threads="$HYPR_THRDS",maxcpus=$SMP \
+    #    -m "$MEMORY" \
+    #    -serial stdio -vga virtio -parallel none \
+    #    -device virtio-net-pci,netdev=network \
+    #    -netdev user,id=network,hostfwd=tcp::"${VM_SSH_PORT}"-:"${HOST_SSH_PORT}" \
+    #    -object iothread,id=io \
+    #    -device virtio-blk-pci,drive=disk,iothread=io \
+    #    -drive if=none,id=disk,cache=none,format=qcow2,aio=threads,file=disk.qcow2 \
+    #    -drive if=virtio,format=raw,file=seed.img,index=0,media=disk \
+    #    -bios /usr/share/ovmf/OVMF.fd \
+    #    -usbdevice tablet \
+    #    -vnc "$HOST_ADDRESS":"$VNC_PORT"
+    #qemu-system-x86_64 -machine accel=kvm,type=q35 -cpu host -m 2G \
+    #    -nographic -device virtio-net-pci,netdev=net0 \
+    #    -netdev user,id=net0,hostfwd=tcp::2222-:22 \
+    #    -drive if=virtio,format=qcow2,file=${CI_VM_HOSTNM}.${CI_IMG_EXT} \
+    #    -drive if=virtio,format=raw,file=${CI_VM_HOSTNM}-cidata.raw
     virsh dumpxml "${CI_VM_HOSTNM}" > "${CI_VM_HOSTNM}.xml"
     virsh list --all;
 }
@@ -183,14 +230,15 @@ function clone_img()
     local isqcow=$(file -b $CI_IMG_FPATH | grep -i qcow | wc -l)
     [[ $isqcow -eq 0 ]] && { echo "Only qcow2 supported for cloning"; exit -1; }
     [[ -e $CI_VM_HOSTNM.$CI_IMG_EXT ]] && { echo "$CI_VM_HOSTNM.$CI_IMG_EXT already exists"; return 0; }
-    qemu-img create -b $CI_IMG_FPATH -f qcow2 -F qcow2 $CI_VM_HOSTNM.$CI_IMG_EXT $CI_DISK_SIZE;
+    qemu-img create -b $CI_IMG_FPATH -f qcow2 -F qcow2 $CI_VM_HOSTNM.$CI_IMG_EXT ${CI_DISK_SIZE}G;
     return $?;
 }
 
 function copy_img()
 {
     [[ -e $CI_VM_HOSTNM.$CI_IMG_EXT ]] && { echo "$CI_VM_HOSTNM.$CI_IMG_EXT already exists"; return 0; }
-    cp -v $CI_IMG_FPATH $CI_VM_HOSTNM.$CI_IMG_EXT;
+    cp -v $CI_IMG_FPATH $CI_VM_HOSTNM.$CI_IMG_EXT && qemu-img resize $CI_VM_HOSTNM.$CI_IMG_EXT ${CI_DISK_SIZE}G;
+    return $?;
 }
 
 function convert_img_to_raw()
@@ -262,18 +310,15 @@ main()
     ((opt_n)) && { CI_VM_HOSTNM=$optarg_n; }
     ((opt_p)) && { CI_SSH_PUBKEY=$optarg_p; }
     ((opt_r)) && { CI_VM_RAM_SZ=$optarg_r; }
-    ((opt_u)) && { CI_IMG_URL="$optarg_u"; CI_IMG_FNAME=$(basename $CI_IMG_URL); }
-    [[ -z $CI_VM_HOSTNM || -z $CI_PUB_BR || -z $CI_VM_IP_LSB ]] && { echo "-b, -n, -i are mandatory"; exit -1; }
-    [[ ! -e $CI_SSH_PUBKEY ]] && { echo "SSH public key not found at $CI_SSH_PUBKEY"; exit -1; }
-    [[ ! -d $CI_IMG_LOC/ ]] && { mkdir -pv $CI_IMG_LOC/; }
+    ((opt_u)) && { CI_IMG_URL="$optarg_u"; }
     CI_IMG_FNAME=$(basename $CI_IMG_URL); CI_IMG_FPATH=$CI_IMG_LOC/$CI_IMG_FNAME; CI_IMG_EXT=${CI_IMG_FPATH##*.}
-    ((opt_u)) && { [[ ! -e $CI_IMG_FPATH ]] && wget -O $CI_IMG_FPATH $CI_IMG_URL; }
-    [[ ! -e $CI_IMG_FPATH ]] && { echo "Base image not found at $CI_IMG_FPATH"; }
-    #((opt_w)) && { convert_img_to_raw; }
     ((opt_t)) && { teardown_vm; }
+    ((opt_u)) && { [[ ! -e $CI_IMG_FPATH ]] && { mkdir -pv $CI_IMG_LOC/; wget -O $CI_IMG_FPATH $CI_IMG_URL; }; }
+    ((opt_q || opt_s || opt_u)) && { [[ ! -e $CI_IMG_FPATH ]] && { echo "Base image not found at $CI_IMG_FPATH"; exit -1; }; }
+    #((opt_w)) && { convert_img_to_raw; }
     ((opt_q)) && { clone_img && CI_IMG_CLONED=1; }
     ((opt_s)) && { [[ -z $CI_IMG_CLONED ]] && copy_img; setup_vm; }
-    ((opt_a)) && { print_vm_ip; }
+    ((opt_a)) && { print_vm_ip_addr; }
     ((opt_h)) && { usage; }
 
     exit 0;
