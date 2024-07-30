@@ -218,18 +218,11 @@ install_kvm()
     [[ $DISTRO_VER < 20.04 ]] && { echo "Ubuntu below 20.X not supported" && return $EINVAL; }
     # qemu - hw emulator, libvirt - VM manager. libvirt-bin in 18.04 & before.
     # virtinst - cmdline tools for VM mgmt, virt-manager - GUI tool for VM mgmt
-    local VIRT_SW="qemu qemu-kvm libvirt-daemon libvirt-clients virtinst virt-manager bridge-utils"
-    local VAGRANT_LIBVIRT_SW="libxslt-dev libxml2-dev zlib1g-dev libvirt-dev"
-    VAGRANT_LIBVIRT_SW+=" libvirt-daemon-system ebtables dnsmasq-base jq"
-    VAGRANT_LIBVIRT_SW+=" bridge-utils ruby-dev ruby-libvirt"
+    local VIRT_SW="qemu qemu-kvm libvirt-daemon libvirt-clients virtinst"
+    local VIRT_SW+=" virt-manager bridge-utils genisoimage"
     #VAGRANT_LIBVIRT_SW+=" libguestfs-tools" # Needed for 'vagrant package' on kvm, not stable, use 'packer'.
-    apt_install $VIRT_SW $VAGRANT_LIBVIRT_SW && sudo usermod -aG libvirt $USER && sudo usermod -aG kvm $USER && \
-    sudo usermod --append --groups $USER libvirt-qemu && \
+    apt_install $VIRT_SW && sudo usermod -aG libvirt $USER && sudo usermod -aG kvm $USER && sudo usermod -aG $USER libvirt-qemu && \
     sudo systemctl enable libvirtd && sudo systemctl start libvirtd;
-    # vagrant-libvirt plugin head is not stable, way too many dependencies
-    #LIBVIRT_PLUGIN_VER=0.4.1
-    #local exists=$(vagrant plugin list | grep $LIBVIRT_PLUGIN_VER | grep vagrant-libvirt)
-    #[[ -z "$exists" ]] && vagrant plugin install vagrant-libvirt --plugin-version=$LIBVIRT_PLUGIN_VER
     return $?;
 }
 
@@ -240,7 +233,14 @@ install_vagrant()
     #Old, Does not work: sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
     echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
     #Old, You can directly install by URL: apt_install https://releases.hashicorp.com/vagrant/2.2.19/vagrant_2.2.19_x86_64.deb
-    apt_update
+    local VAGRANT_LIBVIRT_SW="libxslt-dev libxml2-dev zlib1g-dev libvirt-dev"
+    VAGRANT_LIBVIRT_SW+=" libvirt-daemon-system ebtables dnsmasq-base jq"
+    VAGRANT_LIBVIRT_SW+=" bridge-utils ruby-dev ruby-libvirt"
+    apt_upd_install $VAGRANT_LIBVIRT_SW; bail;
+    # vagrant-libvirt plugin head is not stable, way too many dependencies
+    #LIBVIRT_PLUGIN_VER=0.4.1
+    #local exists=$(vagrant plugin list | grep $LIBVIRT_PLUGIN_VER | grep vagrant-libvirt)
+    #[[ -z "$exists" ]] && vagrant plugin install vagrant-libvirt --plugin-version=$LIBVIRT_PLUGIN_VER
     # Instead of plugin 'vagrant-scp', just copy file to Vagrantfile dir on Host & access through /vagrant dir on VM
     local VGT_PLUGINS="vagrant-vbguest vagrant-cachier vagrant-docker-compose vagrant-libvirt"
     apt_install vagrant && vagrant plugin install $VGT_PLUGINS && \
