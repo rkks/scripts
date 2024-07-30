@@ -307,7 +307,7 @@ install_tools()
     #UBUNTU_LAP_SW+=" vnc4server"
 
     # common server software. NOTE: ansible is buggy, use it?
-    UBUNTU_SVR_SW="bridge-utils"
+    UBUNTU_SVR_SW="bridge-utils ifenslave"
     #UBUNTU_SVR_SW+=" openvswitch-switch virtualbox vagrant openvpn"
 
     UBUNTU_PYTHON_DEV="python-is-python3 python3-pip "

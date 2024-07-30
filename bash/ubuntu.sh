@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: ubuntu quirks and it's remedies
 #  CREATED: 04/05/18 10:34:37 PDT
-# MODIFIED: 06/12/23 10:06:14 IST
+# MODIFIED: 30/07/24 09:48:29 PM IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -230,6 +230,16 @@ function x11_fwd_on()
     sudo echo "X11UseLocalhost no" >> /etc/ssh/sshd_config
     sudo systemctl restart sshd
     sudo systemctl status sshd
+}
+
+# https://help.ubuntu.com/community/UbuntuBonding
+# https://www.ibm.com/docs/en/linux-on-systems?topic=recommendations-bonding-modes
+# https://www.cyberciti.biz/faq/ubuntu-linux-bridging-and-bonding-setup/
+bond_create()
+{
+    echo "bonding" | sudo tee -a /etc/modules;
+    sudo stop networking
+    sudo modprobe bonding
 }
 
 usage()
