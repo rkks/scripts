@@ -4,7 +4,7 @@
 # Reference:
 # https://earlruby.org/2023/02/quickly-create-guest-vms-using-virsh-cloud-image-files-and-cloud-init/
 #  CREATED: 24/07/24 03:54:36 PM +0530
-# MODIFIED: 30/07/24 10:05:29 AM +0530
+# MODIFIED: 30/07/24 10:32:49 PM IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -78,7 +78,7 @@ write_user_data()
     #echo -e "        ens3:" >> user-data
     #echo -e "          dhcp4: true" >> user-data
     #echo -e "          dhcp6: false" >> user-data
-    echo -e "# 1 NAT for provision, 1 mgmt, 1 WAN/pub, 1 LAN/pvt inf" >> user-data
+    echo -e "# 1 mgmt, 1 LAN/pvt, 1 optional WAN/pub inf" >> user-data
     echo -e "write_files:" >> user-data
     echo -e "- path: /etc/cloud/cloud.cfg.d/99-custom-networking.cfg" >> user-data
     echo -e "  permissions: '0644'" >> user-data
@@ -100,15 +100,17 @@ write_user_data()
     echo -e "            - to: default" >> user-data
     echo -e "              via: 192.168.1.1" >> user-data
     echo -e "        enp4s0:" >> user-data
-    echo -e "          dhcp4: true" >> user-data
-    echo -e "          dhcp6: false" >> user-data
-    echo -e "        enp5s0:" >> user-data
     echo -e "          addresses:" >> user-data
     echo -e "            - 192.168.122.${CI_VM_IP_LSB}/24" >> user-data
     # CAUTION: No default routes through private LAN interface, only via WAN
     #echo -e "          routes:" >> user-data
     #echo -e "            - to: default" >> user-data
     #echo -e "              via: 192.168.122.1" >> user-data
+    if [ ! -z $CI_VM_EXTRA_INF ]; then
+    echo -e "        enp5s0:" >> user-data
+    echo -e "          dhcp4: true" >> user-data
+    echo -e "          dhcp6: false" >> user-data
+    fi
     echo -e "" >> user-data
     echo -e "# Configure where output will go" >> user-data
     echo -e "output:" >> user-data
@@ -183,6 +185,7 @@ setup_vm()
     # DPDK recommends e1000 VM NICs: https://doc.dpdk.org/guides-16.07/nics/e1000em.html
     # --network "bridge=br0,model=virtio": But virtio are more performant
 
+    [[ ! -z $CI_VM_EXTRA_INF ]] && { local virtopts="--network \"bridge=${CI_PUB_BR},model=virtio\" $virtopts"; }
     # --force: TODO: What is this for?
     # --network default: # 1st NAT IP for cloud-init over internet does not work
     # --hvm/-v: full virtualization, default for QEMU
@@ -193,7 +196,6 @@ setup_vm()
     # --graphics vnc,listen=0.0.0.0: useful for ubuntu-desktop
     # --location 'http://archive.ubuntu.com/ubuntu/dists/focal/main/installer-amd64/' --extra-args 'console=ttyS0,115200n8 serial': for auto-install
     virt-install --name="${CI_VM_HOSTNM}" \
-        --network "bridge=${CI_PUB_BR},model=virtio" \
         --network "bridge=${CI_PUB_BR},model=virtio" \
         --network "bridge=${CI_PVT_BR},model=virtio" \
         $virtopts --import \
@@ -262,17 +264,18 @@ usage()
     echo "  -b <br-name>    - connect VM WAN to given bridge"
     echo "  -c <num-cpus>   - number of vCPUs in VM"
     echo "  -d <disk-sz>    - size of disk attached to VM"
+    echo "  -e              - add extra/additional public interface to VM"
     echo "  -i <vm-ip-byte> - WAN IP address LSByte for VM (in 192.168.1.0/24)"
     echo "  -l <img-loc>    - location where base images of VM are stored"
     echo "  -m <mac-addr>   - config MAC addr of VM WAN to given value"
     echo "  -n <host-nm>    - config hostname of VM to given value"
+    echo "  -o              - convert image to raw file format"
     echo "  -p <ssh-pubkey> - add given SSH public key to authorized_keys"
     echo "  -q              - qcow2 clone $CI_IMG_FPATH => $CI_VM_HOSTNM.$CI_IMG_EXT (needs -n)"
     echo "  -r <ram-sz>     - size of RAM in the VM"
     echo "  -s              - setup new VM w/ given parameters"
     echo "  -t              - teardown VM w/ given name"
     echo "  -u <img-url>    - HTTP URL to download base image from"
-    echo "  -w              - convert image to raw file format"
     echo "  -z              - dry run this script"
 }
 
@@ -280,7 +283,7 @@ usage()
 # It can then be included in other files for functions.
 main()
 {
-    PARSE_OPTS="hab:c:d:i:l:m:n:p:r:stu:wz"
+    PARSE_OPTS="hab:c:d:ei:l:m:n:op:r:stu:z"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -307,6 +310,7 @@ main()
     ((opt_b)) && { CI_PUB_BR=$optarg_b; }
     ((opt_c)) && { CI_VM_NUM_CPU=$optarg_c; }
     ((opt_d)) && { CI_DISK_SIZE=$optarg_d; }
+    ((opt_e)) && { CI_VM_EXTRA_INF=1; }
     ((opt_i)) && { CI_VM_IP_LSB="$optarg_i"; }
     ((opt_l)) && { CI_IMG_LOC="$optarg_l"; }
     ((opt_m)) && { CI_VM_MACADDR=$optarg_m; }
@@ -317,7 +321,7 @@ main()
     CI_IMG_FNAME=$(basename $CI_IMG_URL); CI_IMG_FPATH=$CI_IMG_LOC/$CI_IMG_FNAME; CI_IMG_EXT=${CI_IMG_FPATH##*.}
     ((opt_t)) && { teardown_vm; }
     ((opt_q || opt_s || opt_u || opt_w)) && { [[ ! -e $CI_IMG_FPATH ]] && { mkdir -pv $CI_IMG_LOC/ && wget -O $CI_IMG_FPATH $CI_IMG_URL; bail; }; }
-    ((opt_w)) && { convert_img_to_raw; }
+    ((opt_o)) && { convert_img_to_raw; }
     ((opt_q)) && { clone_img && CI_IMG_CLONED=1; }
     ((opt_s)) && { [[ -z $CI_IMG_CLONED ]] && copy_img; setup_vm; }
     ((opt_a)) && { print_vm_ip_addr; }
