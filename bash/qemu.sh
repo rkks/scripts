@@ -4,7 +4,7 @@
 # Reference:
 # https://earlruby.org/2023/02/quickly-create-guest-vms-using-virsh-cloud-image-files-and-cloud-init/
 #  CREATED: 24/07/24 03:54:36 PM +0530
-# MODIFIED: 28/07/24 07:28:12 PM +0530
+# MODIFIED: 30/07/24 10:05:29 AM +0530
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -13,6 +13,7 @@
 #set -uvx   # Warn unset vars, Verbose (echo each command), Enable debug mode
 
 PATH="/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:.:/auto/opt/bin:/bin:/sbin"
+
 CI_VM_NUM_CPU=2
 CI_VM_RAM_SZ=4096
 CI_DISK_SIZE=16
@@ -30,6 +31,8 @@ PASSWD=ef123
 USRID=1000
 GRPID=1000
 USER_HOME=/home/$USERNM
+
+function bail() { local e=$?; [[ $e -ne 0 ]] && { echo "$! failed w/ err: $e." >&2; exit $e; } || return 0; }
 
 function run()
 {
@@ -313,9 +316,8 @@ main()
     ((opt_u)) && { CI_IMG_URL="$optarg_u"; }
     CI_IMG_FNAME=$(basename $CI_IMG_URL); CI_IMG_FPATH=$CI_IMG_LOC/$CI_IMG_FNAME; CI_IMG_EXT=${CI_IMG_FPATH##*.}
     ((opt_t)) && { teardown_vm; }
-    ((opt_u)) && { [[ ! -e $CI_IMG_FPATH ]] && { mkdir -pv $CI_IMG_LOC/; wget -O $CI_IMG_FPATH $CI_IMG_URL; }; }
-    ((opt_q || opt_s || opt_u)) && { [[ ! -e $CI_IMG_FPATH ]] && { echo "Base image not found at $CI_IMG_FPATH"; exit -1; }; }
-    #((opt_w)) && { convert_img_to_raw; }
+    ((opt_q || opt_s || opt_u || opt_w)) && { [[ ! -e $CI_IMG_FPATH ]] && { mkdir -pv $CI_IMG_LOC/ && wget -O $CI_IMG_FPATH $CI_IMG_URL; bail; }; }
+    ((opt_w)) && { convert_img_to_raw; }
     ((opt_q)) && { clone_img && CI_IMG_CLONED=1; }
     ((opt_s)) && { [[ -z $CI_IMG_CLONED ]] && copy_img; setup_vm; }
     ((opt_a)) && { print_vm_ip_addr; }
