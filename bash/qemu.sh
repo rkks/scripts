@@ -4,7 +4,7 @@
 # Reference:
 # https://earlruby.org/2023/02/quickly-create-guest-vms-using-virsh-cloud-image-files-and-cloud-init/
 #  CREATED: 24/07/24 03:54:36 PM +0530
-# MODIFIED: 30/07/24 10:32:49 PM IST
+# MODIFIED: 30/07/24 11:12:33 PM IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -179,13 +179,13 @@ setup_vm()
 {
     [[ -z $CI_VM_HOSTNM || -z $CI_PUB_BR || -z $CI_VM_IP_LSB ]] && { echo "-b, -n, -i are mandatory for -s"; exit -1; }
 
-    [[ ! -z $CI_VM_MACADDR ]] && { local virtopts="--mac $CI_VM_MACADDR"; }
+    local virtopts;
+    [[ ! -z $CI_VM_MACADDR ]] && { virtopts="--mac $CI_VM_MACADDR"; }
     bld_cidata_iso || exit -1;
 
     # DPDK recommends e1000 VM NICs: https://doc.dpdk.org/guides-16.07/nics/e1000em.html
     # --network "bridge=br0,model=virtio": But virtio are more performant
 
-    [[ ! -z $CI_VM_EXTRA_INF ]] && { local virtopts="--network \"bridge=${CI_PUB_BR},model=virtio\" $virtopts"; }
     # --force: TODO: What is this for?
     # --network default: # 1st NAT IP for cloud-init over internet does not work
     # --hvm/-v: full virtualization, default for QEMU
@@ -195,15 +195,28 @@ setup_vm()
     # --console pty,target_type=serial: to automatically jump user to console
     # --graphics vnc,listen=0.0.0.0: useful for ubuntu-desktop
     # --location 'http://archive.ubuntu.com/ubuntu/dists/focal/main/installer-amd64/' --extra-args 'console=ttyS0,115200n8 serial': for auto-install
-    virt-install --name="${CI_VM_HOSTNM}" \
-        --network "bridge=${CI_PUB_BR},model=virtio" \
-        --network "bridge=${CI_PVT_BR},model=virtio" \
-        $virtopts --import \
-        --disk "path=$PWD/${CI_VM_HOSTNM}.${CI_IMG_EXT},format=qcow2,size=$CI_DISK_SIZE" \
-        --disk "path=$PWD/${CI_VM_HOSTNM}-cidata.iso,device=cdrom" \
-        --ram="${CI_VM_RAM_SZ}" --vcpus="${CI_VM_NUM_CPU}" --check-cpu \
-        --autostart --arch x86_64 --accelerate --osinfo ubuntu22.04 --debug \
-        --watchdog=default --graphics none --noautoconsole
+    if [ ! -z $CI_VM_EXTRA_INF ]; then
+        virt-install --name="${CI_VM_HOSTNM}" \
+            --network "bridge=${CI_PUB_BR},model=virtio" \
+            --network "bridge=${CI_PVT_BR},model=virtio" \
+            --network "bridge=${CI_PUB_BR},model=virtio" \
+            $virtopts --import \
+            --disk "path=$PWD/${CI_VM_HOSTNM}.${CI_IMG_EXT},format=qcow2,size=$CI_DISK_SIZE" \
+            --disk "path=$PWD/${CI_VM_HOSTNM}-cidata.iso,device=cdrom" \
+            --ram="${CI_VM_RAM_SZ}" --vcpus="${CI_VM_NUM_CPU}" --check-cpu \
+            --autostart --arch x86_64 --accelerate --osinfo ubuntu22.04 --debug \
+            --watchdog=default --graphics none --noautoconsole
+    else
+        virt-install --name="${CI_VM_HOSTNM}" \
+            --network "bridge=${CI_PUB_BR},model=virtio" \
+            --network "bridge=${CI_PVT_BR},model=virtio" \
+            $virtopts --import \
+            --disk "path=$PWD/${CI_VM_HOSTNM}.${CI_IMG_EXT},format=qcow2,size=$CI_DISK_SIZE" \
+            --disk "path=$PWD/${CI_VM_HOSTNM}-cidata.iso,device=cdrom" \
+            --ram="${CI_VM_RAM_SZ}" --vcpus="${CI_VM_NUM_CPU}" --check-cpu \
+            --autostart --arch x86_64 --accelerate --osinfo ubuntu22.04 --debug \
+            --watchdog=default --graphics none --noautoconsole
+    fi
     # https://game.ci/docs/self-hosting/host-creation/QEMU/linux-cloudimage/
     # SMP=$(( $PHYSICAL_CORES * $HYPR_THRDS ))
     #sudo qemu-system-x86_64 \
