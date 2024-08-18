@@ -137,6 +137,12 @@ link_tools()
     echo "Linking Tool binary Files - Done"
 }
 
+# Removing snap has to be manual, automated has issues.
+# $ snap list   // for every pkg in list, except core20 & snapd do snap remove
+# $ snap remove core20          // then delete core20 pkg
+# $ snap remove snapd           // then remove snapd extended pkg from itself
+# $ sudo apt purge -y snapd     // finally purge base snapd apt pkg
+
 uninstall_vpp()
 {
     # Searches give RE pattern in apt-cache & then deletes all matching pkgs
@@ -197,6 +203,14 @@ install_vpp()
     # vpp installer creates new "vpp" usergroup, add current user & session to it
     sudo usermod -a -G vpp $(id -nu)
     newgrp vpp
+}
+
+install_terraform()
+{
+    apt_install gnupg software-properties-common jq; bail;
+    wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor | sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg > /dev/null
+    echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+    apt_upd_install terraform; bail; return 0;
 }
 
 # https://www.dedoimedo.com/computers/virtualbox-kernel-driver-gcc-12.html
