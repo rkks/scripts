@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Terraform helper script
 #  CREATED: 02/08/24 12:52:52 PM +0530
-# MODIFIED: 20/08/24 10:26:47 AM +0530
+# MODIFIED: 31/08/24 09:57:19 PM +0530
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -13,9 +13,11 @@ PATH="/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:.:/auto/opt/bin:/bin:/sb
 
 [[ ~/.bashrc.ext ]] && { source ~/.bashrc.ext; }
 
-TF_PLAN="$PWD/tf-$(basename $PWD).plan"
 TF_SHOW_ARGS="terraform.tfstate"
 SSH_PVT_KEY=$HOME/.ssh/keys/id_rsa
+VPS_PROVIDER=$(basename $PWD)
+
+function bail() { local e=$?; [[ $e -ne 0 ]] && { echo "$! failed w/ err: $e." >&2; exit $e; } || return 0; }
 
 usage()
 {
@@ -23,32 +25,50 @@ usage()
     echo "Options:"
     echo "  -h              - print this help"
     echo "  -a <api_token>  - API token to use for given terraform provider"
+    echo "  -c              - clean terraform artefacts after destroy (use -d)"
     echo "  -d              - run terraform destroy w/ given args (use -a)"
     echo "  -i              - run terraform init"
     echo "  -k <ssh-key>    - SSH private key to use for terraform ops"
     echo "  -l              - turn on verbose logging for terraform ops"
     echo "  -p              - run terraform plan w/ given args (use -a)"
     echo "  -s              - run terraform show w/ terraform.tfstate"
+    echo "  -t <tgt-name>   - terraform target name to bring up/down single resource"
     echo "  -v <VPS>        - VPS provider name"
     echo "  -y              - run terraform apply w/ given args (use -a)"
     echo "  -z              - dry run this script"
     echo "VPS: do (digitalocean), hz (hetzner)"
 }
 
-# $ eval `ssh-agent -s` && ssh ef@10.0.1.2
-# Agent pid 70615
-# kex_exchange_identification: Connection closed by remote host
-# Connection closed by UNKNOWN port 65535
-ssh_key_copy_msg()
+tf_plan_apply()
 {
+    # Do: terraform apply -target hcloud_server.ssheu, to bring up single VM,
+    # but then also need to call for "-target hcloud_server_network.ssheu_inf"
+    [[ ! -z $TF_PLAN ]] && TF_APPLY_ARGS=$TF_PLAN || TF_APPLY_ARGS=$TF_PLAN_ARGS; bail;
+    terraform apply $TF_APPLY_ARGS;
+    # This error is seen during SSH, if SSH private key is not copied to jump-VM
+    # $ eval `ssh-agent -s` && ssh ef@10.0.1.2
+    # Agent pid 70615
+    # kex_exchange_identification: Connection closed by remote host
+    # Connection closed by UNKNOWN port 65535
     echo "Copy pvt_key to ssh jump-VM to avoid error: Connection closed by UNKNOWN port 65535";
+    terraform show $TF_SHOW_ARGS | grep ipv4_address;
+}
+
+tf_plan_destroy()
+{
+    # 'terraform destroy' is alias for 'terraform apply -destroy', but latter
+    # command breaks when "-target digitalocean_droplet.ssh" is passed.
+    terraform destroy $TF_PLAN_ARGS; bail;
+    echo "Deleted cloud resources, removing local terraform artefacts";
+    [[ ! -z $CLN_TF ]] && { rm -rf terraform.* .terraform*; }
+    return 0;
 }
 
 set_tf_plan_args()
 {
     [[ -z $API_TOKEN || -z $SSH_PVT_KEY ]] && { echo "Pass either -v or -a and -k"; exit -1; }
     TF_PLAN_ARGS="-var api_token=${API_TOKEN} -var ssh_key=${SSH_PVT_KEY}";
-    #TF_PLAN_ARGS="-var do_token=${API_TOKEN} -var pvt_key=${SSH_PVT_KEY}";
+    [[ ! -z $TGT_NAME ]] && TF_PLAN_ARGS="$TF_PLAN_ARGS -target $TGT_NAME"
 }
 
 set_vps_provider_env()
@@ -61,7 +81,8 @@ set_vps_provider_env()
         API_TOKEN=${HZ_PAT};
         ;;
     *)
-        usage; exit -1;
+        echo "Either pass -v or run in a directory w/ name do/hz"; exit -1;
+        ;;
     esac
 }
 
@@ -69,7 +90,7 @@ set_vps_provider_env()
 # It can then be included in other files for functions.
 main()
 {
-    PARSE_OPTS="ha:dk:ilpsv:yz"
+    PARSE_OPTS="ha:cdk:ilpst:v:yz"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -93,17 +114,19 @@ main()
     fi
 
     ((opt_z)) && { DRY_RUN=1; LOG_TTY=1; }
-    ((opt_v)) && { set_vps_provider_env $optarg_v; }
+    ((opt_v)) && { VPS_PROVIDER=$optarg_v; }
     ((opt_a)) && { API_TOKEN=$optarg_a; }   # override vps provider default
+    ((opt_c)) && { CLN_TF=1; }
     ((opt_k)) && { SSH_PVT_KEY=$optarg_k; } # override vps provider default
     ((opt_l)) && { export TF_LOG=1; }
-    ((opt_d || opt_p)) && { set_tf_plan_args; }
-    # 'terraform destroy' is alias for 'terraform apply -destroy'
-    ((opt_d)) && { terraform apply -destroy $TF_PLAN_ARGS; } # && rm -rf .terraform*;
-    ((opt_i)) && { terraform init; }
-    ((opt_p)) && { terraform plan $TF_PLAN_ARGS -out=$TF_PLAN; }
-    ((opt_y)) && { terraform apply $TF_PLAN && ssh_key_copy_msg; }
-    ((opt_s || opt_y)) && { terraform show $TF_SHOW_ARGS; } # for VM IP addr
+    ((opt_t)) && { TGT_NAME=$optarg_t; }
+    set_vps_provider_env $VPS_PROVIDER;
+    ((opt_d || opt_p || opt_t || opt_x)) && { set_tf_plan_args; }
+    ((opt_d || opt_x)) && { tf_plan_destroy; bail; }
+    ((opt_i)) && { terraform init; bail; }
+    ((opt_p)) && { TF_PLAN="terraform-$VPS_PROVIDER.plan"; terraform plan $TF_PLAN_ARGS -out=$TF_PLAN; bail; }
+    ((opt_y)) && { tf_plan_apply; bail; }
+    ((opt_s)) && { terraform show $TF_SHOW_ARGS; } # for VM IP addr
     ((opt_h)) && { usage; }
 
     exit 0;
