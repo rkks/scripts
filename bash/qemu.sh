@@ -4,7 +4,7 @@
 # Reference:
 # https://earlruby.org/2023/02/quickly-create-guest-vms-using-virsh-cloud-image-files-and-cloud-init/
 #  CREATED: 24/07/24 03:54:36 PM +0530
-# MODIFIED: 30/07/24 11:12:33 PM IST
+# MODIFIED: 01/09/24 08:23:11 PM +0530
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -106,11 +106,6 @@ write_user_data()
     #echo -e "          routes:" >> user-data
     #echo -e "            - to: default" >> user-data
     #echo -e "              via: 192.168.122.1" >> user-data
-    if [ ! -z $CI_VM_EXTRA_INF ]; then
-    echo -e "        enp5s0:" >> user-data
-    echo -e "          dhcp4: true" >> user-data
-    echo -e "          dhcp6: false" >> user-data
-    fi
     echo -e "" >> user-data
     echo -e "# Configure where output will go" >> user-data
     echo -e "output:" >> user-data
@@ -183,6 +178,10 @@ setup_vm()
     [[ ! -z $CI_VM_MACADDR ]] && { virtopts="--mac $CI_VM_MACADDR"; }
     bld_cidata_iso || exit -1;
 
+    # All VPS/Cloud have max 2 infs, one for public WAN, another for private LAN
+    # Use SSH jump-server VM for OOB-mgmt connectivity. Keeps local setup closer
+    # to VPS, easy to replicate to own VPS kind of deployment in future.
+
     # DPDK recommends e1000 VM NICs: https://doc.dpdk.org/guides-16.07/nics/e1000em.html
     # --network "bridge=br0,model=virtio": But virtio are more performant
 
@@ -195,28 +194,14 @@ setup_vm()
     # --console pty,target_type=serial: to automatically jump user to console
     # --graphics vnc,listen=0.0.0.0: useful for ubuntu-desktop
     # --location 'http://archive.ubuntu.com/ubuntu/dists/focal/main/installer-amd64/' --extra-args 'console=ttyS0,115200n8 serial': for auto-install
-    if [ ! -z $CI_VM_EXTRA_INF ]; then
-        virt-install --name="${CI_VM_HOSTNM}" \
-            --network "bridge=${CI_PUB_BR},model=virtio" \
-            --network "bridge=${CI_PVT_BR},model=virtio" \
-            --network "bridge=${CI_PUB_BR},model=virtio" \
-            $virtopts --import \
-            --disk "path=$PWD/${CI_VM_HOSTNM}.${CI_IMG_EXT},format=qcow2,size=$CI_DISK_SIZE" \
-            --disk "path=$PWD/${CI_VM_HOSTNM}-cidata.iso,device=cdrom" \
-            --ram="${CI_VM_RAM_SZ}" --vcpus="${CI_VM_NUM_CPU}" --check-cpu \
-            --autostart --arch x86_64 --accelerate --osinfo ubuntu22.04 --debug \
-            --watchdog=default --graphics none --noautoconsole
-    else
-        virt-install --name="${CI_VM_HOSTNM}" \
-            --network "bridge=${CI_PUB_BR},model=virtio" \
-            --network "bridge=${CI_PVT_BR},model=virtio" \
-            $virtopts --import \
-            --disk "path=$PWD/${CI_VM_HOSTNM}.${CI_IMG_EXT},format=qcow2,size=$CI_DISK_SIZE" \
-            --disk "path=$PWD/${CI_VM_HOSTNM}-cidata.iso,device=cdrom" \
-            --ram="${CI_VM_RAM_SZ}" --vcpus="${CI_VM_NUM_CPU}" --check-cpu \
-            --autostart --arch x86_64 --accelerate --osinfo ubuntu22.04 --debug \
-            --watchdog=default --graphics none --noautoconsole
-    fi
+    virt-install \
+        --name="${CI_VM_HOSTNM}" --network "bridge=${CI_PUB_BR},model=virtio" \
+        --network "bridge=${CI_PVT_BR},model=virtio" $virtopts --import \
+        --disk "path=$PWD/${CI_VM_HOSTNM}.${CI_IMG_EXT},format=qcow2,size=$CI_DISK_SIZE" \
+        --disk "path=$PWD/${CI_VM_HOSTNM}-cidata.iso,device=cdrom" \
+        --ram="${CI_VM_RAM_SZ}" --vcpus="${CI_VM_NUM_CPU}" --check-cpu \
+        --autostart --arch x86_64 --accelerate --osinfo ubuntu22.04 --debug \
+        --watchdog=default --graphics none --noautoconsole
     # https://game.ci/docs/self-hosting/host-creation/QEMU/linux-cloudimage/
     # SMP=$(( $PHYSICAL_CORES * $HYPR_THRDS ))
     #sudo qemu-system-x86_64 \
@@ -277,7 +262,6 @@ usage()
     echo "  -b <br-name>    - connect VM WAN to given bridge"
     echo "  -c <num-cpus>   - number of vCPUs in VM"
     echo "  -d <disk-sz>    - size of disk attached to VM"
-    echo "  -e              - add extra/additional public interface to VM"
     echo "  -i <vm-ip-byte> - WAN IP address LSByte for VM (in 192.168.1.0/24)"
     echo "  -l <img-loc>    - location where base images of VM are stored"
     echo "  -m <mac-addr>   - config MAC addr of VM WAN to given value"
@@ -296,7 +280,7 @@ usage()
 # It can then be included in other files for functions.
 main()
 {
-    PARSE_OPTS="hab:c:d:ei:l:m:n:op:r:stu:z"
+    PARSE_OPTS="hab:c:d:i:l:m:n:op:r:stu:z"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -323,7 +307,6 @@ main()
     ((opt_b)) && { CI_PUB_BR=$optarg_b; }
     ((opt_c)) && { CI_VM_NUM_CPU=$optarg_c; }
     ((opt_d)) && { CI_DISK_SIZE=$optarg_d; }
-    ((opt_e)) && { CI_VM_EXTRA_INF=1; }
     ((opt_i)) && { CI_VM_IP_LSB="$optarg_i"; }
     ((opt_l)) && { CI_IMG_LOC="$optarg_l"; }
     ((opt_m)) && { CI_VM_MACADDR=$optarg_m; }
