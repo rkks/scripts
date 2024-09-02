@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Terraform helper script
 #  CREATED: 02/08/24 12:52:52 PM +0530
-# MODIFIED: 01/09/24 06:38:55 PM +0530
+# MODIFIED: 01/09/24 10:41:10 PM IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -31,6 +31,7 @@ usage()
     echo "  -i              - run terraform init"
     echo "  -k <ssh-key>    - SSH private key to use for terraform ops"
     echo "  -l              - turn on verbose logging for terraform ops"
+    echo "  -o <os-distro>  - bring up instance w/ given base image"
     echo "  -p              - run terraform plan w/ given args (use -a)"
     echo "  -s              - run terraform show w/ terraform.tfstate"
     echo "  -t <tgt-name>   - terraform target name to bring up/down single resource"
@@ -48,11 +49,9 @@ tf_plan_apply()
     terraform apply $TF_APPLY_ARGS;
     # This error is seen during SSH, if SSH private key is not copied to jump-VM
     # $ eval `ssh-agent -s` && ssh ef@10.0.1.2
-    # Agent pid 70615
-    # kex_exchange_identification: Connection closed by remote host
-    # Connection closed by UNKNOWN port 65535
-    echo "Copy pvt_key to ssh jump-VM to avoid error: Connection closed by UNKNOWN port 65535";
-    terraform show $TF_SHOW_ARGS | grep ipv4_address;
+    # Agent pid 70615 # kex_exchange_identification: Connection closed by remote host # Connection closed by UNKNOWN port 65535
+    # But copying pvt_key to SSH jump-server is cardinal sin, use ssh -J instead
+    [[ $VPS_PROVIDER == lv ]] && virsh net-dhcp-leases --network default || terraform show $TF_SHOW_ARGS | grep ipv4_address;
 }
 
 tf_plan_destroy()
@@ -70,6 +69,7 @@ set_tf_args()
     [[ ! -z $API_TOKEN ]] && TF_ARGS="$TF_ARGS -var api_token=${API_TOKEN}";
     [[ ! -z $SSH_PVT_KEY ]] && TF_ARGS="$TF_ARGS -var ssh_key=${SSH_PVT_KEY}";
     [[ ! -z $TF_TGT ]] && TF_ARGS="$TF_ARGS -target ${TF_TGT}";
+    [[ ! -z $OS_DISTRO ]] && TF_ARGS="$TF_ARGS -var os_distro=${OS_DISTRO}";
 }
 
 set_vps_provider_env()
@@ -83,6 +83,7 @@ set_vps_provider_env()
         ;;
     lv)
         API_TOKEN=${LV_PAT};
+        OS_DISTRO="$HOME/ws/cloud-images/ubuntu-22.04-server-cloudimg-amd64.img";
         ;;
     *)
         echo "Either pass -v or run in a directory w/ name do/hz"; exit -1;
@@ -94,7 +95,7 @@ set_vps_provider_env()
 # It can then be included in other files for functions.
 main()
 {
-    PARSE_OPTS="ha:cdk:ilpst:v:yz"
+    PARSE_OPTS="ha:cdk:ilo:pst:v:yz"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -117,13 +118,13 @@ main()
         usage && exit $EINVAL;
     fi
 
-    set -x
     ((opt_z)) && { DRY_RUN=1; LOG_TTY=1; }
     ((opt_v)) && { VPS_PROVIDER=$optarg_v; }
     ((opt_a)) && { API_TOKEN=$optarg_a; }   # override vps provider default
     ((opt_c)) && { CLN_TF=1; }
     ((opt_k)) && { SSH_PVT_KEY=$optarg_k; } # override vps provider default
     ((opt_l)) && { export TF_LOG=1; }
+    ((opt_o)) && { OS_DISTRO=$optarg_o; }
     ((opt_t)) && { TF_TGT=$optarg_t; }
     set_vps_provider_env $VPS_PROVIDER;
     ((opt_c || opt_d || opt_p || opt_y)) && { set_tf_args; }

@@ -360,6 +360,9 @@ install_tools()
         vpp)
             install_vpp; bail;
             ;;
+        tf)
+            install_terraform; bail;
+            ;;
         *)
             echo "Invalid input $*";
             ;;
