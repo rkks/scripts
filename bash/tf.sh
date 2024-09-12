@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Terraform helper script
 #  CREATED: 02/08/24 12:52:52 PM +0530
-# MODIFIED: 12/09/24 10:54:58 PM +0530
+# MODIFIED: 12/09/24 11:02:28 PM IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -83,7 +83,8 @@ set_vps_provider_env()
         ;;
     lv)
         API_TOKEN=${LV_PAT};
-        OS_DISTRO="$HOME/ws/cloud-images/ubuntu-22.04-server-cloudimg-amd64.img";
+        # Force people to input distro path.
+        #OS_DISTRO="$HOME/ws/cloud-images/ubuntu-22.04-server-cloudimg-amd64.img";
         ;;
     *)
         echo "Either pass -v or run in a directory w/ name do/hz"; exit -1;
