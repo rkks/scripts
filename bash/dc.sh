@@ -4,7 +4,7 @@
 #  $ docker-compose -f docker-compose.yml -f docker-compose.dev.yml
 #
 #  CREATED: 18/12/23 07:08:21 UTC
-# MODIFIED: 24/07/24 02:25:40 PM +0530
+# MODIFIED: 12/09/24 10:44:05 PM +0530
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -108,11 +108,12 @@ usage()
     echo "  -b [svc]        - run docker compose build"
     echo "  -c              - list all running/stopped containers (docker ps -a)"
     echo "  -d [svc]        - run docker compose up in daemon mode"
+    echo "  -e <img/sha>    - remove the given docker image"
+    echo "  -f <dc-fpath>   - file path to use in 'docker compose -f <fpath>'"
     echo "  -i              - list all docker images"
-    echo "  -j              - use ipvlan driver for docker, instead of macvlan"
     echo "  -k              - delete docker route, ipvlan inf if no routes (use -o)"
     echo "  -l [svc]        - show docker compose up logs"
-    echo "  -m <img/sha>    - remove the given docker image"
+    echo "  -m              - use ipvlan driver/mode for docker n/w (default: macvlan)"
     echo "  -n [prune]      - without any args, list docker networks, else prune them"
     echo "  -o <dkr-ip>     - docker guest IP address for -k, -v options"
     echo "  -q              - run docker compose build (-b) with --no-cache"
@@ -132,7 +133,7 @@ usage()
 # It can then be included in other files for functions.
 main()
 {
-    PARSE_OPTS="ha:bcdiklm:no:p:qrst:uv:w:x:z"
+    PARSE_OPTS="ha:bcde:f:iklmno:p:qrst:uv:w:x:z"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -158,15 +159,16 @@ main()
     ((opt_z)) && { DRY_RUN=1; LOG_TTY=1; }
     ((opt_o)) && { DKR_GUEST_IP=$optarg_o; }
     ((opt_k)) && { del_dkr_vnet $DKR_GUEST_IP; }
+    ((opt_f)) && { DC_CMD="$DC_CMD -f $optarg_f"; }
     ((opt_w)) && { DKR_HOST_INF=$optarg_w; }
-    ((opt_j)) && { DKR_NET_KLM=ipvlan; }
+    ((opt_m)) && { DKR_NET_KLM=ipvlan; }
     ((opt_n)) && { [[ $# -ne 0 ]] && docker network $@ || docker network ls; }
     ((opt_v && !opt_k)) && { add_dkr_vnet $optarg_v; }
     ((opt_a)) && { docker attach $optarg_a; bail; }
     ((opt_x)) && { docker exec -it $optarg_x bash; bail; }
     ((opt_l)) && { $DC_CMD logs --no-color $@; bail; }
     ((opt_i)) && { docker images; bail; }
-    ((opt_m)) && { docker rmi $optarg_m; bail; }
+    ((opt_e)) && { docker rmi $optarg_e; bail; }
     ((opt_q)) && { DC_BLD_ARGS+=" --no-cache"; }
     ((opt_b)) && { $DC_CMD build $DC_BLD_ARGS $@; bail; }
     ((opt_d)) && { DC_UP_ARGS="-d --remove-orphans"; }

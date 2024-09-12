@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: Terraform helper script
 #  CREATED: 02/08/24 12:52:52 PM +0530
-# MODIFIED: 01/09/24 10:41:10 PM IST
+# MODIFIED: 12/09/24 10:54:58 PM +0530
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
