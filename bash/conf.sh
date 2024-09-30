@@ -137,6 +137,17 @@ link_tools()
     echo "Linking Tool binary Files - Done"
 }
 
+install_gh_cli()
+{
+    (type -p wget >/dev/null || (sudo apt update && sudo apt-get install wget -y)) \
+	&& sudo mkdir -p -m 755 /etc/apt/keyrings \
+	&& wget -qO- https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null \
+	&& sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg \
+	&& echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+	&& sudo apt update \
+	&& sudo apt install gh -y
+}
+
 # Removing snap has to be manual, automated has issues.
 # $ snap list   // for every pkg in list, except core20 & snapd do snap remove
 # $ snap remove core20          // then delete core20 pkg
@@ -261,16 +272,16 @@ install_vagrant()
     return $?;
 }
 
-# docker-ce comes pre-compiled w/ all dependent libs within. docker.io is stock
-# debian w/ all libs external, independent. Keeps you safe from lib version hell
+# docker-ce comes pre-compiled w/ all dependent libs within. https://docs.docker.com/engine/install/ubuntu/ -- keeps changing.
+# docker.io is stock debian w/ all libs external, independent. To keep OS safe from lib version hell. but does not work w/ buildKit for VPP.
 # https://stackoverflow.com/questions/45023363/what-is-docker-io-in-relation-to-docker-ce-and-docker-ee-now-called-mirantis-k
 install_docker_ce()
 {
-    sudo apt remove docker docker-engine docker.io containerd runc
-    apt_install ca-certificates curl gnupg lsb-release
-    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-    apt_upd_install docker-ce docker-ce-cli containerd.io; return $?;
+    for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do sudo apt-get remove -y $pkg; done
+    apt_install ca-certificates curl gnupg; sudo install -m 0755 -d /etc/apt/keyrings
+    sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc; sudo chmod a+r /etc/apt/keyrings/docker.asc;
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo $VERSION_CODENAME) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+    apt_upd_install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin; return $?;
 }
 
 install_docker()
@@ -334,6 +345,7 @@ install_tools()
         case $pkgset in
         dev)
             apt_install $UBUNTU_DEV_SW; bail;
+            echo "Also install hcloud (hetzner), gh (github), doctl (digitalocean) CLIs";
             ;;
         lap)
             apt_install $UBUNTU_LAP_SW; bail;

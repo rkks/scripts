@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #  DETAILS: External diff tool for git
 #  CREATED: 03/20/13 21:55:08 IST
-# MODIFIED: 16/12/23 22:06:11 IST
+# MODIFIED: 30/09/24 11:00:09 PM IST
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
 #  LICENCE: Copyright (c) 2013, Ravikiran K.S.
@@ -106,6 +106,19 @@ function cherry_pick()
     done
 }
 
+# requires gh cli of github. https://cli.github.com/manual/
+# Ref: https://gist.github.com/caniszczyk/3856584
+function github_clone_org()
+{
+    [[ $# -ne 1 ]] && { echo "usage: $FUNCNAME <github-org-name>"; exit -1; }
+    mkdir $1 && cd $1; [[ $? -ne 0 ]] && { echo "mkdir $1 failed w/ rc $?"; return -1; }
+    gh repo list $1 --limit 9999 --json sshUrl | jq '.[]|.sshUrl' | xargs -n1 > list;
+    local r;
+    for r in $(cat list); do
+        git clone $r; [[ $? -ne 0 ]] && { echo "Failed to clone $r"; exit 1; }
+    done
+}
+
 function usage()
 {
     echo "usage: git.sh <path> <old-file> <old-hex> <old-mode> <new-file> <new-hex> <new-mode>"
@@ -117,6 +130,7 @@ function usage()
     echo "  -c <kv-conf-path>       - use given key-val file to config local repo"
     echo "  -d <diff-name>          - use given diff-name generate diff file-name"
     echo "  -f <diff-file-path>     - do not generate file-name, use provided name"
+    echo "  -g <github-org-name>    - clone all repos of given organization from github"
     echo "  -l [ws-name]            - clone repo from GIT_REPO url with opts"
     echo "  -p                      - pull & track all branches in remote repo"
     echo "  -r <remote-name> <url>  - move git repo to different hosting"
@@ -131,7 +145,7 @@ main()
     local DIFF=$(which diff 2>/dev/null);
     [[ $# -eq 7 ]] && { [[ ! -z $DIFF ]] && $DIFF "$2" "$5"; exit 0; }  # echo $*
 
-    PARSE_OPTS="ha:b:c:d:f:lpr:tu:"
+    PARSE_OPTS="ha:b:c:d:f:g:lpr:tu:"
     local opts_found=0
     while getopts ":$PARSE_OPTS" opt; do
         case $opt in
@@ -157,6 +171,7 @@ main()
     ((opt_a)) && { add_ssh_key $optarg_a; }
     ((opt_b)) && { BRANCH=" -b $optarg_b"; } || { unset BRANCH; }
     ((opt_f)) && { DIFF_NM=$optarg_f; } || { unset DIFF_NM; }
+    ((opt_g)) && { github_clone_org $optarg_g; exit 0; }
     ((opt_l)) && { git_clone $*; exit 0; }
     ((opt_d)) && { git_diff $optarg_d; return; }
     [[ ! -d .git ]] && { echo "Unknown git repo, .git not found"; return; }

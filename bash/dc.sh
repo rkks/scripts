@@ -4,7 +4,7 @@
 #  $ docker-compose -f docker-compose.yml -f docker-compose.dev.yml
 #
 #  CREATED: 18/12/23 07:08:21 UTC
-# MODIFIED: 12/09/24 10:44:05 PM +0530
+# MODIFIED: 30/09/24 11:05:27 PM IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -12,7 +12,9 @@
 
 #set -uvx   # Warn unset vars, Verbose (echo each command), Enable debug mode
 
-PATH="/usr/bin:/usr/sbin:.:/auto/opt/bin:/bin:/sbin"
+PATH="/usr/bin:/usr/sbin:.:/auto/opt/bin:/bin:/sbin:$PATH"
+
+#[[ "$(basename dc.sh)" == "$(basename -- $0)" && -f $HOME/.bashrc.dev ]] && { source $HOME/.bashrc.dev; }
 
 # Exposing port 5000 on host & directly referring it is unnecessary: hub.b4cloud.com:5000/v2/_catalog
 DC_CMD='docker -D compose --progress plain'

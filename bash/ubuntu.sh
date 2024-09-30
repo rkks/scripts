@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: ubuntu quirks and it's remedies
 #  CREATED: 04/05/18 10:34:37 PDT
-# MODIFIED: 30/07/24 09:48:29 PM IST
+# MODIFIED: 08/09/24 03:20:47 PM IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -115,7 +115,8 @@ function add_systemd_svc()
     sudo cp "$2/$1@.service" /etc/systemd/system/ &&
     sudo systemctl daemon-reload && sudo systemctl enable "$1@1.service" &&
     sudo systemctl start "$1@1.service" && sudo systemctl status "$1@1.service"
-    #journalctl -xe     # to debug issues
+    journalctl -xe     # to debug issues
+    journalctl -xeu $1.service
     #sudo echo VNCSERVERS=1:$USER > /etc/default/vncserver  # does not work
     #sudo update-rc.d vncserver defaults        # if needed
 }
