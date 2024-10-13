@@ -148,6 +148,12 @@ install_gh_cli()
 	&& sudo apt install gh -y
 }
 
+install_go()
+{
+    cd /tmp/ && wget https://go.dev/dl/go1.23.1.linux-amd64.tar.gz && \
+    sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.23.1.linux-amd64.tar.gz
+}
+
 # Removing snap has to be manual, automated has issues.
 # $ snap list   // for every pkg in list, except core20 & snapd do snap remove
 # $ snap remove core20          // then delete core20 pkg
