@@ -4,7 +4,7 @@
 #  $ docker-compose -f docker-compose.yml -f docker-compose.dev.yml
 #
 #  CREATED: 18/12/23 07:08:21 UTC
-# MODIFIED: 30/09/24 11:05:27 PM IST
+# MODIFIED: 10/11/24 12:54:15 PM IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -17,7 +17,7 @@ PATH="/usr/bin:/usr/sbin:.:/auto/opt/bin:/bin:/sbin:$PATH"
 #[[ "$(basename dc.sh)" == "$(basename -- $0)" && -f $HOME/.bashrc.dev ]] && { source $HOME/.bashrc.dev; }
 
 # Exposing port 5000 on host & directly referring it is unnecessary: hub.b4cloud.com:5000/v2/_catalog
-DC_CMD='docker -D compose --progress plain'
+DC_CMD='docker -l debug -D compose --progress plain'
 # If any files are removed after build, compress img. squash is obsolete option
 #DC_BLD_ARGS='--squash'
 DKR_NET_KLM=macvlan
@@ -101,6 +101,13 @@ del_dkr_vnet()
     return $?;
 }
 
+docker_build_run()
+{
+    docker build --tag $optarg_g . &&   \
+    docker run -it --rm -v .:/proj/ -w /proj --net host $optarg_g bash;
+    return $?;
+}
+
 usage()
 {
     echo "Usage: dc.sh [-h|]"
@@ -112,9 +119,10 @@ usage()
     echo "  -d [svc]        - run docker compose up in daemon mode"
     echo "  -e <img/sha>    - remove the given docker image"
     echo "  -f <dc-fpath>   - file path to use in 'docker compose -f <fpath>'"
+    echo "  -g <tag-name>   - do docker build and run w/ standalone Dockerfile"
     echo "  -i              - list all docker images"
     echo "  -k              - delete docker route, ipvlan inf if no routes (use -o)"
-    echo "  -l [svc]        - show docker compose up logs"
+    echo "  -l [svc]        - show docker compose up/run logs"
     echo "  -m              - use ipvlan driver/mode for docker n/w (default: macvlan)"
     echo "  -n [prune]      - without any args, list docker networks, else prune them"
     echo "  -o <dkr-ip>     - docker guest IP address for -k, -v options"
@@ -122,7 +130,7 @@ usage()
     echo "  -r <svc-sha|all>- run docker stop & docker rm, on single or all"
     echo "  -s <svc-sha|all>- run docker compose stop, proc stopped, FS still kept"
     echo "  -t [img]        - show docker history for given container image"
-    echo "  -u [svc]        - run docker compose up in interactive mode for test"
+    echo "  -u <svc>        - run docker compose run svc in interactive mode for test"
     echo "  -v <hip>        - add ipvlan inf & docker guest route (pass -o, -w)"
     echo "  -w <phy-inf>    - physical interface name for -v option"
     echo "  -x <svc/sha>    - run docker exec -it bash for given container"
@@ -166,6 +174,7 @@ main()
     ((opt_m)) && { DKR_NET_KLM=ipvlan; }
     ((opt_n)) && { [[ $# -ne 0 ]] && docker network $@ || docker network ls; }
     ((opt_v && !opt_k)) && { add_dkr_vnet $optarg_v; }
+    ((opt_g)) && { docker_build_run; bail; }
     ((opt_a)) && { docker attach $optarg_a; bail; }
     ((opt_x)) && { docker exec -it $optarg_x bash; bail; }
     ((opt_l)) && { $DC_CMD logs --no-color $@; bail; }
@@ -173,8 +182,8 @@ main()
     ((opt_e)) && { docker rmi $optarg_e; bail; }
     ((opt_q)) && { DC_BLD_ARGS+=" --no-cache"; }
     ((opt_b)) && { $DC_CMD build $DC_BLD_ARGS $@; bail; }
-    ((opt_d)) && { DC_UP_ARGS="-d --remove-orphans"; }
-    ((opt_d || opt_u)) && { $DC_CMD up $DC_UP_ARGS $@; bail; }
+    ((opt_d)) && { $DC_CMD up -d --remove-orphans $@; }
+    ((opt_u)) && { $DC_CMD run $@ bash; bail; }
     ((opt_d || opt_c)) && { docker ps -a; } # docker ps == docker container ps
     ((opt_r || opt_s)) && { [[ $# -ne 1 ]] && { echo "-s and -r require either <svc-sha> or 'all' keyword"; exit -1; }; }
     ((opt_r || opt_s)) && { [[ $1 == all ]] && DKR_LST=$(docker ps -a | grep -v CREATED | awk '{print $1}'); }

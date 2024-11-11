@@ -1,7 +1,7 @@
 #!/bin/bash
 #  DETAILS: k0sctl helper script 
 #  CREATED: 28/05/24 05:25:23 PM IST IST
-# MODIFIED: 29/05/24 03:37:23 PM IST
+# MODIFIED: 05/11/24 04:36:23 PM IST
 # REVISION: 1.0
 #
 #   AUTHOR: Ravikiran K.S., ravikirandotks@gmail.com
@@ -9,9 +9,7 @@
 
 #set -uvx   # Warn unset vars, Verbose (echo each command), Enable debug mode
 
-PATH="/usr/bin:/usr/sbin:.:/auto/opt/bin:/bin:/sbin"
-
-[[ "$(basename k0sctl.sh)" == "$(basename -- $0)" && -f $HOME/.bashrc.dev ]] && { source $HOME/.bashrc.dev; }
+PATH="/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:.:/auto/opt/bin:/bin:/sbin"
 
 usage()
 {

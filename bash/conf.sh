@@ -137,6 +137,12 @@ link_tools()
     echo "Linking Tool binary Files - Done"
 }
 
+install_kubectl()
+{
+    curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl &&
+    chmod +x ./kubectl && sudo mv ./kubectl /usr/local/bin/kubectl
+}
+
 install_gh_cli()
 {
     (type -p wget >/dev/null || (sudo apt update && sudo apt-get install wget -y)) \
@@ -308,6 +314,13 @@ install_containerlab()
     #echo "deb [trusted=yes] https://apt.fury.io/netdevops/ /" | sudo tee -a /etc/apt/sources.list.d/netdevops.list
     ## Log out, Log back in, Run 'netlab test clab'
     #apt_upd_install containerlab
+}
+
+install_hcloud()
+{
+    cd /tmp/ && wget https://github.com/hetznercloud/cli/releases/download/v1.49.0/hcloud-linux-amd64.tar.gz && \
+    sudo rm -rf /usr/local/bin/hcloud && tar -xvzf hcloud-linux-amd64.tar.gz && sudo mv hcloud /usr/local/bin/;
+    return $?;
 }
 
 install_tools()
